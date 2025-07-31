@@ -1,4 +1,7 @@
-import { POI, CategoryConfigMap } from '../types'
+import { POI, POIType, CategoryConfigMap } from '../types'
+
+// Export types and config for components to use
+export type { POI, POIType, CategoryConfigMap }
 
 export const categoryConfig: CategoryConfigMap = {
   hiking: { color: '#8B4513', icon: 'hiking', name: 'Vandre' },
