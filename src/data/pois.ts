@@ -1,7 +1,29 @@
-import { POI, POIType, CategoryConfigMap } from '../types'
+// Define types directly in this file to avoid circular dependencies
+export interface POI {
+  id: string
+  name: string
+  lat: number
+  lng: number
+  description: string
+  type: POIType
+  metadata?: Record<string, any>
+}
 
-// Export types and config for components to use
-export type { POI, POIType, CategoryConfigMap }
+export type POIType = 
+  | 'hiking' 
+  | 'swimming' 
+  | 'camping' 
+  | 'waterfalls' 
+  | 'viewpoints' 
+  | 'history'
+
+export interface CategoryConfig {
+  color: string
+  icon: string
+  name: string
+}
+
+export type CategoryConfigMap = Record<POIType, CategoryConfig>
 
 export const categoryConfig: CategoryConfigMap = {
   hiking: { color: '#8B4513', icon: 'hiking', name: 'Vandre' },
