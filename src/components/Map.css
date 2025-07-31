@@ -1,0 +1,27 @@
+.map-container {
+  flex: 1;
+  margin: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.leaflet-map {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+}
+
+/* Custom marker styling */
+.custom-div-icon {
+  background: none !important;
+  border: none !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .map-container {
+    margin: 0.5rem;
+  }
+}
