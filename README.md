@@ -1,6 +1,6 @@
-# 🏔️ Tråkke React - Bykle og Valle
+# 🏔️ Tråkke
 
-React-versjon av Tråkke - frilufts-app for å oppdage vandreturer, badesteder, severdigheter og mer i Bykle og Valle i Setesdal.
+React-versjon av Tråkke - frilufts-app for å oppdage vandreturer, badesteder, severdigheter og mer i Norge.
 
 ## 🚀 Se appene live
 - **[HTML-versjon (original)](https://elzacka.github.io/trakke/src/)** 
