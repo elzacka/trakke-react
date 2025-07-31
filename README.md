@@ -1,69 +1,95 @@
-# React + TypeScript + Vite
+# 🏔️ Tråkke React - Bykle og Valle
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React-versjon av Tråkke - frilufts-app for å oppdage vandreturer, badesteder, severdigheter og mer i Bykle og Valle i Setesdal.
 
-Currently, two official plugins are available:
+## 🚀 Se appene live
+- **[HTML-versjon (original)](https://elzacka.github.io/trakke/src/)** 
+- **React-versjon**: Under utvikling 🚧
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Funksjoner
+- ⚡ **React + TypeScript + Vite** - Moderne utviklingsstack
+- 🗺️ **Interaktivt kart** med Leaflet
+- 🎯 **Filtrerbare POI-kategorier** (vandring, bading, camping, fosser, utsiktspunkter, historie)
+- 📱 **Responsive design** for mobil og desktop
+- 🎨 **Material Symbols** for konsistente ikoner
+- 🏔️ **Fokus på Bykle og Valle** kommuner
 
-## Expanding the ESLint configuration
+## 🛠️ Teknologi
+- **Frontend**: React 19 + TypeScript + Vite
+- **Kart**: Leaflet + React-Leaflet  
+- **Ikoner**: Material Symbols Outlined
+- **Styling**: CSS Modules
+- **Deployment**: Vercel (planlagt)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Kom i gang
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Forutsetninger
+- Node.js 18+ 
+- npm eller yarn
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### Installasjon
+```bash
+# Klon repository
+git clone https://github.com/elzacka/trakke-react.git
+cd trakke-react
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Installer dependencies
+npm install
+
+# Start utviklingsserver
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Bygg for produksjon
+```bash
+npm run build
+npm run preview
 ```
+
+## 📋 Utvikling
+
+### Filstruktur
+```
+src/
+├── components/
+│   ├── Header/
+│   ├── Map/
+│   └── Sidebar/
+├── data/
+├── types/
+└── styles/
+```
+
+### Scripts
+- `npm run dev` - Start utviklingsserver
+- `npm run build` - Bygg for produksjon  
+- `npm run preview` - Forhåndsvis bygget app
+- `npm run lint` - Kjør ESLint
+
+## 🎯 Migrering fra HTML-versjon
+
+Denne React-versjonen migrerer fra den [originale HTML-versjonen](https://github.com/elzacka/trakke) med følgende forbedringer:
+- ⚡ Raskere utvikling med Vite
+- 🧩 Modulær komponentstruktur
+- 📱 Bedre responsivt design
+- 🔧 TypeScript for type-sikkerhet
+- 🚀 Optimalisert for deployment
+
+## 📋 Planlagte funksjoner  
+- [ ] **Turdata/turplanlegging**: UT.no (DNT) API
+- [ ] **Kartlag**: Kartverket API 
+- [ ] **Værdata**: YR.no API
+- [ ] **Bilder**: Flickr API med geografisk søk
+- [ ] **Utvide**: Oslo → Norge
+- [ ] **App Store**: iPhone app
+- [ ] **Offline modus**: Nedlastbare kart
+
+## 🤝 Bidrag
+Bidrag er velkomne! Åpne en issue eller send en pull request.
+
+## 📄 Lisens
+(Ikke aktivert lisens ennå) MIT License - se [LICENSE](LICENSE) fil for detaljer.
+
+---
+
+**Laget med ❤️ for friluftsliv i Setesdal**
