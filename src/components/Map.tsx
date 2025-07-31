@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
-import L from 'leaflet'
+import * as L from 'leaflet'
 import { POI, categoryConfig } from '../data/pois'
 import './Map.css'
 
