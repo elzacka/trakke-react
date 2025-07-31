@@ -1,34 +1,54 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import React, { useState } from 'react'
+import { Header } from './components/Header'
+import { Sidebar } from './components/Sidebar'
+import { Map } from './components/Map'
+import { poisData, POIType } from './data/pois'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  
+  // Initialize with all categories active (like HTML version)
+  const [activeCategories, setActiveCategories] = useState<Set<POIType>>(
+    new Set(['hiking', 'swimming', 'camping', 'waterfalls', 'viewpoints', 'history'])
+  )
+
+  // Filter POIs based on active categories
+  const filteredPOIs = poisData.filter(poi => activeCategories.has(poi.type))
+
+  // Toggle category function
+  const toggleCategory = (categoryId: POIType) => {
+    setActiveCategories(prev => {
+      const next = new Set(prev)
+      if (next.has(categoryId)) {
+        next.delete(categoryId)
+      } else {
+        next.add(categoryId)
+      }
+      return next
+    })
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="app">
+      <Header />
+      
+      <div className="container">
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          activeCategories={activeCategories}
+          onToggleCategory={toggleCategory}
+          filteredPOIs={filteredPOIs}
+          totalPOIs={poisData.length}
+        />
+        
+        <Map 
+          pois={filteredPOIs} 
+          sidebarCollapsed={sidebarCollapsed}
+        />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   )
 }
 
