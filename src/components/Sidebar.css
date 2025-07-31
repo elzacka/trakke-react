@@ -1,0 +1,134 @@
+.sidebar {
+  width: 300px;
+  background: white;
+  padding: 1rem;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 50px;
+  padding: 1rem 0.5rem;
+}
+
+.sidebar.collapsed .sidebar-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-content {
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 1rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: #2c5530;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(44, 85, 48, 0.1);
+}
+
+.filter-section {
+  margin-bottom: 1.5rem;
+}
+
+.filter-section h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c5530;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.filter-item:hover {
+  background-color: #f0f8f0;
+}
+
+.filter-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.filter-item label {
+  cursor: pointer;
+  flex: 1;
+}
+
+.icon-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.legend {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.legend h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2c5530;
+  display: flex;
+  align-items: center;
+}
+
+.stats {
+  background: #e8f5e8;
+  padding: 0.8rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.stats p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #2c5530;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+  }
+  
+  .sidebar.collapsed {
+    width: 40px;
+  }
+}
