@@ -1,5 +1,5 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { POI, manualPoisData, updatePoisData } from '../data/pois'
 import { OSMService } from '../services/osmService'
 
@@ -17,6 +17,9 @@ export function usePOIData() {
     error: null,
     lastUpdated: null
   })
+
+  // Prevent multiple initial loads
+  const hasLoadedRef = useRef(false)
 
   // Lag OSMService kun en gang med useMemo
   const osmService = useMemo(() => new OSMService(), [])
@@ -115,11 +118,17 @@ export function usePOIData() {
 
   // Hent data ved første last - men kun én gang
   useEffect(() => {
+    // Sjekk om data allerede er lastet
+    if (hasLoadedRef.current) {
+      return
+    }
+
     let mounted = true
     
     // Legg til en liten delay for å la appen rendre først
     const timer = setTimeout(() => {
-      if (mounted) {
+      if (mounted && !hasLoadedRef.current) {
+        hasLoadedRef.current = true
         fetchOSMData()
       }
     }, 1000)
@@ -128,7 +137,7 @@ export function usePOIData() {
       mounted = false
       clearTimeout(timer)
     }
-  }, []) // Fjernet fetchOSMData fra dependencies for å unngå loops
+  }, [fetchOSMData]) // ESLint krever denne dependency
 
   return {
     ...state,
