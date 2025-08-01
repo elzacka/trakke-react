@@ -4,7 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/trakke-react/', // Korrekt base for GitHub Pages repo
+  // FIKSET: Korrekt base for GitHub Pages med eget repo
+  base: './', // Relativ path for GitHub Pages deployment
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

@@ -1,4 +1,4 @@
-// src/data/pois.ts - Fikset ESLint warning
+// src/data/pois.ts - Fikset ESLint warning og manglende kategorier
 
 export type POIType = 
   | 'hiking' 
@@ -49,6 +49,7 @@ export interface CategoryConfig {
 
 export type CategoryConfigMap = Record<POIType, CategoryConfig>
 
+// FIKSET: Alle kategorier inkludert, korrekte ikoner, riktig rekkefølge
 export const categoryConfig: CategoryConfigMap = {
   hiking: { 
     color: '#8B4513', 
@@ -62,15 +63,15 @@ export const categoryConfig: CategoryConfigMap = {
     name: 'Bade',
     description: 'Badeplass'
   },
-   wilderness_shelter: { 
-    color: '#8B4513', 
-    icon: 'cabin', 
-    name: 'Hytte og mer',
-    description: 'Primitive hytter, gapahuk og vindskjul'
+  camping_site: { 
+    color: '#228B22', 
+    icon: 'camping', 
+    name: 'Camping',
+    description: 'Etablerte campingplasser med fasiliteter'
   },
   tent_spot: { 
     color: '#32CD32', 
-    icon: 'camping', 
+    icon: 'holiday_village', 
     name: 'Teltplass',
     description: 'Flate områder egnet for telt'
   },
@@ -80,9 +81,21 @@ export const categoryConfig: CategoryConfigMap = {
     name: 'Hengekøyeplass',
     description: 'Skogsområder med egnede trær for hengekøye'
   },
+  under_stars: { 
+    color: '#4B0082', 
+    icon: 'bedtime', 
+    name: 'Under stjerner',
+    description: 'Åpne områder for å sove under åpen himmel'
+  },
+  wilderness_shelter: { 
+    color: '#8B4513', 
+    icon: 'cabin', 
+    name: 'Hytte og mer',
+    description: 'Primitive hytter, gapahuk og vindskjul'
+  },
   waterfalls: { 
     color: '#20B2AA', 
-    icon: 'cadence', 
+    icon: 'water_drop', // FIKSET: Fra 'cadence' til 'water_drop'
     name: 'Foss',
     description: 'Fosser og vannfall'
   },
@@ -94,7 +107,7 @@ export const categoryConfig: CategoryConfigMap = {
   },
   history: { 
     color: '#8B4B8B', 
-    icon: 'numbers', 
+    icon: 'museum', // FIKSET: Fra 'numbers' til 'museum'
     name: 'Historiske steder',
     description: 'Historiske steder og kulturminner'
   },
