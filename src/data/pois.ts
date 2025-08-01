@@ -6,7 +6,7 @@ export interface POI {
   lng: number
   description: string
   type: POIType
-  metadata?: Record<string, any>
+  metadata?: Record<string, string | number>
 }
 
 export type POIType = 
