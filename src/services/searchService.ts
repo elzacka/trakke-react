@@ -1,4 +1,4 @@
-// src/services/searchService.ts - Forbedret søketjeneste med rate limiting
+// src/services/searchService.ts - ESLint-fikset søketjeneste
 
 export interface SearchResult {
   id: string
@@ -18,6 +18,34 @@ export interface CoordinateParseResult {
   format: 'decimal' | 'dms' | 'utm'
 }
 
+// Typedefinisjon for POI objekter
+interface POILike {
+  id: string
+  name: string
+  description: string
+  lat: number
+  lng: number
+  type: string
+}
+
+// Nominatim API response types
+interface NominatimAddress {
+  municipality?: string
+  county?: string
+  house_number?: string
+}
+
+interface NominatimItem {
+  place_id: number
+  name?: string
+  display_name: string
+  lat: string
+  lon: string
+  type?: string
+  address?: NominatimAddress
+  boundingbox?: string[]
+}
+
 // Rate limiting for Nominatim API
 class RateLimiter {
   private lastRequest = 0
@@ -29,7 +57,7 @@ class RateLimiter {
     
     if (timeSinceLastRequest < this.minInterval) {
       const waitTime = this.minInterval - timeSinceLastRequest
-      await new Promise(resolve => setTimeout(resolve, waitTime))
+      await new Promise<void>(resolve => setTimeout(resolve, waitTime))
     }
     
     this.lastRequest = Date.now()
@@ -53,7 +81,7 @@ export class SearchService {
   /**
    * Hovedsøkefunksjon - prøver alle søketyper
    */
-  async search(query: string, localPOIs: any[] = []): Promise<SearchResult[]> {
+  async search(query: string, localPOIs: POILike[] = []): Promise<SearchResult[]> {
     const cleanQuery = query.trim().toLowerCase()
     if (!cleanQuery) return []
 
@@ -167,7 +195,7 @@ export class SearchService {
   /**
    * Søker i lokale POI-er
    */
-  private searchLocalPOIs(query: string, pois: any[]): SearchResult[] {
+  private searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
     return pois
       .filter(poi => 
         poi.name.toLowerCase().includes(query) ||
@@ -220,9 +248,9 @@ export class SearchService {
         throw new Error(`Nominatim feil: ${response.status}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as NominatimItem[]
       
-      return data.map((item: any) => ({
+      return data.map((item: NominatimItem) => ({
         id: `nominatim_${item.place_id}`,
         name: item.name || item.display_name.split(',')[0],
         displayName: this.formatDisplayName(item),
@@ -254,7 +282,7 @@ export class SearchService {
   /**
    * Formaterer visningsnavn for Nominatim-resultater
    */
-  private formatDisplayName(item: any): string {
+  private formatDisplayName(item: NominatimItem): string {
     const parts = []
     
     if (item.name) parts.push(item.name)
@@ -271,7 +299,7 @@ export class SearchService {
   /**
    * Bestemmer type basert på Nominatim data
    */
-  private getNominatimType(item: any): 'place' | 'address' {
+  private getNominatimType(item: NominatimItem): 'place' | 'address' {
     if (item.address?.house_number) return 'address'
     return 'place'
   }
