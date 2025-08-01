@@ -71,7 +71,7 @@ export function Sidebar({
                     <input 
                       type="checkbox" 
                       id={categoryId}
-                      checked={activeCategories.has(categoryId)}
+                      unchecked={activeCategories.has(categoryId)}
                       onChange={() => onToggleCategory(categoryId)}
                     />
                     <div 
