@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config([
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'node_modules', '.github', '*.config.js'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -26,6 +26,16 @@ export default tseslint.config([
         'warn',
         { allowConstantExport: true },
       ],
+      // Tillat unused parameters med underscore
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { 
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ],
+      // Mindre strenge regler for utvikling
+      '@typescript-eslint/no-explicit-any': 'warn'
     },
   },
 ])
