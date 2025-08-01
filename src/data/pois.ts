@@ -1,4 +1,30 @@
-// Define types directly in this file to avoid circular dependencies
+// src/data/pois.ts - Oppdatert med nye camping kategorier
+
+export type POIType = 
+  | 'hiking' 
+  | 'swimming' 
+  | 'camping_site'        // Etablerte campingplasser
+  | 'tent_spot'           // Flate områder egnet for telt
+  | 'hammock_spot'        // Skogsområder med egnede trær
+  | 'under_stars'         // Åpne områder for å sove under stjernehimmelen
+  | 'wilderness_shelter'  // Gapahuk/vindskjul/DNT-hytter
+  | 'waterfalls' 
+  | 'viewpoints' 
+  | 'history'
+
+export interface CampingMetadata {
+  terrain: 'flat' | 'sloped' | 'rocky' | 'soft'
+  trees: boolean           // For hengekøye
+  tree_types?: string[]    // 'birch', 'pine', 'spruce'
+  water_nearby: boolean    // Ferskvann innen 500m
+  wind_protection: 'good' | 'moderate' | 'poor'
+  legal_status: 'allowed' | 'restricted' | 'private' | 'unknown'
+  facilities?: string[]    // 'fireplace', 'toilet', 'shelter', 'water'
+  season_best: string[]    // ['summer', 'winter', 'all_year']
+  difficulty_access: 'easy' | 'moderate' | 'difficult'
+  confidence?: number      // AI confidence in data quality (0-1)
+}
+
 export interface POI {
   id: string
   name: string
@@ -6,35 +32,85 @@ export interface POI {
   lng: number
   description: string
   type: POIType
-  metadata?: Record<string, string | number>
+  metadata?: Record<string, string | number> | CampingMetadata
+  api_source?: 'ut_no' | 'osm' | 'kartverket' | 'manual'
+  last_updated?: string
 }
-
-export type POIType = 
-  | 'hiking' 
-  | 'swimming' 
-  | 'camping' 
-  | 'waterfalls' 
-  | 'viewpoints' 
-  | 'history'
 
 export interface CategoryConfig {
   color: string
   icon: string
   name: string
+  description?: string
 }
 
 export type CategoryConfigMap = Record<POIType, CategoryConfig>
 
 export const categoryConfig: CategoryConfigMap = {
-  hiking: { color: '#8B4513', icon: 'hiking', name: 'Vandre' },
-  swimming: { color: '#4169E1', icon: 'pool', name: 'Bade' },
-  camping: { color: '#228B22', icon: 'camping', name: 'Sove' },
-  waterfalls: { color: '#20B2AA', icon: 'water_drop', name: 'Foss' },
-  viewpoints: { color: '#FF6347', icon: 'landscape', name: 'Utsikt' },
-  history: { color: '#8B4B8B', icon: 'museum', name: 'Historisk' },
+  hiking: { 
+    color: '#8B4513', 
+    icon: 'hiking', 
+    name: 'Vandre',
+    description: 'Turveier og vandreruter'
+  },
+  swimming: { 
+    color: '#4169E1', 
+    icon: 'pool', 
+    name: 'Bade',
+    description: 'Badeplasser og svømmesteder'
+  },
+  camping_site: { 
+    color: '#228B22', 
+    icon: 'camping', 
+    name: 'Camping',
+    description: 'Etablerte campingplasser med fasiliteter'
+  },
+  tent_spot: { 
+    color: '#32CD32', 
+    icon: 'holiday_village', 
+    name: 'Teltplass',
+    description: 'Flate områder egnede for teltleir'
+  },
+  hammock_spot: { 
+    color: '#006400', 
+    icon: 'forest', 
+    name: 'Hengekøye',
+    description: 'Skogsområder med egnede trær for hengekøye'
+  },
+  under_stars: { 
+    color: '#4B0082', 
+    icon: 'bedtime', 
+    name: 'Under stjerner',
+    description: 'Åpne områder for å sove under åpen himmel'
+  },
+  wilderness_shelter: { 
+    color: '#8B4513', 
+    icon: 'cabin', 
+    name: 'Vindskjul',
+    description: 'Gapahuk, vindskjul og primitive hytter'
+  },
+  waterfalls: { 
+    color: '#20B2AA', 
+    icon: 'water_drop', 
+    name: 'Foss',
+    description: 'Fosser og vannfall'
+  },
+  viewpoints: { 
+    color: '#FF6347', 
+    icon: 'landscape', 
+    name: 'Utsikt',
+    description: 'Utsiktspunkter og panoramaer'
+  },
+  history: { 
+    color: '#8B4B8B', 
+    icon: 'museum', 
+    name: 'Historisk',
+    description: 'Historiske steder og kulturminner'
+  },
 }
 
-export const poisData: POI[] = [
+// Eksisterende manuelle POI-er (beholdes som fallback)
+export const manualPoisData: POI[] = [
   {
     id: 'reinevasstind',
     name: 'Reinevasstind (1404 moh)',
@@ -46,7 +122,8 @@ export const poisData: POI[] = [
       difficulty: 'Krevende',
       duration: '6 timer',
       elevation: '1404 moh'
-    }
+    },
+    api_source: 'manual'
   },
   {
     id: 'byglandsfjord-badeplass',
@@ -58,7 +135,8 @@ export const poisData: POI[] = [
     metadata: {
       facilities: 'Toalett, parkering',
       season: 'Juni-august'
-    }
+    },
+    api_source: 'manual'
   },
   {
     id: 'hovden-camping',
@@ -66,11 +144,12 @@ export const poisData: POI[] = [
     lat: 59.5456,
     lng: 7.3456,
     description: 'Familievennlig camping ved foten av Hovdenfjell.',
-    type: 'camping',
+    type: 'camping_site',
     metadata: {
       services: 'Hytte, teltplass, strøm',
       booking: 'Påkrevd i høysesong'
-    }
+    },
+    api_source: 'manual'
   },
   {
     id: 'rjukandefossen',
@@ -83,7 +162,8 @@ export const poisData: POI[] = [
       height: '182 meter',
       season: 'Best fra mai til oktober',
       accessibility: 'Lett tilgjengelig'
-    }
+    },
+    api_source: 'manual'
   },
   {
     id: 'hovdenfjell-utsikt',
@@ -96,7 +176,8 @@ export const poisData: POI[] = [
       elevation: '1200 moh',
       direction: '360° utsikt',
       bestTime: 'Solnedgang'
-    }
+    },
+    api_source: 'manual'
   },
   {
     id: 'rygnestad-stavkirke',
@@ -109,6 +190,15 @@ export const poisData: POI[] = [
       period: 'Middelalder (1100-tallet)',
       status: 'Fredet bygning',
       openingHours: 'Sommersesong'
-    }
+    },
+    api_source: 'manual'
   }
 ]
+
+// Kombinert POI data - vil bli populert av API service
+export let poisData: POI[] = manualPoisData
+
+// Funksjon for å oppdatere POI data med API-data
+export function updatePoisData(newPois: POI[]) {
+  poisData = [...manualPoisData, ...newPois]
+}

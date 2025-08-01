@@ -1,20 +1,36 @@
+// src/App.tsx - Oppdatert med OSM API integration
 import React, { useState } from 'react'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { Map } from './components/Map'
-import { poisData, POIType } from './data/pois'
+import { POIType } from './data/pois'
+import { usePOIData } from './hooks/usePOIData'
 import './App.css'
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   
-  // Initialize with all categories active (like HTML version)
+  // Bruk den nye POI data hook
+  const { pois, loading, error, refreshData, lastUpdated } = usePOIData()
+  
+  // Initialize with all categories active (inkludert nye camping kategorier)
   const [activeCategories, setActiveCategories] = useState<Set<POIType>>(
-    new Set(['hiking', 'swimming', 'camping', 'waterfalls', 'viewpoints', 'history'])
+    new Set([
+      'hiking', 
+      'swimming', 
+      'camping_site',
+      'tent_spot',
+      'hammock_spot', 
+      'under_stars',
+      'wilderness_shelter',
+      'waterfalls', 
+      'viewpoints', 
+      'history'
+    ])
   )
 
   // Filter POIs based on active categories
-  const filteredPOIs = poisData.filter(poi => activeCategories.has(poi.type))
+  const filteredPOIs = pois.filter(poi => activeCategories.has(poi.type))
 
   // Toggle category function
   const toggleCategory = (categoryId: POIType) => {
@@ -40,12 +56,17 @@ function App() {
           activeCategories={activeCategories}
           onToggleCategory={toggleCategory}
           filteredPOIs={filteredPOIs}
-          totalPOIs={poisData.length}
+          totalPOIs={pois.length}
+          loading={loading}
+          error={error}
+          onRefresh={refreshData}
+          lastUpdated={lastUpdated}
         />
         
         <Map 
           pois={filteredPOIs} 
           sidebarCollapsed={sidebarCollapsed}
+          loading={loading}
         />
       </div>
     </div>
