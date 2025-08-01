@@ -15,18 +15,7 @@ function App() {
   
   // Initialize with all categories active (inkludert nye camping kategorier)
   const [activeCategories, setActiveCategories] = useState<Set<POIType>>(
-    new Set([
-      'hiking', 
-      'swimming', 
-      'camping_site',
-      'tent_spot',
-      'hammock_spot', 
-      'under_stars',
-      'wilderness_shelter',
-      'waterfalls', 
-      'viewpoints', 
-      'history'
-    ])
+  new Set()
   )
 
   // Filter POIs based on active categories
