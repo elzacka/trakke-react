@@ -1,5 +1,5 @@
 // src/hooks/usePOIData.ts
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { POI, manualPoisData, updatePoisData } from '../data/pois'
 import { OSMService } from '../services/osmService'
 
@@ -20,7 +20,7 @@ export function usePOIData() {
 
   const osmService = new OSMService()
 
-  const fetchOSMData = async () => {
+  const fetchOSMData = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
@@ -64,7 +64,7 @@ export function usePOIData() {
         error: error instanceof Error ? error.message : 'Ukjent feil'
       }))
     }
-  }
+  }, [osmService])
 
   const refreshData = () => {
     fetchOSMData()
@@ -73,7 +73,7 @@ export function usePOIData() {
   // Hent data ved første last
   useEffect(() => {
     fetchOSMData()
-  }, [])
+  }, [fetchOSMData])
 
   return {
     ...state,

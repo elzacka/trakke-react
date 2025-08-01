@@ -1,4 +1,6 @@
 // src/services/osmService.ts
+import { POI } from '../data/pois'
+
 export interface OSMElement {
   type: 'node' | 'way' | 'relation'
   id: number
@@ -146,7 +148,7 @@ export class OSMService {
   /**
    * Konverterer OSM element til vårt POI format
    */
-  convertToPOI(element: OSMElement, suitability: ReturnType<typeof this.analyzeCampingSuitability>): any {
+  convertToPOI(element: OSMElement, suitability: ReturnType<typeof this.analyzeCampingSuitability>): POI {
     const lat = element.lat || element.center?.lat || 0
     const lon = element.lon || element.center?.lon || 0
     const tags = element.tags
@@ -201,7 +203,7 @@ export class OSMService {
     return typeNames[type as keyof typeof typeNames] || 'Ukjent plass'
   }
 
-  private generateDescription(tags: Record<string, string>, suitability: any): string {
+  private generateDescription(tags: Record<string, string>, suitability: ReturnType<typeof this.analyzeCampingSuitability>): string {
     const descriptions = []
     
     if (suitability.tentSuitable) descriptions.push('Egnet for telt')
