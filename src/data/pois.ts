@@ -1,4 +1,4 @@
-// src/data/pois.ts - Fikset TypeScript-feil
+// src/data/pois.ts - Fikset ESLint warning
 
 export type POIType = 
   | 'hiking' 
@@ -112,11 +112,14 @@ export const categoryConfig: CategoryConfigMap = {
   },
 }
 
-// Type guard function for camping metadata
-export function isCampingMetadata(metadata: any): metadata is CampingMetadata {
-  return metadata && 
-         typeof metadata.terrain === 'string' && 
-         typeof metadata.trees === 'boolean'
+// Type guard function for camping metadata - Fikset ESLint warning
+export function isCampingMetadata(metadata: unknown): metadata is CampingMetadata {
+  return typeof metadata === 'object' && 
+         metadata !== null &&
+         'terrain' in metadata && 
+         typeof (metadata as CampingMetadata).terrain === 'string' && 
+         'trees' in metadata &&
+         typeof (metadata as CampingMetadata).trees === 'boolean'
 }
 
 // Eksisterende manuelle POI-er (beholdes som fallback)
