@@ -1,6 +1,6 @@
-// src/components/SearchBox/SearchBox.tsx - Forbedret søkekomponent med tilgjengelighet
+// src/components/SearchBox/SearchBox.tsx - Fikset constructor og tilgjengelighet
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { SearchService, SearchResult } from '../../services/searchService'
 import { POI } from '../../data/pois'
 import './SearchBox.css'
@@ -27,7 +27,10 @@ export function SearchBox({
   
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
-  const searchService = useRef(new SearchService())
+  
+  // FIKSET: Bruk useMemo for å opprette SearchService kun én gang
+  const searchService = useMemo(() => new SearchService(), [])
+  
   const debounceTimer = useRef<NodeJS.Timeout>()
   const listboxId = `searchbox-listbox-${Math.random().toString(36).substr(2, 9)}`
 
@@ -55,7 +58,7 @@ export function SearchBox({
     setError(null)
     
     try {
-      const searchResults = await searchService.current.search(searchQuery, pois)
+      const searchResults = await searchService.search(searchQuery, pois)
       setResults(searchResults)
       setIsOpen(searchResults.length > 0)
       setSelectedIndex(-1)
@@ -64,7 +67,7 @@ export function SearchBox({
     } finally {
       setIsLoading(false)
     }
-  }, [pois, handleSearchError])
+  }, [pois, handleSearchError, searchService])
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

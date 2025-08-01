@@ -1,4 +1,4 @@
-// src/services/searchService.ts - ESLint-fikset søketjeneste
+// src/services/searchService.ts - Fikset bbox typing issue
 
 export interface SearchResult {
   id: string
@@ -250,22 +250,30 @@ export class SearchService {
 
       const data = await response.json() as NominatimItem[]
       
-      return data.map((item: NominatimItem) => ({
-        id: `nominatim_${item.place_id}`,
-        name: item.name || item.display_name.split(',')[0],
-        displayName: this.formatDisplayName(item),
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-        type: this.getNominatimType(item),
-        source: 'nominatim' as const,
-        description: item.type ? `${item.type} i ${item.address?.municipality || item.address?.county || 'Norge'}` : undefined,
-        bbox: item.boundingbox ? [
-          parseFloat(item.boundingbox[2]), // west
-          parseFloat(item.boundingbox[0]), // south  
-          parseFloat(item.boundingbox[3]), // east
-          parseFloat(item.boundingbox[1])  // north
-        ] : undefined
-      })).filter(result => 
+      return data.map((item: NominatimItem): SearchResult => {
+        // FIKSET: Sikker bbox konvertering med type checking
+        let bbox: [number, number, number, number] | undefined = undefined
+        if (item.boundingbox && item.boundingbox.length === 4) {
+          bbox = [
+            parseFloat(item.boundingbox[2]), // west
+            parseFloat(item.boundingbox[0]), // south  
+            parseFloat(item.boundingbox[3]), // east
+            parseFloat(item.boundingbox[1])  // north
+          ]
+        }
+
+        return {
+          id: `nominatim_${item.place_id}`,
+          name: item.name || item.display_name.split(',')[0],
+          displayName: this.formatDisplayName(item),
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          type: this.getNominatimType(item),
+          source: 'nominatim',
+          description: item.type ? `${item.type} i ${item.address?.municipality || item.address?.county || 'Norge'}` : undefined,
+          bbox
+        }
+      }).filter(result => 
         // Filtrer ut resultater utenfor Norge (dobbel-sjekk)
         this.isValidNorwegianCoordinate(result.lat, result.lng)
       )

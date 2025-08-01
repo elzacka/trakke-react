@@ -1,4 +1,4 @@
-/* src/components/SearchBox/SearchBox.css - Søkestiler */
+/* src/components/SearchBox/SearchBox.css - Komplette søkestiler med error styling */
 
 .search-box {
   position: relative;
@@ -9,174 +9,6 @@
 .search-input-container {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.15s ease;
-}
-
-.search-result-item:hover,
-.search-result-item.selected {
-  background-color: #f8fdf8;
-}
-
-.search-result-item:last-child {
-  border-bottom: none;
-}
-
-.result-icon {
-  color: #2c5530;
-  font-size: 20px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.result-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.result-name {
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 2px;
-  word-wrap: break-word;
-}
-
-.result-description {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 4px;
-  line-height: 1.3;
-}
-
-.result-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: #999;
-  gap: 8px;
-}
-
-.result-type {
-  background: #e8f5e8;
-  color: #2c5530;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-weight: 500;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.result-coords {
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
-}
-
-.search-help {
-  padding: 8px 16px;
-  background: #f9f9f9;
-  border-top: 1px solid #f0f0f0;
-  text-align: center;
-  color: #666;
-}
-
-.search-no-results {
-  padding: 24px 16px;
-  text-align: center;
-  color: #666;
-}
-
-.search-no-results .material-symbols-outlined {
-  font-size: 32px;
-  color: #ccc;
-  margin-bottom: 8px;
-}
-
-.search-no-results div {
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.search-no-results small {
-  color: #999;
-  font-size: 12px;
-}
-
-/* Mobile tilpasninger */
-@media (max-width: 768px) {
-  .search-box {
-    max-width: none;
-  }
-  
-  .search-input {
-    font-size: 16px; /* Unngå zoom på iOS */
-  }
-  
-  .search-results {
-    max-height: 300px;
-  }
-  
-  .result-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-}
-
-/* Focus states for tilgjengelighet */
-.search-result-item:focus {
-  outline: 2px solid #2c5530;
-  outline-offset: -2px;
-}
-
-.search-clear:focus {
-  outline: 2px solid #2c5530;
-  outline-offset: 2px;
-}
-
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  .search-input-container {
-    background: #2a2a2a;
-    border-color: #444;
-  }
-  
-  .search-input {
-    color: #fff;
-  }
-  
-  .search-input::placeholder {
-    color: #aaa;
-  }
-  
-  .search-results {
-    background: #2a2a2a;
-    border-color: #444;
-  }
-  
-  .search-result-item:hover,
-  .search-result-item.selected {
-    background-color: #333;
-  }
-  
-  .result-name {
-    color: #fff;
-  }
-  
-  .result-description {
-    color: #ccc;
-  }
-  
-  .search-help {
-    background: #333;
-    border-top-color: #444;
-  }
-}: flex;
   align-items: center;
   background: white;
   border: 2px solid #e0e0e0;
@@ -244,6 +76,30 @@
 
 .search-clear .material-symbols-outlined {
   font-size: 18px;
+}
+
+/* Error styling */
+.search-error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffebee;
+  border: 1px solid #f44336;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d32f2f;
+  font-size: 13px;
+  z-index: 1000;
+}
+
+.search-error .material-symbols-outlined {
+  font-size: 16px;
+  color: #f44336;
 }
 
 .search-results {
@@ -430,172 +286,10 @@
     background: #333;
     border-top-color: #444;
   }
-}: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.15s ease;
-}
-
-.search-result-item:hover,
-.search-result-item.selected {
-  background-color: #f8fdf8;
-}
-
-.search-result-item:last-child {
-  border-bottom: none;
-}
-
-.result-icon {
-  color: #2c5530;
-  font-size: 20px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.result-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.result-name {
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 2px;
-  word-wrap: break-word;
-}
-
-.result-description {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 4px;
-  line-height: 1.3;
-}
-
-.result-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: #999;
-  gap: 8px;
-}
-
-.result-type {
-  background: #e8f5e8;
-  color: #2c5530;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-weight: 500;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.result-coords {
-  font-family: 'Courier New', monospace;
-  font-size: 11px;
-}
-
-.search-help {
-  padding: 8px 16px;
-  background: #f9f9f9;
-  border-top: 1px solid #f0f0f0;
-  text-align: center;
-  color: #666;
-}
-
-.search-no-results {
-  padding: 24px 16px;
-  text-align: center;
-  color: #666;
-}
-
-.search-no-results .material-symbols-outlined {
-  font-size: 32px;
-  color: #ccc;
-  margin-bottom: 8px;
-}
-
-.search-no-results div {
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.search-no-results small {
-  color: #999;
-  font-size: 12px;
-}
-
-/* Mobile tilpasninger */
-@media (max-width: 768px) {
-  .search-box {
-    max-width: none;
-  }
   
-  .search-input {
-    font-size: 16px; /* Unngå zoom på iOS */
-  }
-  
-  .search-results {
-    max-height: 300px;
-  }
-  
-  .result-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-}
-
-/* Focus states for tilgjengelighet */
-.search-result-item:focus {
-  outline: 2px solid #2c5530;
-  outline-offset: -2px;
-}
-
-.search-clear:focus {
-  outline: 2px solid #2c5530;
-  outline-offset: 2px;
-}
-
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  .search-input-container {
+  .search-error {
     background: #2a2a2a;
-    border-color: #444;
-  }
-  
-  .search-input {
-    color: #fff;
-  }
-  
-  .search-input::placeholder {
-    color: #aaa;
-  }
-  
-  .search-results {
-    background: #2a2a2a;
-    border-color: #444;
-  }
-  
-  .search-result-item:hover,
-  .search-result-item.selected {
-    background-color: #333;
-  }
-  
-  .result-name {
-    color: #fff;
-  }
-  
-  .result-description {
-    color: #ccc;
-  }
-  
-  .search-help {
-    background: #333;
-    border-top-color: #444;
+    border-color: #f44336;
+    color: #ff6b6b;
   }
 }
