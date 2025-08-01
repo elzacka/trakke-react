@@ -1,3 +1,5 @@
+/* src/components/Header.css - Oppdaterte headerstiler med søkefelt */
+
 .header {
   background: linear-gradient(135deg, #19461A, #486A47);
   color: white;
@@ -5,10 +7,20 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 .title-wrapper {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  flex-shrink: 0;
 }
 
 .title-wrapper h1 {
@@ -30,4 +42,60 @@
   margin: 0.4rem 0 0 0;
   opacity: 0.9;
   font-size: 1rem;
+}
+
+.search-wrapper {
+  flex: 1;
+  max-width: 400px;
+  margin-left: auto;
+}
+
+.header-search {
+  width: 100%;
+}
+
+/* Responsive tilpasninger */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .title-wrapper {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .title-wrapper h1 {
+    font-size: 1.6rem;
+  }
+  
+  .tagline {
+    font-size: 0.9rem;
+  }
+  
+  .search-wrapper {
+    max-width: none;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 0.8rem;
+  }
+  
+  .title-wrapper h1 {
+    font-size: 1.4rem;
+  }
+  
+  .title-wrapper svg {
+    height: 24px;
+    width: 24px;
+  }
+  
+  .tagline {
+    font-size: 0.8rem;
+  }
 }
