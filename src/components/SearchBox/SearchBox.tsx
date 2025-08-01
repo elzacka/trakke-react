@@ -1,4 +1,4 @@
-// src/components/SearchBox/SearchBox.tsx - Fikset constructor og tilgjengelighet
+// src/components/SearchBox/SearchBox.tsx - Forenklet uten constructor issues
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { SearchService, SearchResult } from '../../services/searchService'
@@ -11,6 +11,9 @@ interface SearchBoxProps {
   placeholder?: string
   className?: string
 }
+
+// Opprett service-instans utenfor komponenten for å unngå constructor issues
+const searchService = new SearchService()
 
 export function SearchBox({ 
   onLocationSelect, 
@@ -27,18 +30,6 @@ export function SearchBox({
   
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
-  
-  // FIKSET: Enkel useRef med lazy initialization
-  const searchServiceRef = useRef<SearchService>()
-  
-  // Get or create search service instance
-  const getSearchService = useCallback(() => {
-    if (!searchServiceRef.current) {
-      searchServiceRef.current = new SearchService()
-    }
-    return searchServiceRef.current
-  }, [])
-  
   const debounceTimer = useRef<NodeJS.Timeout>()
   const listboxId = `searchbox-listbox-${Math.random().toString(36).substr(2, 9)}`
 
@@ -66,7 +57,6 @@ export function SearchBox({
     setError(null)
     
     try {
-      const searchService = getSearchService()
       const searchResults = await searchService.search(searchQuery, pois)
       setResults(searchResults)
       setIsOpen(searchResults.length > 0)
@@ -76,23 +66,21 @@ export function SearchBox({
     } finally {
       setIsLoading(false)
     }
-  }, [pois, handleSearchError, getSearchService])
+  }, [pois, handleSearchError])
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setQuery(value)
-    setError(null) // Clear any previous errors
+    setError(null)
 
-    // Clear previous timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
     }
 
-    // Set new timer
     debounceTimer.current = setTimeout(() => {
       performSearch(value)
-    }, 300) // 300ms delay
+    }, 300)
   }
 
   // Handle result selection
