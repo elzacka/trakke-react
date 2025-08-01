@@ -1,5 +1,5 @@
 // src/hooks/usePOIData.ts
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { POI, manualPoisData, updatePoisData } from '../data/pois'
 import { OSMService } from '../services/osmService'
 
@@ -18,7 +18,8 @@ export function usePOIData() {
     lastUpdated: null
   })
 
-  const osmService = new OSMService()
+  // Lag OSMService kun en gang med useMemo
+  const osmService = useMemo(() => new OSMService(), [])
 
   const fetchOSMData = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }))
@@ -66,9 +67,9 @@ export function usePOIData() {
     }
   }, [osmService])
 
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
     fetchOSMData()
-  }
+  }, [fetchOSMData])
 
   // Hent data ved første last
   useEffect(() => {
