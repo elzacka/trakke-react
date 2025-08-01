@@ -17,7 +17,7 @@ export function Header() {
           </svg>
           Tråkke
         </h1>
-        <p className="tagline">Oppdag Bykle og Valle med turskoa på</p>
+        <p className="tagline">Oppdag Bykle og Valle med turskoa på (app under utvikling)</p>
       </div>
     </div>
   )
