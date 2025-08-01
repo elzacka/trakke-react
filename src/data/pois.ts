@@ -54,60 +54,48 @@ export const categoryConfig: CategoryConfigMap = {
     color: '#8B4513', 
     icon: 'hiking', 
     name: 'Vandre',
-    description: 'Turveier og vandreruter'
+    description: 'Vandreruter'
   },
   swimming: { 
     color: '#4169E1', 
     icon: 'pool', 
     name: 'Bade',
-    description: 'Badeplasser og svømmesteder'
+    description: 'Badeplass'
   },
-  camping_site: { 
-    color: '#228B22', 
-    icon: 'camping', 
-    name: 'Camping',
-    description: 'Etablerte campingplasser med fasiliteter'
+   wilderness_shelter: { 
+    color: '#8B4513', 
+    icon: 'cabin', 
+    name: 'Hytte og mer',
+    description: 'Primitive hytter, gapahuk og vindskjul'
   },
   tent_spot: { 
     color: '#32CD32', 
-    icon: 'holiday_village', 
+    icon: 'camping', 
     name: 'Teltplass',
-    description: 'Flate områder egnede for teltleir'
+    description: 'Flate områder egnet for telt'
   },
   hammock_spot: { 
     color: '#006400', 
     icon: 'forest', 
-    name: 'Hengekøye',
+    name: 'Hengekøyeplass',
     description: 'Skogsområder med egnede trær for hengekøye'
-  },
-  under_stars: { 
-    color: '#4B0082', 
-    icon: 'bedtime', 
-    name: 'Under stjerner',
-    description: 'Åpne områder for å sove under åpen himmel'
-  },
-  wilderness_shelter: { 
-    color: '#8B4513', 
-    icon: 'cabin', 
-    name: 'Vindskjul',
-    description: 'Gapahuk, vindskjul og primitive hytter'
   },
   waterfalls: { 
     color: '#20B2AA', 
-    icon: 'water_drop', 
+    icon: 'cadence', 
     name: 'Foss',
     description: 'Fosser og vannfall'
   },
   viewpoints: { 
     color: '#FF6347', 
     icon: 'landscape', 
-    name: 'Utsikt',
-    description: 'Utsiktspunkter og panoramaer'
+    name: 'Utsiktspunkter',
+    description: 'Fine utsiktspunkter'
   },
   history: { 
     color: '#8B4B8B', 
-    icon: 'museum', 
-    name: 'Historisk',
+    icon: 'numbers', 
+    name: 'Historiske steder',
     description: 'Historiske steder og kulturminner'
   },
 }
