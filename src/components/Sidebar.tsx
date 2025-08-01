@@ -9,6 +9,10 @@ interface SidebarProps {
   onToggleCategory: (categoryId: POIType) => void
   filteredPOIs: POI[]
   totalPOIs: number
+  loading: boolean
+  error: string | null
+  onRefresh: () => void
+  lastUpdated: Date | null
 }
 
 export function Sidebar({ 
@@ -17,9 +21,25 @@ export function Sidebar({
   activeCategories, 
   onToggleCategory,
   filteredPOIs,
-  totalPOIs 
+  totalPOIs,
+  loading,
+  error,
+  onRefresh,
+  lastUpdated
 }: SidebarProps) {
-  const categories: POIType[] = ['hiking', 'swimming', 'camping', 'waterfalls', 'viewpoints', 'history']
+  // Oppdatert med korrekte POIType verdier
+  const categories: POIType[] = [
+    'hiking', 
+    'swimming', 
+    'camping_site',
+    'tent_spot',
+    'hammock_spot',
+    'under_stars',
+    'wilderness_shelter',
+    'waterfalls', 
+    'viewpoints', 
+    'history'
+  ]
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -86,6 +106,47 @@ export function Sidebar({
           <div className="stats">
             <p><strong>Synlige punkter:</strong> {filteredPOIs.length}</p>
             <p><strong>Totalt i området:</strong> {totalPOIs}</p>
+            
+            {loading && (
+              <p style={{ color: '#2c5530', fontStyle: 'italic' }}>
+                <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px', marginRight: '4px' }}>
+                  refresh
+                </span>
+                Laster data...
+              </p>
+            )}
+            
+            {error && (
+              <div style={{ color: '#d32f2f', marginTop: '0.5rem' }}>
+                <p style={{ margin: '0', fontSize: '0.85rem' }}>
+                  <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px', marginRight: '4px' }}>
+                    error
+                  </span>
+                  Feil: {error}
+                </p>
+                <button 
+                  onClick={onRefresh}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #d32f2f',
+                    color: '#d32f2f',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    marginTop: '0.25rem'
+                  }}
+                >
+                  Prøv igjen
+                </button>
+              </div>
+            )}
+            
+            {lastUpdated && !loading && (
+              <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
+                Sist oppdatert: {lastUpdated.toLocaleTimeString('no-NO')}
+              </p>
+            )}
           </div>
         </div>
       )}

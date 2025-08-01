@@ -1,5 +1,5 @@
-// src/services/osmService.ts
-import { POI } from '../data/pois'
+// src/services/osmService.ts - Fikset TypeScript-feil
+import { POI, POIType, CampingMetadata } from '../data/pois'
 
 export interface OSMElement {
   type: 'node' | 'way' | 'relation'
@@ -153,8 +153,8 @@ export class OSMService {
     const lon = element.lon || element.center?.lon || 0
     const tags = element.tags
     
-    // Bestem hovedtype basert på egnethet
-    let type = 'camping_site'
+    // Bestem hovedtype basert på egnethet - med riktig type-casting
+    let type: POIType = 'camping_site'
     if (suitability.hammockSuitable && suitability.confidence > 0.6) {
       type = 'hammock_spot'
     } else if (suitability.underStarsSuitable && suitability.confidence > 0.6) {
@@ -166,6 +166,24 @@ export class OSMService {
     if (tags.amenity === 'shelter') type = 'wilderness_shelter'
     if (tags.tourism === 'wilderness_hut') type = 'wilderness_shelter'
     
+    // Lag CampingMetadata med riktige typer
+    const campingMetadata: CampingMetadata = {
+      terrain: this.getTerrainType(tags),
+      trees: suitability.hammockSuitable,
+      water_nearby: this.hasWaterNearby(tags),
+      wind_protection: this.getWindProtection(tags),
+      legal_status: this.getLegalStatus(tags),
+      facilities: this.getFacilities(tags),
+      season_best: this.getBestSeasons(tags),
+      difficulty_access: this.getAccessDifficulty(tags),
+      confidence: suitability.confidence
+    }
+
+    // Legg til tree_types hvis vi har trær
+    if (suitability.hammockSuitable) {
+      campingMetadata.tree_types = this.getTreeTypes(tags)
+    }
+    
     return {
       id: `osm_${element.type}_${element.id}`,
       name: tags.name || this.generateName(tags, type),
@@ -173,34 +191,29 @@ export class OSMService {
       lng: lon,
       description: this.generateDescription(tags, suitability),
       type,
-      metadata: {
-        terrain: this.getTerrainType(tags),
-        trees: suitability.hammockSuitable,
-        water_nearby: this.hasWaterNearby(tags),
-        wind_protection: this.getWindProtection(tags),
-        legal_status: this.getLegalStatus(tags),
-        facilities: this.getFacilities(tags),
-        season_best: this.getBestSeasons(tags),
-        difficulty_access: this.getAccessDifficulty(tags),
-        confidence: suitability.confidence
-      },
+      metadata: campingMetadata,
       api_source: 'osm',
       last_updated: new Date().toISOString()
     }
   }
 
-  private generateName(tags: Record<string, string>, type: string): string {
+  private generateName(tags: Record<string, string>, type: POIType): string {
     if (tags.name) return tags.name
     
-    const typeNames = {
+    const typeNames: Record<POIType, string> = {
+      hiking: 'Tursti',
+      swimming: 'Badeplass',
       camping_site: 'Campingplass',
       tent_spot: 'Teltplass',
       hammock_spot: 'Hengekøyeplass',
       under_stars: 'Stjernehimmel-spot',
-      wilderness_shelter: 'Vindskjul'
+      wilderness_shelter: 'Vindskjul',
+      waterfalls: 'Foss',
+      viewpoints: 'Utsiktspunkt',
+      history: 'Historisk sted'
     }
     
-    return typeNames[type as keyof typeof typeNames] || 'Ukjent plass'
+    return typeNames[type] || 'Ukjent plass'
   }
 
   private generateDescription(tags: Record<string, string>, suitability: ReturnType<typeof this.analyzeCampingSuitability>): string {
@@ -216,30 +229,34 @@ export class OSMService {
     return descriptions.join('. ') || 'Potensielt overnattingssted i naturen.'
   }
 
-  private getTerrainType(tags: Record<string, string>): string {
+  private getTerrainType(tags: Record<string, string>): 'flat' | 'sloped' | 'rocky' | 'soft' {
     if (tags.natural === 'beach') return 'soft'
     if (tags.natural === 'rock') return 'rocky'
     if (tags.natural === 'grassland') return 'flat'
+    if (tags.surface === 'grass') return 'flat'
     return 'flat' // default
   }
 
   private hasWaterNearby(tags: Record<string, string>): boolean {
     return tags.natural === 'beach' || 
            tags.water === 'yes' ||
-           !!tags.drinking_water
+           !!tags.drinking_water ||
+           tags.amenity === 'drinking_water'
   }
 
-  private getWindProtection(tags: Record<string, string>): string {
+  private getWindProtection(tags: Record<string, string>): 'good' | 'moderate' | 'poor' {
     if (tags.natural === 'forest' || tags.natural === 'wood') return 'good'
     if (tags.amenity === 'shelter') return 'good'
     if (tags.natural === 'grassland') return 'poor'
+    if (tags.natural === 'clearing') return 'moderate'
     return 'moderate'
   }
 
-  private getLegalStatus(tags: Record<string, string>): string {
+  private getLegalStatus(tags: Record<string, string>): 'allowed' | 'restricted' | 'private' | 'unknown' {
     if (tags.access === 'private') return 'private'
     if (tags.access === 'no') return 'restricted'
     if (tags.tourism === 'camp_site') return 'allowed'
+    if (tags.amenity === 'shelter') return 'allowed'
     return 'unknown'
   }
 
@@ -248,7 +265,8 @@ export class OSMService {
     if (tags.fireplace === 'yes' || tags.leisure === 'fireplace') facilities.push('fireplace')
     if (tags.toilets === 'yes') facilities.push('toilet')
     if (tags.amenity === 'shelter') facilities.push('shelter')
-    if (tags.drinking_water === 'yes') facilities.push('water')
+    if (tags.drinking_water === 'yes' || tags.amenity === 'drinking_water') facilities.push('water')
+    if (tags.amenity === 'toilets') facilities.push('toilet')
     return facilities
   }
 
@@ -256,15 +274,185 @@ export class OSMService {
     // Enkel analyse - kan forbedres med mer data
     if (tags.seasonal === 'summer') return ['summer']
     if (tags.winter === 'yes') return ['summer', 'winter']
+    if (tags.amenity === 'shelter') return ['all_year']
     return ['summer'] // default for Norge
   }
 
-  private getAccessDifficulty(tags: Record<string, string>): string {
+  private getAccessDifficulty(tags: Record<string, string>): 'easy' | 'moderate' | 'difficult' {
     if (tags.highway || tags.access === 'yes') return 'easy'
+    if (tags.motor_vehicle === 'no') return 'moderate'
     if (tags.sac_scale) {
       if (['hiking', 'mountain_hiking'].includes(tags.sac_scale)) return 'moderate'
       if (['demanding_mountain_hiking', 'alpine_hiking'].includes(tags.sac_scale)) return 'difficult'
     }
+    if (tags.tourism === 'camp_site') return 'easy'
     return 'moderate' // default
+  }
+
+  private getTreeTypes(tags: Record<string, string>): string[] {
+    const treeTypes = []
+    if (tags.leaf_type === 'broadleaved') treeTypes.push('birch')
+    if (tags.leaf_type === 'needleleaved') treeTypes.push('pine', 'spruce')
+    if (tags.leaf_type === 'mixed') treeTypes.push('birch', 'pine', 'spruce')
+    if (tags.species && tags.species.includes('pine')) treeTypes.push('pine')
+    if (tags.species && tags.species.includes('spruce')) treeTypes.push('spruce')
+    if (tags.species && tags.species.includes('birch')) treeTypes.push('birch')
+    
+    // Default hvis ingen spesifikk info
+    if (treeTypes.length === 0 && (tags.natural === 'forest' || tags.natural === 'wood')) {
+      treeTypes.push('mixed')
+    }
+    
+    return treeTypes
+  }
+}
+```
+
+## 5. src/hooks/usePOIData.ts
+```typescript
+// src/hooks/usePOIData.ts - Fikset OSM API implementering
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { POI, manualPoisData, updatePoisData } from '../data/pois'
+import { OSMService } from '../services/osmService'
+
+export interface POIDataState {
+  pois: POI[]
+  loading: boolean
+  error: string | null
+  lastUpdated: Date | null
+}
+
+export function usePOIData() {
+  const [state, setState] = useState<POIDataState>({
+    pois: manualPoisData, // Start med manuelle data umiddelbart
+    loading: false,
+    error: null,
+    lastUpdated: null
+  })
+
+  // Prevent multiple initial loads
+  const hasLoadedRef = useRef(false)
+
+  // Lag OSMService kun en gang med useMemo
+  const osmService = useMemo(() => new OSMService(), [])
+
+  const fetchOSMData = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true, error: null }))
+    
+    try {
+      console.log('🗺️ Henter camping-data fra OpenStreetMap...')
+      
+      // Timeout for API call (25 sekunder som i query + buffer)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('OSM API timeout etter 30 sekunder')), 30000)
+      )
+      
+      const osmDataPromise = osmService.getCampingPOIs()
+      
+      // Race mellom API call og timeout
+      const osmElements = await Promise.race([osmDataPromise, timeoutPromise])
+      
+      console.log(`📍 Fant ${osmElements.length} OSM elementer`)
+      
+      const osmPois: POI[] = []
+      
+      // Safer element processing med error handling
+      for (const element of osmElements) {
+        try {
+          // Valider at element har nødvendige data
+          if (!element.id || (!element.lat && !element.center?.lat)) {
+            console.warn('⚠️ Ugyldig OSM element:', element.id)
+            continue
+          }
+          
+          const suitability = osmService.analyzeCampingSuitability(element)
+          
+          // Kun inkluder hvis vi har rimelig confidence
+          if (suitability.confidence > 0.4) {
+            const poi = osmService.convertToPOI(element, suitability)
+            
+            // Ekstra validering av POI
+            if (poi.lat !== 0 && poi.lng !== 0) {
+              osmPois.push(poi)
+            }
+          }
+        } catch (elementError) {
+          console.warn('⚠️ Feil ved prosessering av OSM element:', element.id, elementError)
+          // Fortsett med neste element istedenfor å krasje
+        }
+      }
+      
+      console.log(`✅ Konverterte ${osmPois.length} egnede camping-spotter`)
+      
+      // Kombiner manuelle og OSM data
+      const allPois = [...manualPoisData, ...osmPois]
+      
+      // Oppdater global state (optional, kan fjernes hvis ikke nødvendig)
+      updatePoisData(osmPois)
+      
+      setState({
+        pois: allPois,
+        loading: false,
+        error: null,
+        lastUpdated: new Date()
+      })
+      
+    } catch (error) {
+      console.error('❌ Feil ved henting av OSM data:', error)
+      
+      // Gi mer spesifikke feilmeldinger
+      let errorMessage = 'Ukjent feil ved lasting av data'
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          errorMessage = 'Forespørsel tok for lang tid - prøv igjen senere'
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Nettverksfeil - sjekk internett-tilkobling'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: errorMessage
+      }))
+      
+      // Ikke krasj appen - behold manuelle data
+      // (state.pois forblir manualPoisData)
+    }
+  }, [osmService])
+
+  const refreshData = useCallback(() => {
+    console.log('🔄 Manuell refresh av OSM data...')
+    fetchOSMData()
+  }, [fetchOSMData])
+
+  // Hent data ved første last - men kun én gang
+  useEffect(() => {
+    // Sjekk om data allerede er lastet
+    if (hasLoadedRef.current) {
+      return
+    }
+
+    let mounted = true
+    
+    // Legg til en liten delay for å la appen rendre først
+    const timer = setTimeout(() => {
+      if (mounted && !hasLoadedRef.current) {
+        hasLoadedRef.current = true
+        fetchOSMData()
+      }
+    }, 1000)
+    
+    return () => {
+      mounted = false
+      clearTimeout(timer)
+    }
+  }, [fetchOSMData]) // ESLint krever denne dependency
+
+  return {
+    ...state,
+    refreshData
   }
 }

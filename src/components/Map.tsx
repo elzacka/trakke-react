@@ -7,6 +7,7 @@ import './Map.css'
 interface MapProps {
   pois: POI[]
   sidebarCollapsed: boolean
+  loading: boolean
 }
 
 // Custom hook for handling map resize when sidebar toggles
@@ -78,7 +79,7 @@ const createCustomIcon = (type: string) => {
   })
 }
 
-export function Map({ pois, sidebarCollapsed }: MapProps) {
+export function Map({ pois, sidebarCollapsed, loading }: MapProps) {
   return (
     <div className="map-container">
       <MapContainer
@@ -95,7 +96,7 @@ export function Map({ pois, sidebarCollapsed }: MapProps) {
         
         <MapResizer sidebarCollapsed={sidebarCollapsed} />
         
-        {pois.map(poi => {
+        {!loading && pois.map(poi => {
           const config = categoryConfig[poi.type]
           
           return (
@@ -125,14 +126,41 @@ export function Map({ pois, sidebarCollapsed }: MapProps) {
                   
                   {poi.metadata && Object.entries(poi.metadata).map(([key, value]) => (
                     <p key={key} style={{ margin: '3px 0', fontSize: '0.9rem' }}>
-                      <strong>{key}:</strong> {value}
+                      <strong>{key}:</strong> {String(value)}
                     </p>
                   ))}
+                  
+                  {poi.api_source && (
+                    <p style={{ margin: '3px 0', fontSize: '0.8rem', color: '#666' }}>
+                      Kilde: {poi.api_source.toUpperCase()}
+                    </p>
+                  )}
                 </div>
               </Popup>
             </Marker>
           )
         })}
+        
+        {loading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(255, 255, 255, 0.9)',
+            padding: '1rem',
+            borderRadius: '8px',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '20px' }}>
+              refresh
+            </span>
+            Laster kartdata...
+          </div>
+        )}
       </MapContainer>
     </div>
   )

@@ -1,4 +1,4 @@
-// src/data/pois.ts - Oppdatert med nye camping kategorier
+// src/data/pois.ts - Fikset TypeScript-feil
 
 export type POIType = 
   | 'hiking' 
@@ -25,6 +25,9 @@ export interface CampingMetadata {
   confidence?: number      // AI confidence in data quality (0-1)
 }
 
+// Union type for metadata - kan være enten simple nøkkel-verdi par eller CampingMetadata
+export type POIMetadata = Record<string, string | number> | CampingMetadata
+
 export interface POI {
   id: string
   name: string
@@ -32,7 +35,7 @@ export interface POI {
   lng: number
   description: string
   type: POIType
-  metadata?: Record<string, string | number> | CampingMetadata
+  metadata?: POIMetadata
   api_source?: 'ut_no' | 'osm' | 'kartverket' | 'manual'
   last_updated?: string
 }
@@ -107,6 +110,13 @@ export const categoryConfig: CategoryConfigMap = {
     name: 'Historisk',
     description: 'Historiske steder og kulturminner'
   },
+}
+
+// Type guard function for camping metadata
+export function isCampingMetadata(metadata: any): metadata is CampingMetadata {
+  return metadata && 
+         typeof metadata.terrain === 'string' && 
+         typeof metadata.trees === 'boolean'
 }
 
 // Eksisterende manuelle POI-er (beholdes som fallback)
