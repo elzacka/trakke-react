@@ -28,13 +28,16 @@ export function SearchBox({
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   
-  // FIKSET: Opprett SearchService med useRef for å unngå re-creation
-  const searchService = useRef<SearchService | null>(null)
+  // FIKSET: Enkel useRef med lazy initialization
+  const searchServiceRef = useRef<SearchService>()
   
-  // Initialize search service on first render
-  if (!searchService.current) {
-    searchService.current = new SearchService()
-  }
+  // Get or create search service instance
+  const getSearchService = useCallback(() => {
+    if (!searchServiceRef.current) {
+      searchServiceRef.current = new SearchService()
+    }
+    return searchServiceRef.current
+  }, [])
   
   const debounceTimer = useRef<NodeJS.Timeout>()
   const listboxId = `searchbox-listbox-${Math.random().toString(36).substr(2, 9)}`
@@ -63,7 +66,8 @@ export function SearchBox({
     setError(null)
     
     try {
-      const searchResults = await searchService.current!.search(searchQuery, pois)
+      const searchService = getSearchService()
+      const searchResults = await searchService.search(searchQuery, pois)
       setResults(searchResults)
       setIsOpen(searchResults.length > 0)
       setSelectedIndex(-1)
@@ -72,7 +76,7 @@ export function SearchBox({
     } finally {
       setIsLoading(false)
     }
-  }, [pois, handleSearchError])
+  }, [pois, handleSearchError, getSearchService])
 
   // Handle input change with debouncing
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

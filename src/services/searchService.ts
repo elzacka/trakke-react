@@ -78,6 +78,11 @@ export class SearchService {
   private searchCache = new Map<string, { results: SearchResult[], timestamp: number }>()
   private readonly cacheTimeout = 5 * 60 * 1000 // 5 minutter
 
+  // FIKSET: Eksplisitt tom konstruktør
+  constructor() {
+    // Konstruktør trenger ingen parametere
+  }
+
   /**
    * Hovedsøkefunksjon - prøver alle søketyper
    */
