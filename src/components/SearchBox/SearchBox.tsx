@@ -1,4 +1,4 @@
-// src/components/SearchBox/SearchBox.tsx - Forenklet uten constructor issues
+// src/components/SearchBox/SearchBox.tsx - Fullstendig fikset versjon
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { SearchService, SearchResult } from '../../services/searchService'
@@ -12,7 +12,7 @@ interface SearchBoxProps {
   className?: string
 }
 
-// Opprett service-instans utenfor komponenten for å unngå constructor issues
+// Opprett service-instans utenfor komponenten
 const searchService = new SearchService()
 
 export function SearchBox({ 
@@ -30,22 +30,21 @@ export function SearchBox({
   
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
-  const debounceTimer = useRef<NodeJS.Timeout>()
-  const listboxId = `searchbox-listbox-${Math.random().toString(36).substr(2, 9)}`
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+  const listboxId = `searchbox-listbox-${Math.random().toString(36).substring(2, 9)}`
 
-  // Error boundary for search failures
-  const handleSearchError = useCallback((error: Error) => {
-    console.error('Søkefeil:', error)
+  // Error handling
+  const handleSearchError = useCallback((searchError: Error) => {
+    console.error('Søkefeil:', searchError)
     setError('Søket feilet. Prøv igjen.')
     setResults([])
     setIsOpen(false)
     setIsLoading(false)
     
-    // Clear error after 3 seconds
     setTimeout(() => setError(null), 3000)
   }, [])
 
-  // Debounced search function
+  // Debounced search
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([])
@@ -61,14 +60,14 @@ export function SearchBox({
       setResults(searchResults)
       setIsOpen(searchResults.length > 0)
       setSelectedIndex(-1)
-    } catch (error) {
-      handleSearchError(error instanceof Error ? error : new Error('Ukjent feil'))
+    } catch (searchError) {
+      handleSearchError(searchError instanceof Error ? searchError : new Error('Ukjent feil'))
     } finally {
       setIsLoading(false)
     }
   }, [pois, handleSearchError])
 
-  // Handle input change with debouncing
+  // Input change handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setQuery(value)
@@ -76,6 +75,7 @@ export function SearchBox({
 
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
+      debounceTimer.current = null
     }
 
     debounceTimer.current = setTimeout(() => {
@@ -83,7 +83,7 @@ export function SearchBox({
     }, 300)
   }
 
-  // Handle result selection
+  // Result selection
   const selectResult = useCallback((result: SearchResult, closeDropdown = true) => {
     setQuery(result.displayName)
     if (closeDropdown) {
@@ -94,7 +94,7 @@ export function SearchBox({
     onLocationSelect(result)
   }, [onLocationSelect])
 
-  // Handle keyboard navigation
+  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen || results.length === 0) {
       if (e.key === 'ArrowDown' && results.length > 0) {
@@ -135,18 +135,26 @@ export function SearchBox({
     }
   }
 
-  // Handle click outside to close
+  // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (resultsRef.current && !resultsRef.current.contains(event.target as Node) &&
-          inputRef.current && !inputRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      const clickedInsideResults = resultsRef.current?.contains(target)
+      const clickedInsideInput = inputRef.current?.contains(target)
+      
+      if (!clickedInsideResults && !clickedInsideInput) {
         setIsOpen(false)
         setSelectedIndex(-1)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
+    }
   }, [])
 
   // Clear search
@@ -159,18 +167,29 @@ export function SearchBox({
     inputRef.current?.focus()
   }
 
-  // Get icon for result type
-  const getResultIcon = (result: SearchResult) => {
-    switch (result.type) {
-      case 'coordinates': return 'my_location'
-      case 'poi': return 'place'
-      case 'address': return 'home'
-      case 'place': return 'location_city'
-      default: return 'search'
+  // Result icon helper
+  const getResultIcon = (result: SearchResult): string => {
+    const iconMap: Record<SearchResult['type'], string> = {
+      coordinates: 'my_location',
+      poi: 'place',
+      address: 'home',
+      place: 'location_city'
     }
+    return iconMap[result.type] || 'search'
   }
 
-  // Generate unique IDs for accessibility
+  // Result type display name
+  const getResultTypeDisplayName = (type: SearchResult['type']): string => {
+    const typeNames: Record<SearchResult['type'], string> = {
+      coordinates: 'Koordinater',
+      poi: 'POI',
+      address: 'Adresse',
+      place: 'Sted'
+    }
+    return typeNames[type] || 'Ukjent'
+  }
+
+  // Unique ID generator
   const getResultId = (index: number) => `${listboxId}-option-${index}`
 
   return (
@@ -216,6 +235,7 @@ export function SearchBox({
             className="search-clear"
             title="Tøm søk"
             aria-label="Tøm søkefeltet"
+            type="button"
           >
             <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
@@ -262,11 +282,12 @@ export function SearchBox({
                 )}
                 <div className="result-meta">
                   <span className="result-type">
-                    {result.type === 'coordinates' ? 'Koordinater' : 
-                     result.type === 'poi' ? 'POI' :
-                     result.type === 'address' ? 'Adresse' : 'Sted'}
+                    {getResultTypeDisplayName(result.type)}
                   </span>
-                  <span className="result-coords" aria-label={`Koordinater ${result.lat.toFixed(4)}, ${result.lng.toFixed(4)}`}>
+                  <span 
+                    className="result-coords" 
+                    aria-label={`Koordinater ${result.lat.toFixed(4)}, ${result.lng.toFixed(4)}`}
+                  >
                     {result.lat.toFixed(4)}, {result.lng.toFixed(4)}
                   </span>
                 </div>

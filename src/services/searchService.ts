@@ -1,4 +1,4 @@
-// src/services/searchService.ts - Helt ren versjon uten constructor issues
+// src/services/searchService.ts - Fullstendig fikset versjon
 
 export interface SearchResult {
   id: string
@@ -44,7 +44,7 @@ interface NominatimItem {
   boundingbox?: string[]
 }
 
-// Rate limiter som vanlig funksjon
+// Rate limiter
 let lastRequest = 0
 const minInterval = 1000
 
@@ -60,17 +60,19 @@ async function waitIfNeeded(): Promise<void> {
   lastRequest = Date.now()
 }
 
-// Cache utenfor klassen
+// Cache
 const searchCache = new Map<string, { results: SearchResult[], timestamp: number }>()
 const cacheTimeout = 5 * 60 * 1000
 
+// Constants
 const norwegianBounds = {
   south: 57.5,
   west: 4.0,
   north: 71.5,
   east: 31.5
-}
+} as const
 
+// Validation functions
 function isValidNorwegianCoordinate(lat: number, lng: number): boolean {
   return lat >= norwegianBounds.south && 
          lat <= norwegianBounds.north &&
@@ -78,31 +80,36 @@ function isValidNorwegianCoordinate(lat: number, lng: number): boolean {
          lng <= norwegianBounds.east
 }
 
+function isValidNumber(value: number): boolean {
+  return typeof value === 'number' && !isNaN(value) && isFinite(value)
+}
+
+// Coordinate parsing
 function parseCoordinates(input: string): CoordinateParseResult | null {
   const cleaned = input.replace(/[°'"′″\s]/g, ' ').trim()
 
-  // Decimal format
+  // Decimal format: "59.123, 7.456" or "59.123 7.456"
   const decimalMatch = cleaned.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/)
   if (decimalMatch) {
     const lat = parseFloat(decimalMatch[1])
     const lng = parseFloat(decimalMatch[2])
     
-    if (isValidNorwegianCoordinate(lat, lng)) {
+    if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
       return { lat, lng, format: 'decimal' }
     }
   }
 
-  // DMS format
+  // DMS format: "59 12 34.5 N 7 25 42.1 E"
   const dmsPattern = /(\d+)\s*(\d+)\s*(\d+\.?\d*)\s*([NS])\s+(\d+)\s*(\d+)\s*(\d+\.?\d*)\s*([EW])/i
   const dmsMatch = cleaned.match(dmsPattern)
   if (dmsMatch) {
-    const latDeg = parseInt(dmsMatch[1])
-    const latMin = parseInt(dmsMatch[2]) 
+    const latDeg = parseInt(dmsMatch[1], 10)
+    const latMin = parseInt(dmsMatch[2], 10) 
     const latSec = parseFloat(dmsMatch[3])
     const latDir = dmsMatch[4].toUpperCase()
     
-    const lngDeg = parseInt(dmsMatch[5])
-    const lngMin = parseInt(dmsMatch[6])
+    const lngDeg = parseInt(dmsMatch[5], 10)
+    const lngMin = parseInt(dmsMatch[6], 10)
     const lngSec = parseFloat(dmsMatch[7])
     const lngDir = dmsMatch[8].toUpperCase()
 
@@ -112,7 +119,7 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
     if (latDir === 'S') lat = -lat
     if (lngDir === 'W') lng = -lng
 
-    if (isValidNorwegianCoordinate(lat, lng)) {
+    if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
       return { lat, lng, format: 'dms' }
     }
   }
@@ -120,12 +127,16 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
   return null
 }
 
+// Local POI search
 function searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
+  const normalizedQuery = query.toLowerCase()
+  
   return pois
-    .filter(poi => 
-      poi.name.toLowerCase().includes(query) ||
-      poi.description.toLowerCase().includes(query)
-    )
+    .filter(poi => {
+      const nameMatch = poi.name.toLowerCase().includes(normalizedQuery)
+      const descMatch = poi.description.toLowerCase().includes(normalizedQuery)
+      return nameMatch || descMatch
+    })
     .map(poi => ({
       id: `poi_${poi.id}`,
       name: poi.name,
@@ -139,6 +150,7 @@ function searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
     .slice(0, 5)
 }
 
+// Nominatim search
 async function searchNominatim(query: string): Promise<SearchResult[]> {
   try {
     await waitIfNeeded()
@@ -169,59 +181,90 @@ async function searchNominatim(query: string): Promise<SearchResult[]> {
       throw new Error(`Nominatim feil: ${response.status}`)
     }
 
-    const data = await response.json() as NominatimItem[]
+    const data = await response.json()
     
-    return data.map((item: NominatimItem): SearchResult => {
-      let bbox: [number, number, number, number] | undefined = undefined
-      if (item.boundingbox && item.boundingbox.length === 4) {
-        bbox = [
-          parseFloat(item.boundingbox[2]),
-          parseFloat(item.boundingbox[0]),
-          parseFloat(item.boundingbox[3]),
-          parseFloat(item.boundingbox[1])
-        ]
-      }
+    // Type guard for Nominatim response
+    if (!Array.isArray(data)) {
+      console.warn('Uventet Nominatim respons format')
+      return []
+    }
 
-      const name = item.name || item.display_name.split(',')[0]
-      const parts = []
-      
-      if (item.name) parts.push(item.name)
-      if (item.address?.municipality && item.address.municipality !== item.name) {
-        parts.push(item.address.municipality)
-      }
-      if (item.address?.county && !parts.includes(item.address.county)) {
-        parts.push(item.address.county)
-      }
-      
-      const displayName = parts.join(', ') || item.display_name.split(',').slice(0, 2).join(', ')
-      const type = item.address?.house_number ? 'address' : 'place'
+    return data
+      .filter((item: unknown): item is NominatimItem => {
+        return typeof item === 'object' && 
+               item !== null && 
+               'place_id' in item && 
+               'display_name' in item && 
+               'lat' in item && 
+               'lon' in item
+      })
+      .map((item: NominatimItem): SearchResult => {
+        const lat = parseFloat(item.lat)
+        const lng = parseFloat(item.lon)
+        
+        // Validate coordinates
+        if (!isValidNumber(lat) || !isValidNumber(lng)) {
+          throw new Error(`Ugyldige koordinater fra Nominatim: ${item.lat}, ${item.lon}`)
+        }
 
-      return {
-        id: `nominatim_${item.place_id}`,
-        name,
-        displayName,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-        type,
-        source: 'nominatim',
-        description: item.type ? `${item.type} i ${item.address?.municipality || item.address?.county || 'Norge'}` : undefined,
-        bbox
-      }
-    }).filter(result => 
-      isValidNorwegianCoordinate(result.lat, result.lng)
-    )
+        let bbox: [number, number, number, number] | undefined = undefined
+        if (item.boundingbox && Array.isArray(item.boundingbox) && item.boundingbox.length === 4) {
+          const bboxNumbers = item.boundingbox.map(coord => parseFloat(coord))
+          if (bboxNumbers.every(isValidNumber)) {
+            bbox = [bboxNumbers[2], bboxNumbers[0], bboxNumbers[3], bboxNumbers[1]]
+          }
+        }
+
+        const name = item.name || item.display_name.split(',')[0]
+        const parts: string[] = []
+        
+        if (item.name) parts.push(item.name)
+        if (item.address?.municipality && item.address.municipality !== item.name) {
+          parts.push(item.address.municipality)
+        }
+        if (item.address?.county && !parts.includes(item.address.county)) {
+          parts.push(item.address.county)
+        }
+        
+        const displayName = parts.length > 0 
+          ? parts.join(', ') 
+          : item.display_name.split(',').slice(0, 2).join(', ')
+        
+        const type: SearchResult['type'] = item.address?.house_number ? 'address' : 'place'
+
+        return {
+          id: `nominatim_${item.place_id}`,
+          name,
+          displayName,
+          lat,
+          lng,
+          type,
+          source: 'nominatim',
+          description: item.type ? 
+            `${item.type} i ${item.address?.municipality || item.address?.county || 'Norge'}` : 
+            undefined,
+          bbox
+        }
+      })
+      .filter(result => isValidNorwegianCoordinate(result.lat, result.lng))
+      
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.warn('Nominatim søk timed out')
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.warn('Nominatim søk timed out')
+      } else {
+        console.error('Nominatim søkefeil:', error.message)
+      }
     } else {
-      console.error('Nominatim søkefeil:', error)
+      console.error('Ukjent Nominatim feil:', error)
     }
     return []
   }
 }
 
+// Distance calculation
 function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371
+  const R = 6371 // Earth's radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLng = (lng2 - lng1) * Math.PI / 180
   const a = 
@@ -232,37 +275,48 @@ function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * c
 }
 
+// Deduplication and sorting
 function deduplicateAndSort(results: SearchResult[], query: string): SearchResult[] {
+  const normalizedQuery = query.toLowerCase()
+  
+  // Remove duplicates based on proximity
   const filtered = results.filter((result, index) => {
     return !results.slice(0, index).some(prev => 
       getDistance(result.lat, result.lng, prev.lat, prev.lng) < 0.1
     )
   })
 
+  // Sort by relevance
   return filtered.sort((a, b) => {
+    // Coordinates always first
     if (a.type === 'coordinates') return -1
     if (b.type === 'coordinates') return 1
     
-    const aExact = a.name.toLowerCase() === query
-    const bExact = b.name.toLowerCase() === query
+    // Exact matches
+    const aExact = a.name.toLowerCase() === normalizedQuery
+    const bExact = b.name.toLowerCase() === normalizedQuery
     if (aExact && !bExact) return -1
     if (bExact && !aExact) return 1
     
+    // POIs before other types
     if (a.type === 'poi' && b.type !== 'poi') return -1
     if (b.type === 'poi' && a.type !== 'poi') return 1
     
+    // Alphabetical fallback
     return a.displayName.localeCompare(b.displayName, 'no')
   }).slice(0, 8)
 }
 
-// FIKSET: Enkel klasse uten constructor problemer
+// Main service class
 export class SearchService {
   async search(query: string, localPOIs: POILike[] = []): Promise<SearchResult[]> {
-    const cleanQuery = query.trim().toLowerCase()
+    const cleanQuery = query.trim()
     if (!cleanQuery) return []
 
-    // Sjekk cache
-    const cached = searchCache.get(cleanQuery)
+    const normalizedQuery = cleanQuery.toLowerCase()
+
+    // Check cache
+    const cached = searchCache.get(normalizedQuery)
     if (cached && Date.now() - cached.timestamp < cacheTimeout) {
       return cached.results
     }
@@ -270,8 +324,8 @@ export class SearchService {
     const results: SearchResult[] = []
 
     try {
-      // 1. Koordinater
-      const coordResult = parseCoordinates(query)
+      // 1. Parse coordinates
+      const coordResult = parseCoordinates(cleanQuery)
       if (coordResult) {
         results.push({
           id: `coord_${coordResult.lat}_${coordResult.lng}`,
@@ -285,11 +339,11 @@ export class SearchService {
         })
       }
 
-      // 2. Lokale POI-er
-      const localResults = searchLocalPOIs(cleanQuery, localPOIs)
+      // 2. Search local POIs
+      const localResults = searchLocalPOIs(normalizedQuery, localPOIs)
       results.push(...localResults)
 
-      // 3. Nominatim
+      // 3. Search Nominatim if we need more results
       if (results.length < 5) {
         const nominatimResults = await searchNominatim(cleanQuery)
         results.push(...nominatimResults)
@@ -297,11 +351,13 @@ export class SearchService {
 
     } catch (error) {
       console.error('Søkefeil:', error)
+      // Don't throw - return partial results
     }
 
-    const finalResults = deduplicateAndSort(results, cleanQuery)
+    const finalResults = deduplicateAndSort(results, normalizedQuery)
     
-    searchCache.set(cleanQuery, {
+    // Cache results
+    searchCache.set(normalizedQuery, {
       results: finalResults,
       timestamp: Date.now()
     })
