@@ -88,7 +88,7 @@ export function Sidebar({
               Tråkke
             </h1>
             <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-              Oppdag Norge med turskoa på (app under utvikling)
+              Oppdag Norge med turskoa på
             </p>
           </div>
 
@@ -151,6 +151,9 @@ export function Sidebar({
               {weatherEnabled && weatherLastUpdated && (
                 <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
                   Vær oppdatert: {weatherLastUpdated.toLocaleTimeString('nb-NO')}
+                </p>
+                <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
+                  Status 5/8-25: Appen er under utvikling. Suss, Lene.
                 </p>
               )}
             </div>
