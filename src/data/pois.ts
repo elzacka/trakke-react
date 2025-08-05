@@ -143,7 +143,7 @@ export const categoryConfig: CategoryConfigMap = {
   staffed_huts: {
     color: '#CD853F',
     icon: 'house',
-    name: 'Serverte hytter',
+    name: 'Betjente hytter',
     description: 'DNT-hytter med betjening og servering'
   },
   self_service_huts: {
