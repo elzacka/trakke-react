@@ -88,7 +88,7 @@ export function Sidebar({
               Tråkke
             </h1>
             <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-              App under arbeid...
+              Oppdag Norge med turskoa på
             </p>
           </div>
 
