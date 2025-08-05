@@ -1,7 +1,7 @@
 // Working TrakkeApp with manual Leaflet implementation
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import L from 'leaflet'
-// Header component will be added later if needed
+import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { SearchResult } from './services/searchService'
 import { useCombinedPOIData } from './hooks/useCombinedPOIData'
@@ -428,7 +428,8 @@ export function WorkingTrakkeApp() {
   const combinedError = error
 
   return (
-    <div className="app">      
+    <div className="app">
+      <Header />
       <main className="app-main">
         <Sidebar
           collapsed={sidebarCollapsed}

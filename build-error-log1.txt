@@ -1,0 +1,42 @@
+Annotations
+10 errors and 10 warnings
+build: src/WorkingTrakkeApp.tsx#L323
+'popupContent' is assigned a value but never used. Allowed unused vars must match /^_/u
+build: src/WorkingTrakkeApp.tsx#L232
+'markerIcon' is never reassigned. Use 'const' instead
+build: src/WorkingTrakkeApp.tsx#L88
+'heritagePOIs' is assigned a value but never used. Allowed unused vars must match /^_/u
+build: src/WorkingTrakkeApp.tsx#L87
+'outdoorPOIs' is assigned a value but never used. Allowed unused vars must match /^_/u
+build: src/WorkingTrakkeApp.tsx#L66
+'searchResult' is assigned a value but never used. Allowed unused vars must match /^_/u
+build: src/WorkingTrakkeApp.tsx#L48
+'collectAllPOITypes' is defined but never used. Allowed unused vars must match /^_/u
+build: src/WorkingTrakkeApp.tsx#L21
+'createCustomIcon' is defined but never used. Allowed unused vars must match /^_/u
+build: src/WorkingTrakkeApp.tsx#L8
+'POI' is defined but never used. Allowed unused vars must match /^_/u
+build: src/WorkingTrakkeApp.tsx#L4
+'Header' is defined but never used. Allowed unused vars must match /^_/u
+build: src/MapTest.tsx#L74
+'e' is defined but never used
+build: src/services/riksantikvarenService.ts#L67
+Unexpected any. Specify a different type
+build: src/services/riksantikvarenService.ts#L31
+Unexpected any. Specify a different type
+build: src/components/Map.tsx#L11
+Unexpected any. Specify a different type
+build: src/WorkingTrakkeApp.tsx#L13
+Unexpected any. Specify a different type
+build: src/SimpleMapApp.tsx#L9
+Unexpected any. Specify a different type
+build: src/MapTest.tsx#L70
+Unexpected any. Specify a different type
+build: src/MapTest.tsx#L68
+Unexpected any. Specify a different type
+build: src/MapTest.tsx#L20
+Unexpected any. Specify a different type
+build: src/MapTest.tsx#L8
+Unexpected any. Specify a different type
+build: src/ManualMapTest.tsx#L7
+Unexpected any. Specify a different type

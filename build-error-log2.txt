@@ -1,0 +1,22 @@
+Annotations
+10 errors
+build: src/components/Sidebar.tsx#L46
+'error' is defined but never used. Allowed unused args must match /^_/u
+build: src/components/Sidebar.tsx#L45
+'loading' is defined but never used. Allowed unused args must match /^_/u
+build: src/components/Sidebar.tsx#L44
+'totalPOIs' is defined but never used. Allowed unused args must match /^_/u
+build: src/components/Sidebar.tsx#L43
+'filteredPOIs' is defined but never used. Allowed unused args must match /^_/u
+build: src/components/Sidebar.tsx#L2
+'categoryConfig' is defined but never used. Allowed unused vars must match /^_/u
+build: src/components/Sidebar.tsx#L2
+'POIType' is defined but never used. Allowed unused vars must match /^_/u
+build: src/components/HierarchicalCategoryFilter.tsx#L2
+'categoryConfig' is defined but never used. Allowed unused vars must match /^_/u
+build: src/components/HierarchicalCategoryFilter.tsx#L1
+'useState' is defined but never used. Allowed unused vars must match /^_/u
+build
+Unexpected empty object pattern
+build: src/WorkingTrakkeApp.tsx#L399
+'searchMarker' is assigned a value but never used. Allowed unused vars must match /^_/u
