@@ -1,6 +1,6 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { POI, manualPoisData, updatePoisData } from '../data/pois'
+import { POI, updatePoisData } from '../data/pois'
 import { OSMService } from '../services/osmService'
 
 export interface POIDataState {

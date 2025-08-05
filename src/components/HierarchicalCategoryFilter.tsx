@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { CategoryNode, CategoryState, categoryConfig } from '../data/pois'
+import React from 'react'
+import { CategoryNode, CategoryState } from '../data/pois'
 
 interface HierarchicalCategoryFilterProps {
   categoryTree: CategoryNode[]

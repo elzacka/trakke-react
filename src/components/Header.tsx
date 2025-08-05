@@ -3,9 +3,10 @@
 import React from 'react'
 import './Header.css'
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface HeaderProps {}
 
-export function Header({}: HeaderProps) {
+export function Header(_props: HeaderProps) {
   return (
     <div className="header">
       <div className="header-content">

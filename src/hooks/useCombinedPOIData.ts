@@ -1,5 +1,5 @@
 // Combined hook for outdoor recreation POIs, weather data, and heritage POIs
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { usePOIDataWithWeather } from './usePOIDataWithWeather'
 import { useHeritageData } from './useHeritageData'
 import { POI } from '../data/pois'
@@ -47,7 +47,7 @@ interface UseCombinedPOIDataReturn {
 
 export function useCombinedPOIData({
   weatherEnabled,
-  heritageEnabled
+  heritageEnabled: _heritageEnabled
 }: UseCombinedPOIDataOptions): UseCombinedPOIDataReturn {
   
   // Outdoor recreation POIs with weather

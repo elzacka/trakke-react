@@ -1,5 +1,5 @@
 import React from 'react'
-import { POI, POIType, categoryConfig, categoryTree, CategoryState } from '../data/pois'
+import { POI, categoryTree, CategoryState } from '../data/pois'
 import { SearchBox } from './SearchBox/SearchBox'
 import { SearchResult } from '../services/searchService'
 import { HierarchicalCategoryFilter } from './HierarchicalCategoryFilter'
@@ -40,17 +40,17 @@ export function Sidebar({
   categoryState,
   onCategoryToggle,
   onExpandToggle,
-  filteredPOIs,
-  totalPOIs,
-  loading,
-  error,
-  onRefresh,
-  lastUpdated,
+  filteredPOIs: _filteredPOIs,
+  totalPOIs: _totalPOIs,
+  loading: _loading,
+  error: _error,
+  onRefresh: _onRefresh,
+  lastUpdated: _lastUpdated,
   weatherEnabled = false,
   onToggleWeather,
-  poisWithWeather = 0,
-  goodWeatherPOIs = [],
-  hasWeatherData = false,
+  poisWithWeather: _poisWithWeather = 0,
+  goodWeatherPOIs: _goodWeatherPOIs = [],
+  hasWeatherData: _hasWeatherData = false,
   onRefreshWeather,
   weatherLastUpdated,
   heritageEnabled = false,

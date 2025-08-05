@@ -396,7 +396,7 @@ export function WorkingTrakkeApp() {
       
       // Add a temporary marker for the search result
       const displayName = result.displayName || result.name || 'Søkeresultat'
-      const searchMarker = L.marker([result.lat, result.lng])
+      const _searchMarker = L.marker([result.lat, result.lng])
         .bindPopup(`<div style="min-width: 150px;"><strong>${displayName}</strong><br><em>Søkeresultat</em></div>`)
         .addTo(mapInstanceRef.current!)
         .openPopup()
