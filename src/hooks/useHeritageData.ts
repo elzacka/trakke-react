@@ -58,7 +58,7 @@ export function useHeritageData({
     }
   }, [])
 
-  // Fetch heritage data
+  // Fetch heritage data - removed dependencies to prevent infinite loops
   const fetchHeritageData = useCallback(async () => {
     if (!enabled) {
       setHeritagePOIs([])
@@ -99,7 +99,7 @@ export function useHeritageData({
     } finally {
       setLoading(false)
     }
-  }, [enabled, bbox, convertToPOI])
+  }, [enabled]) // Removed bbox and convertToPOI to prevent infinite loops
 
   // Initial load
   useEffect(() => {

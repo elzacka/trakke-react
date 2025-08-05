@@ -17,49 +17,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-// Create custom POI icons with improved click handling (currently unused)
-function _createCustomIcon(poiType: POIType): L.DivIcon {
-  const config = categoryConfig[poiType]
-  return L.divIcon({
-    html: `<div class="poi-marker" style="
-      background: ${config.color};
-      border: 2px solid white;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      font-family: 'Material Symbols Outlined';
-      font-size: 16px;
-      color: white;
-      cursor: pointer;
-      pointer-events: auto;
-    ">${config.icon}</div>`,
-    className: 'custom-div-icon',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -15]
-  })
-}
-
-// Helper function to collect all POI types from category tree (currently unused)
-function _collectAllPOITypes(nodes: CategoryNode[]): POIType[] {
-  const types: POIType[] = []
-  
-  function traverse(node: CategoryNode) {
-    if (node.poiTypes) {
-      types.push(...node.poiTypes)
-    }
-    if (node.children) {
-      node.children.forEach(traverse)
-    }
-  }
-  
-  nodes.forEach(traverse)
-  return types
-}
+// Unused helper functions removed during popup fix
 
 export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -198,46 +156,14 @@ export function WorkingTrakkeApp() {
     const activePOITypes = getActivePOITypes()
     const filteredPOIs = pois.filter(poi => activePOITypes.has(poi.type))
 
-    // Reduced debug logging to prevent console spam
-    if (filteredPOIs.length !== markersRef.current.length) {
-      console.log('🗺️ POI Update:', {
-        totalPOIs: pois.length,
-        filteredPOIs: filteredPOIs.length,
-        activePOITypes: Array.from(activePOITypes).slice(0, 3) // Show only first 3
-      })
-    }
+    // Minimal logging to prevent infinite loops
 
-    // Add new markers
-    if (filteredPOIs.length > 0) {
-      console.log(`🗺️ Adding ${filteredPOIs.length} markers to map`)
-    } else if (pois.length > 0) {
-      console.log('⚠️ No POIs match active categories. Total POIs:', pois.length)
-    } else {
-      console.log('⚠️ No POI data available')
-    }
+    // Add new markers (reduced logging)
     
     filteredPOIs.forEach((poi, index) => {
       try {
-        if (index === 0) {
-          console.log(`🗺️ Creating ${filteredPOIs.length} markers, first:`, {
-            name: poi.name,
-            type: poi.type,
-            lat: poi.lat,
-            lng: poi.lng,
-            hasConfig: !!categoryConfig[poi.type]
-          })
-        }
-
-        // Use default Leaflet markers temporarily to fix popup issue
+        // Use default Leaflet markers for reliable popup functionality
         const markerIcon = new L.Icon.Default()
-        
-        // TODO: Re-enable custom icons once popup clicking is confirmed working
-        // try {
-        //   markerIcon = createCustomIcon(poi.type)
-        // } catch (iconError) {
-        //   console.warn('⚠️ Failed to create custom icon, using default:', iconError)
-        //   markerIcon = new L.Icon.Default()
-        // }
         
         const marker = L.marker([poi.lat, poi.lng], {
           icon: markerIcon,
@@ -247,41 +173,34 @@ export function WorkingTrakkeApp() {
           riseOffset: 250
         })
         
-        // Debug click handler to test popup functionality
-        marker.on('click', (e) => {
-          console.log('🖱️ Marker clicked:', poi.name, 'Opening popup...')
-          marker.openPopup()
-          // Prevent event bubbling to map
-          L.DomEvent.stopPropagation(e)
-        })
-
-        // Legacy popup content code removed
-        
-        // Simple popup content to avoid rendering issues
-        const simplePopup = `
-          <div style="padding: 12px; max-width: 250px;">
-            <h3 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px;">
+        // Create simple, clean popup content
+        const popupContent = `
+          <div style="padding: 8px; min-width: 200px;">
+            <h3 style="margin: 0 0 6px 0; color: #2c5530; font-size: 15px;">
               ${poi.name || 'Ukjent sted'}
             </h3>
-            <p style="margin: 0 0 8px 0; color: #555; font-size: 14px;">
+            <p style="margin: 0 0 6px 0; color: #555; font-size: 13px;">
               ${poi.description || 'Ingen beskrivelse tilgjengelig'}
             </p>
-            <div style="color: #777; font-size: 12px;">
+            <div style="color: #777; font-size: 11px;">
               Type: ${categoryConfig[poi.type]?.name || poi.type}
             </div>
           </div>
         `
         
-        marker.bindPopup(simplePopup, {
-          maxWidth: 280,
-          minWidth: 150,
+        // Bind popup with simple options
+        marker.bindPopup(popupContent, {
+          maxWidth: 300,
           closeButton: true,
           autoClose: true,
-          closeOnEscapeKey: true,
-          keepInView: true
+          closeOnClick: true,
+          closeOnEscapeKey: true
         })
         
-        // Add popup debugging to verify popup creation\n        marker.on('popupopen', () => {\n          console.log('✅ Popup opened for:', poi.name)\n        })\n        \n        marker.on('popupclose', () => {\n          console.log('❌ Popup closed for:', poi.name)\n        })
+        // Simple click handler - popup opens automatically when marker is clicked
+        marker.on('click', (e) => {
+          L.DomEvent.stopPropagation(e)
+        })
         
         marker.addTo(mapInstanceRef.current!)
         markersRef.current.push(marker)
@@ -290,23 +209,9 @@ export function WorkingTrakkeApp() {
       }
     })
     
-    // Add simple test marker to debug popup visibility
-    if (mapInstanceRef.current && filteredPOIs.length > 0) {
-      console.log('🧪 Adding simple test marker with basic popup...')
-      const testMarker = L.marker([59.9139, 10.7522])
-      testMarker.bindPopup('<div><strong>TEST POPUP</strong><br>Can you see this?</div>')
-      testMarker.addTo(mapInstanceRef.current)
-      markersRef.current.push(testMarker)
-    }
+    // Test marker removed to prevent interference
 
-    if (filteredPOIs.length > 0) {
-      console.log(`✅ Successfully added ${markersRef.current.length} markers to map`)
-      console.log('💡 To test popups: Check some categories in sidebar, then click the blue Leaflet markers on the map')
-      
-      // Remove automatic popup opening to prevent loops
-    } else if (pois.length > 0) {
-      console.log('💡 No markers visible. Check some categories in the sidebar to see POI markers!')
-    }
+    // Markers added successfully (logging removed to prevent loops)
   }, [pois, getActivePOITypes])
 
   const toggleSidebar = useCallback(() => {

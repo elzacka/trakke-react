@@ -217,12 +217,12 @@ export function usePOIDataWithWeather(enableWeather: boolean = true) {
     }
   }, [fetchOSMData])
 
-  // Fetch weather data when POI data changes
+  // Fetch weather data when POI data changes - removed fetchWeatherForPOIs from deps to prevent infinite loops
   useEffect(() => {
     if (!enableWeather || state.loading || state.pois.length === 0) return
     
     fetchWeatherForPOIs(state.pois)
-  }, [state.pois, state.loading, enableWeather, fetchWeatherForPOIs])
+  }, [state.pois.length, state.loading, enableWeather]) // Use pois.length instead of full pois array
 
   // Clean up expired weather cache periodically
   useEffect(() => {
