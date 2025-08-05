@@ -1,12 +1,4 @@
-<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-  <!-- Light background for better visibility -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 -960 960 960">
   <rect width="16" height="16" rx="2" fill="#f8f9fa"/>
-  
-  <!-- Very simple, bold tree for 16x16 size -->
-  <!-- Tree crown (bold triangle) -->
-  <polygon points="8,2 5,9 11,9" fill="#19461A"/>
-  <!-- Smaller layer for depth -->
-  <polygon points="8,3 6,8 10,8" fill="#486A47"/>
-  <!-- Tree trunk (thick enough to be visible) -->
-  <rect x="7" y="9" width="2" height="5" fill="#8B4513"/>
+  <path d="M312-96v-144H48l153-240h-57l240-384 96 154 96-154 240 384h-57l153 240H648v144H504v-144h-48v144H312Zm362-216h106L628-552h58L576-728l-54 86 102 162h-57l107 168Zm-495 0h410L436-552h58L384-728 274-552h58L179-312Z" fill="#2c5530"/>
 </svg>
