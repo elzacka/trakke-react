@@ -543,7 +543,7 @@ export class OSMService {
       type = 'mountain_peaks'
     } else if (tags['piste:type'] || tags.route === 'ski') {
       type = 'ski_trails'
-    } else if (tags.leisure === 'swimming_area' || tags.natural === 'beach' || tags.amenity === 'swimming_pool') {
+    } else if (tags.leisure === 'swimming_area' || tags.amenity === 'swimming_pool') {
       type = 'swimming'
     } else if (tags.natural === 'beach') {
       type = 'beach'
@@ -551,7 +551,7 @@ export class OSMService {
       type = 'lakes_rivers'
     } else if (tags.sport === 'fishing' && tags.seasonal === 'winter') {
       type = 'ice_fishing'
-    } else if (tags.waterway === 'waterfall' || tags.natural === 'cave_entrance' || tags.tourism === 'viewpoint') {
+    } else if (tags.waterway === 'waterfall' || tags.natural === 'cave_entrance') {
       type = 'nature_gems'
     } else if (tags.tourism === 'viewpoint') {
       type = 'viewpoints'
