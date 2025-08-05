@@ -297,7 +297,7 @@ export function SearchBox({
           
           <div className="search-help" role="note">
             <small>
-              💡 Klikk i boksene nedenfor for å se på kartet.
+              💡 Du kan utvide kategoriene nedenfor og klikke i boksene for det du vil se på kartet.
             </small>
           </div>
         </div>
