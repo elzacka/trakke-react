@@ -17,14 +17,6 @@ interface SidebarProps {
   error: string | null
   onRefresh: () => void
   lastUpdated: Date | null
-  // Weather props (optional for backward compatibility)
-  weatherEnabled?: boolean
-  onToggleWeather?: () => void
-  poisWithWeather?: number
-  goodWeatherPOIs?: POI[]
-  hasWeatherData?: boolean
-  onRefreshWeather?: () => void
-  weatherLastUpdated?: Date | null
   // Heritage props
   heritageEnabled?: boolean
   onToggleHeritage?: () => void
@@ -46,13 +38,6 @@ export function Sidebar({
   error: _error,
   onRefresh: _onRefresh,
   lastUpdated: _lastUpdated,
-  weatherEnabled = false,
-  onToggleWeather,
-  poisWithWeather: _poisWithWeather = 0,
-  goodWeatherPOIs: _goodWeatherPOIs = [],
-  hasWeatherData: _hasWeatherData = false,
-  onRefreshWeather,
-  weatherLastUpdated,
   heritageEnabled = false,
   onToggleHeritage,
   heritageTotal = 0,
@@ -109,57 +94,6 @@ export function Sidebar({
             />
           </div>
 
-          {/* Weather Controls */}
-          {onToggleWeather && (
-            <div className="weather-section">
-              <button
-                onClick={onToggleWeather}
-                className={`weather-toggle ${weatherEnabled ? 'active' : ''}`}
-                style={{
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  backgroundColor: weatherEnabled ? '#2c5530' : '#e0e0e0',
-                  color: weatherEnabled ? 'white' : '#666',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  marginBottom: '8px',
-                  width: '100%'
-                }}
-              >
-                {weatherEnabled ? 'Se værdata' : 'Ikke se værdata'}
-              </button>
-
-              {weatherEnabled && onRefreshWeather && (
-                <button
-                  onClick={onRefreshWeather}
-                  style={{
-                    padding: '4px 8px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px',
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    marginTop: '4px',
-                    width: '100%'
-                  }}
-                >
-                  Oppdater værdata
-                </button>
-              )}
-              
-              {weatherEnabled && weatherLastUpdated && (
-                <>
-                  <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-                    Vær oppdatert: {weatherLastUpdated.toLocaleTimeString('nb-NO')}
-                  </p>
-                  <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-                    Status 5. aug: Appen er under arbeid. Suss, L.
-                  </p>
-                </>
-              )}
-            </div>
-          )}
 
           {/* Heritage Controls */}
           {onToggleHeritage && (

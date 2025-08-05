@@ -75,7 +75,6 @@ function createCustomPOIMarker(poiType: POIType): L.DivIcon {
 export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [_searchResult, setSearchResult] = useState<SearchResult | null>(null)
-  const [weatherEnabled, setWeatherEnabled] = useState(true) // Re-enabled now that OSM POIs work
   const [heritageEnabled, setHeritageEnabled] = useState(false) // Keep disabled - causes network errors
   
   // Initialize category state - all unchecked and collapsed by default
@@ -92,7 +91,7 @@ export function WorkingTrakkeApp() {
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
 
-  // Use combined POI data hook (outdoor + heritage + weather)
+  // Use combined POI data hook (outdoor + heritage, no weather)
   const {
     allPOIs: pois,
     outdoorPOIs: _outdoorPOIs,
@@ -100,16 +99,10 @@ export function WorkingTrakkeApp() {
     loading,
     error,
     lastUpdated,
-    weatherLastUpdated,
-    poisWithWeather,
-    hasWeatherData,
     heritageTotal,
     refreshOutdoorData,
-    refreshHeritageData,
-    refreshWeatherData,
-    getGoodWeatherPOIs
+    refreshHeritageData
   } = useCombinedPOIData({
-    weatherEnabled,
     heritageEnabled
   })
 
@@ -363,9 +356,6 @@ export function WorkingTrakkeApp() {
 
   // clearSearch function removed as it was unused
 
-  const toggleWeather = useCallback(() => {
-    setWeatherEnabled(prev => !prev)
-  }, [])
 
   const toggleHeritage = useCallback(() => {
     setHeritageEnabled(prev => !prev)
@@ -382,7 +372,6 @@ export function WorkingTrakkeApp() {
   // Filter POIs based on active categories
   const activePOITypes = getActivePOITypes()
   const filteredPOIs = pois.filter(poi => activePOITypes.has(poi.type))
-  const goodWeatherPOIs = getGoodWeatherPOIs()
   const combinedError = error
 
   return (
@@ -400,13 +389,6 @@ export function WorkingTrakkeApp() {
           error={combinedError}
           onRefresh={refreshData}
           lastUpdated={lastUpdated}
-          weatherEnabled={weatherEnabled}
-          onToggleWeather={toggleWeather}
-          poisWithWeather={poisWithWeather}
-          goodWeatherPOIs={goodWeatherPOIs}
-          hasWeatherData={hasWeatherData}
-          onRefreshWeather={refreshWeatherData}
-          weatherLastUpdated={weatherLastUpdated}
           heritageEnabled={heritageEnabled}
           onToggleHeritage={toggleHeritage}
           heritageTotal={heritageTotal}

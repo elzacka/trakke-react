@@ -1,11 +1,10 @@
-// Combined hook for outdoor recreation POIs, weather data, and heritage POIs
+// Combined hook for outdoor recreation POIs and heritage POIs (weather removed)
 import { useMemo } from 'react'
-import { usePOIDataWithWeather } from './usePOIDataWithWeather'
+import { usePOIData } from './usePOIData'
 import { useHeritageData } from './useHeritageData'
 import { POI } from '../data/pois'
 
 interface UseCombinedPOIDataOptions {
-  weatherEnabled: boolean
   heritageEnabled: boolean
 }
 
@@ -25,14 +24,6 @@ interface UseCombinedPOIDataReturn {
   heritageError: string | null
   heritageTotal: number
   
-  // Weather data
-  weatherLoading: boolean
-  weatherError: string | null
-  poisWithWeather: number
-  hasWeatherData: boolean
-  goodWeatherPOIs: POI[]
-  weatherLastUpdated: Date | null
-  
   // Combined state
   loading: boolean
   error: string | null
@@ -41,30 +32,20 @@ interface UseCombinedPOIDataReturn {
   // Actions
   refreshOutdoorData: () => void
   refreshHeritageData: () => Promise<void>
-  refreshWeatherData: () => void
-  getGoodWeatherPOIs: () => POI[]
 }
 
 export function useCombinedPOIData({
-  weatherEnabled,
-  heritageEnabled: _heritageEnabled
+  heritageEnabled
 }: UseCombinedPOIDataOptions): UseCombinedPOIDataReturn {
   
-  // Outdoor recreation POIs with weather
+  // Outdoor recreation POIs (no weather)
   const {
     pois: outdoorPOIs,
     loading: outdoorLoading,
-    weatherLoading,
     error: outdoorError,
-    weatherError,
     lastUpdated: outdoorLastUpdated,
-    weatherLastUpdated,
-    poisWithWeather,
-    hasWeatherData,
-    refreshData: refreshOutdoorData,
-    refreshWeatherData,
-    getGoodWeatherPOIs
-  } = usePOIDataWithWeather(weatherEnabled)
+    refreshData: refreshOutdoorData
+  } = usePOIData()
 
   // Heritage POIs
   const {
@@ -75,31 +56,36 @@ export function useCombinedPOIData({
     refreshData: refreshHeritageData,
     totalHeritage: heritageTotal
   } = useHeritageData({ 
-    enabled: false, // Force disabled to prevent CORS errors
+    enabled: heritageEnabled,
     bbox: [4.5, 57.8, 31.5, 71.2] // Hele Norge
   })
 
   // Combine all POIs
   const allPOIs = useMemo(() => {
-    return [...outdoorPOIs, ...heritagePOIs]
-  }, [outdoorPOIs, heritagePOIs])
+    const combined = [...outdoorPOIs]
+    
+    if (heritageEnabled) {
+      combined.push(...heritagePOIs)
+    }
+    
+    return combined
+  }, [outdoorPOIs, heritagePOIs, heritageEnabled])
 
-  // Combined loading state - exclude weather loading to prevent blocking
-  const loading = outdoorLoading || heritageLoading
+  // Combined loading state
+  const loading = outdoorLoading || (heritageEnabled && heritageLoading)
   
-  // Removed logging to prevent console spam
-
   // Combined error state
-  const error = useMemo(() => {
-    const errors = [outdoorError, heritageError, weatherError].filter(Boolean)
-    return errors.length > 0 ? errors.join('; ') : null
-  }, [outdoorError, heritageError, weatherError])
-
-  // Combined last updated
+  const error = outdoorError || (heritageEnabled ? heritageError : null)
+  
+  // Most recent update time
   const lastUpdated = useMemo(() => {
-    const dates = [outdoorLastUpdated, heritageLastUpdated].filter(Boolean) as Date[]
-    return dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))) : null
-  }, [outdoorLastUpdated, heritageLastUpdated])
+    const dates = [outdoorLastUpdated, heritageEnabled ? heritageLastUpdated : null]
+      .filter((date): date is Date => date !== null)
+    
+    return dates.length > 0 
+      ? new Date(Math.max(...dates.map(d => d.getTime())))
+      : null
+  }, [outdoorLastUpdated, heritageLastUpdated, heritageEnabled])
 
   return {
     // Combined data
@@ -117,14 +103,6 @@ export function useCombinedPOIData({
     heritageError,
     heritageTotal,
     
-    // Weather data
-    weatherLoading,
-    weatherError,
-    poisWithWeather,
-    hasWeatherData,
-    goodWeatherPOIs: getGoodWeatherPOIs(),
-    weatherLastUpdated,
-    
     // Combined state
     loading,
     error,
@@ -132,8 +110,6 @@ export function useCombinedPOIData({
     
     // Actions
     refreshOutdoorData,
-    refreshHeritageData,
-    refreshWeatherData,
-    getGoodWeatherPOIs
+    refreshHeritageData
   }
 }

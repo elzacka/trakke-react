@@ -59,14 +59,6 @@ export interface POI {
   metadata?: POIMetadata
   api_source?: 'ut_no' | 'osm' | 'kartverket' | 'manual' | 'riksantikvaren'
   last_updated?: string
-  weather?: {
-    temperature: number
-    symbolCode: string
-    description: string
-    precipitation: number
-    windSpeed: number
-    lastUpdated: string
-  }
 }
 
 export interface CategoryConfig {
