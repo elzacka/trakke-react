@@ -99,7 +99,8 @@ export function useHeritageData({
     } finally {
       setLoading(false)
     }
-  }, [enabled, bbox, convertToPOI]) // Include all dependencies for consistency
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]) // bbox and convertToPOI are stable - including them causes infinite loops
 
   // Initial load
   useEffect(() => {
