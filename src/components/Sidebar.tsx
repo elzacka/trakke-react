@@ -87,6 +87,9 @@ export function Sidebar({
               </svg>
               Tråkke
             </h1>
+            <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
+              App under arbeid...
+            </p>
           </div>
 
           <div className="search-section">
