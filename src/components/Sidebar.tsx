@@ -127,7 +127,7 @@ export function Sidebar({
                   width: '100%'
                 }}
               >
-                {weatherEnabled ? 'Se vær' : '☁️ Vær av'}
+                {weatherEnabled ? '☁️ Vær på' : '☁️ Vær av'}
               </button>
 
               {weatherEnabled && onRefreshWeather && (
@@ -144,17 +144,19 @@ export function Sidebar({
                     width: '100%'
                   }}
                 >
-                  🔄 Oppdater Vær
+                  🔄 Oppdater vær
                 </button>
               )}
               
               {weatherEnabled && weatherLastUpdated && (
-                <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-                  Vær oppdatert: {weatherLastUpdated.toLocaleTimeString('nb-NO')}
-                </p>
-                <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-                  Status 5/8-25: Appen er under utvikling. Suss, Lene.
-                </p>
+                <>
+                  <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
+                    Vær oppdatert: {weatherLastUpdated.toLocaleTimeString('nb-NO')}
+                  </p>
+                  <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
+                    Status 5/8-25: Appen er under utvikling. Suss, Lene.
+                  </p>
+                </>
               )}
             </div>
           )}
