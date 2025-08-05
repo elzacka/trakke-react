@@ -1,16 +1,33 @@
 // src/components/Map.tsx - Kart med søkemarkør-funksjonalitet
-import React, { useEffect, useImperativeHandle, forwardRef, useState } from 'react'
+import React, { useEffect, useImperativeHandle, forwardRef, useState, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import * as L from 'leaflet'
 import { POI, categoryConfig } from '../data/pois'
 import { SearchResult } from '../services/searchService'
-import { MapRef } from '../App'
+import { WeatherIcon } from './Weather/WeatherIcon'
 import './Map.css'
+
+// Fix Leaflet default marker icons issue
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
+
+// MapRef interface for component communication
+export interface MapRef {
+  flyTo: (lat: number, lng: number, zoom?: number) => void
+  addSearchMarker: (result: SearchResult) => void
+  clearSearchMarker: () => void
+}
 
 interface MapProps {
   pois: POI[]
   sidebarCollapsed: boolean
   loading: boolean
+  searchResult?: SearchResult | null
+  onClearSearchResult?: () => void
 }
 
 // Custom hook for handling map resize when sidebar toggles
@@ -211,9 +228,17 @@ const getSearchTypeDisplayName = (type: string): string => {
   return typeNames[type as keyof typeof typeNames] || 'Ukjent'
 }
 
-export const Map = forwardRef<MapRef, MapProps>(({ pois, sidebarCollapsed, loading }, ref) => {
+export const Map = forwardRef<MapRef, MapProps>(({ 
+  pois, 
+  sidebarCollapsed, 
+  loading, 
+  searchResult = null, 
+  onClearSearchResult 
+}, ref) => {
   const [map, setMap] = useState<L.Map | null>(null)
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
+  
+  // Generate unique key to prevent "Map container is already initialized" error
+  const mapKey = useMemo(() => Math.random().toString(36), [])
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -225,21 +250,41 @@ export const Map = forwardRef<MapRef, MapProps>(({ pois, sidebarCollapsed, loadi
         })
       }
     },
-    addSearchMarker: (result: SearchResult) => {
-      setSearchResult(result)
+    addSearchMarker: (_result: SearchResult) => {
+      // Search marker is now handled by parent via props
     },
     clearSearchMarker: () => {
-      setSearchResult(null)
+      onClearSearchResult?.()
     }
-  }), [map])
+  }), [map, onClearSearchResult])
+
+  // Map error handling is now managed by ErrorBoundary in parent
 
   return (
     <div className="map-container">
+      {loading && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 1000,
+          background: 'white',
+          padding: '20px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+        }}>
+          Laster kartdata...
+        </div>
+      )}
+      
       <MapContainer
+        key={mapKey}
         center={[59.4, 7.4]}
         zoom={10}
         className="leaflet-map"
         scrollWheelZoom={true}
+        style={{ height: '100%', width: '100%', minHeight: '500px' }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -252,7 +297,7 @@ export const Map = forwardRef<MapRef, MapProps>(({ pois, sidebarCollapsed, loadi
         <MapController 
           onMapReady={setMap}
           searchResult={searchResult}
-          clearSearchResult={() => setSearchResult(null)}
+          clearSearchResult={onClearSearchResult || (() => {})}
         />
         
         {!loading && pois.map(poi => {
@@ -266,22 +311,112 @@ export const Map = forwardRef<MapRef, MapProps>(({ pois, sidebarCollapsed, loadi
             >
               <Popup>
                 <div style={{ minWidth: '200px' }}>
-                  <h3 style={{ 
-                    margin: '0 0 10px 0', 
-                    color: config.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px'
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'flex-start',
+                    marginBottom: '10px'
                   }}>
-                    <span style={{ 
-                      fontFamily: 'Material Symbols Outlined',
-                      fontSize: '20px'
+                    <h3 style={{ 
+                      margin: '0', 
+                      color: config.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      flex: '1'
                     }}>
-                      {config.icon}
-                    </span>
-                    {poi.name}
-                  </h3>
+                      <span style={{ 
+                        fontFamily: 'Material Symbols Outlined',
+                        fontSize: '20px'
+                      }}>
+                        {config.icon}
+                      </span>
+                      {poi.name}
+                    </h3>
+                    
+                    {poi.weather && (
+                      <div style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        gap: '2px',
+                        marginLeft: '10px'
+                      }}>
+                        <WeatherIcon 
+                          symbolCode={poi.weather.symbolCode} 
+                          size="medium"
+                          showMaterialIcon={false}
+                        />
+                        <span style={{ 
+                          fontSize: '0.9rem', 
+                          fontWeight: 'bold',
+                          color: '#333'
+                        }}>
+                          {poi.weather.temperature}°C
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
                   <p style={{ margin: '5px 0' }}>{poi.description}</p>
+                  
+                  {poi.weather && (
+                    <div style={{ 
+                      background: '#f8f9fa', 
+                      padding: '8px', 
+                      borderRadius: '4px',
+                      margin: '8px 0',
+                      fontSize: '0.85rem'
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px',
+                        marginBottom: '4px'
+                      }}>
+                        <span style={{ 
+                          fontFamily: 'Material Symbols Outlined',
+                          fontSize: '14px',
+                          color: '#666'
+                        }}>
+                          wb_sunny
+                        </span>
+                        <strong>Vær:</strong> {poi.weather.description}
+                      </div>
+                      
+                      {poi.weather.precipitation > 0 && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '5px',
+                          color: '#3498db'
+                        }}>
+                          <span style={{ 
+                            fontFamily: 'Material Symbols Outlined',
+                            fontSize: '14px'
+                          }}>
+                            water_drop
+                          </span>
+                          <span>Nedbør: {poi.weather.precipitation}mm</span>
+                        </div>
+                      )}
+                      
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px',
+                        color: '#666'
+                      }}>
+                        <span style={{ 
+                          fontFamily: 'Material Symbols Outlined',
+                          fontSize: '14px'
+                        }}>
+                          air
+                        </span>
+                        <span>Vind: {poi.weather.windSpeed} km/t</span>
+                      </div>
+                    </div>
+                  )}
                   
                   {poi.metadata && Object.entries(poi.metadata).map(([key, value]) => (
                     <p key={key} style={{ margin: '3px 0', fontSize: '0.9rem' }}>

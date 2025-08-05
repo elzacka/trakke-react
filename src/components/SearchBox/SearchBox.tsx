@@ -297,7 +297,7 @@ export function SearchBox({
           
           <div className="search-help" role="note">
             <small>
-              💡 Tips: Søk på stedsnavn, koordinater (59.123,7.456) eller POI-navn
+              💡 Klikk i kategoriboksene under for å vise på kartet.
             </small>
           </div>
         </div>

@@ -1,0 +1,90 @@
+// Manual Leaflet implementation without react-leaflet
+import React, { useEffect, useRef } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+// Fix Leaflet default marker icons issue
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
+
+export function ManualMapTest() {
+  const mapRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<L.Map | null>(null)
+
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    // Clean up existing map if it exists
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove()
+      mapInstanceRef.current = null
+    }
+
+    // Create map manually
+    try {
+      const map = L.map(mapRef.current).setView([59.4, 7.4], 10)
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map)
+
+      mapInstanceRef.current = map
+
+      console.log('✅ Manual Leaflet map created successfully')
+    } catch (error) {
+      console.error('❌ Error creating manual map:', error)
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove()
+        mapInstanceRef.current = null
+      }
+    }
+  }, [])
+
+  return (
+    <div style={{ 
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif',
+      backgroundColor: '#f0f0f0',
+      minHeight: '100vh'
+    }}>
+      <h1 style={{ 
+        color: 'green', 
+        fontSize: '36px', 
+        textAlign: 'center' 
+      }}>
+        🗺️ MANUAL LEAFLET TEST
+      </h1>
+      
+      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <p>Using pure Leaflet without react-leaflet components</p>
+        <p>This should avoid the "already initialized" error</p>
+      </div>
+      
+      <div 
+        ref={mapRef}
+        style={{
+          width: '800px',
+          height: '500px',
+          border: '3px solid green',
+          margin: '20px auto',
+          borderRadius: '8px'
+        }}
+      />
+      
+      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        <p>✅ Manual Leaflet implementation</p>
+        <p>Should show Norwegian terrain without React-Leaflet issues</p>
+      </div>
+    </div>
+  )
+}
+
+export default ManualMapTest

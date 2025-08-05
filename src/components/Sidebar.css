@@ -1,5 +1,6 @@
 .sidebar {
   width: 300px;
+  height: 100vh; /* Full viewport height */
   background: white;
   padding: 1rem;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
@@ -43,8 +44,56 @@
   background: rgba(44, 85, 48, 0.1);
 }
 
+.title-section {
+  margin-bottom: 1.5rem;
+}
+
+.sidebar-title {
+  margin: 0;
+  color: #2c5530;
+  font-size: 1.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-section {
+  margin-bottom: 1.5rem;
+}
+
 .filter-section {
   margin-bottom: 1.5rem;
+}
+
+.hierarchical-category-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.category-item:hover {
+  background-color: #f0f8f0;
+}
+
+.expand-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subcategories {
+  border-left: 2px solid #e0e0e0;
+  margin-left: 12px;
+  padding-left: 8px;
 }
 
 .filter-section h3 {

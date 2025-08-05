@@ -1,0 +1,137 @@
+// Debug component with error catching
+import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { MapContainer, TileLayer } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+// Fix Leaflet default marker icons issue
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
+
+// Error boundary component
+class MapErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: any) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('🚨 MapContainer Error:', error)
+    console.error('🚨 Error Info:', errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          padding: '20px',
+          backgroundColor: '#ffe0e0',
+          border: '2px solid red',
+          borderRadius: '8px',
+          margin: '20px 0'
+        }}>
+          <h3>🚨 MapContainer Error Caught!</h3>
+          <p><strong>Error:</strong> {this.state.error?.message}</p>
+          <p><strong>Stack:</strong></p>
+          <pre style={{ fontSize: '12px', overflow: 'auto' }}>
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
+export function MapTest() {
+  console.log('🧪 Debug component rendering...')
+  
+  // Create a unique container ID that changes each time
+  const containerId = React.useMemo(() => `map-${Date.now()}-${Math.random().toString(36)}`, [])
+  
+  React.useEffect(() => {
+    // Clean up any existing maps when component mounts
+    const containers = document.querySelectorAll('.leaflet-container')
+    containers.forEach(container => {
+      if ((container as any)._leaflet_id) {
+        try {
+          const map = (container as any)._leaflet_map
+          if (map) {
+            map.remove()
+          }
+        } catch (e) {
+          console.log('Cleaned up old map container')
+        }
+      }
+    })
+  }, [])
+  
+  return (
+    <div style={{ 
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif',
+      backgroundColor: '#f0f0f0',
+      minHeight: '100vh'
+    }}>
+      <h1 style={{ 
+        color: 'green', 
+        fontSize: '36px', 
+        textAlign: 'center' 
+      }}>
+        🧪 LEAFLET FIXED TEST
+      </h1>
+      
+      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+        <p>Fixed: Using unique key to prevent "already initialized" error</p>
+        <p>Container ID: {containerId}</p>
+      </div>
+      
+      <div 
+        id={containerId}
+        key={containerId}
+        style={{
+          width: '800px',
+          height: '500px',
+          border: '3px solid red',
+          margin: '20px auto',
+          backgroundColor: 'lightblue'
+        }}
+      >
+        <MapErrorBoundary>
+          <MapContainer
+            center={[59.4, 7.4]}
+            zoom={10}
+            style={{ 
+              width: '100%', 
+              height: '100%'
+            }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </MapContainer>
+        </MapErrorBoundary>
+      </div>
+      
+      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        <p>✅ Should now show working OpenStreetMap!</p>
+        <p>Look for Norwegian terrain in the red-bordered area above</p>
+      </div>
+    </div>
+  )
+}
+
+export default MapTest

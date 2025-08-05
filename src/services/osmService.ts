@@ -14,12 +14,12 @@ export interface OSMResponse {
   elements: OSMElement[]
 }
 
-// Bounding box for Bykle og Valle kommuner
-const BYKLE_VALLE_BBOX = {
-  south: 59.0,   // Sør-grense
-  west: 6.8,     // Vest-grense  
-  north: 59.8,   // Nord-grense
-  east: 8.2      // Øst-grense
+// Bounding box for hele Norge
+const NORWAY_BBOX = {
+  south: 57.8,   // Sør-Norge (Lindesnes)
+  west: 4.5,     // Vest-Norge (inkludert Shetland)  
+  north: 71.2,   // Nord-Norge (Nordkapp)
+  east: 31.5     // Øst-Norge (Finnmark grense til Russland)
 }
 
 export class OSMService {
@@ -56,7 +56,7 @@ export class OSMService {
    * Bygger Overpass QL query for camping-relaterte POI-er
    */
   private buildCampingQuery(): string {
-    const { south, west, north, east } = BYKLE_VALLE_BBOX
+    const { south, west, north, east } = NORWAY_BBOX
     
     return `
       [out:json][timeout:25];
@@ -153,18 +153,19 @@ export class OSMService {
     const lon = element.lon || element.center?.lon || 0
     const tags = element.tags
     
-    // Bestem hovedtype basert på egnethet - med riktig type-casting
+    // Determine main type based on suitability and tags using new naming
     let type: POIType = 'camping_site'
-    if (suitability.hammockSuitable && suitability.confidence > 0.6) {
-      type = 'hammock_spot'
-    } else if (suitability.underStarsSuitable && suitability.confidence > 0.6) {
-      type = 'under_stars'
-    } else if (suitability.tentSuitable) {
-      type = 'tent_spot'
-    }
     
-    if (tags.amenity === 'shelter') type = 'wilderness_shelter'
-    if (tags.tourism === 'wilderness_hut') type = 'wilderness_shelter'
+    // Check specific amenity/tourism tags first
+    if (tags.amenity === 'shelter' || tags.tourism === 'wilderness_hut') {
+      type = 'wilderness_shelter'
+    } else if (tags.tourism === 'camp_site') {
+      type = 'camping_site'
+    } else if (suitability.hammockSuitable && suitability.confidence > 0.6) {
+      type = 'wild_camping'  // Previously hammock_spot
+    } else if (suitability.tentSuitable) {
+      type = 'tent_area'     // Previously tent_spot
+    }
     
     // Lag CampingMetadata med riktige typer
     const campingMetadata: CampingMetadata = {
@@ -201,16 +202,37 @@ export class OSMService {
     if (tags.name) return tags.name
     
     const typeNames: Record<POIType, string> = {
+      // Friluftsliv
       hiking: 'Tursti',
+      mountain_peaks: 'Fjelltopp',
+      ski_trails: 'Skiløype',
       swimming: 'Badeplass',
+      beach: 'Strand',
+      lakes_rivers: 'Vannkilde',
+      ice_fishing: 'Isfiskeplass',
+      // Overnatting
+      staffed_huts: 'Serverte hytte',
+      self_service_huts: 'Selvbetjent hytte',
+      wilderness_shelter: 'Gapahuk',
       camping_site: 'Campingplass',
-      tent_spot: 'Teltplass',
-      hammock_spot: 'Hengekøyeplass',
-      under_stars: 'Stjernehimmel-spot',
-      wilderness_shelter: 'Vindskjul',
-      waterfalls: 'Foss',
+      tent_area: 'Teltområde',
+      wild_camping: 'Fri camping',
+      // Naturopplevelser
+      nature_gems: 'Naturperle',
       viewpoints: 'Utsiktspunkt',
-      history: 'Historisk sted'
+      cultural_landscapes: 'Kulturlandskap',
+      // Kulturarv
+      archaeological: 'Fornminne',
+      protected_buildings: 'Vernebygg',
+      industrial_heritage: 'Teknisk kulturminne',
+      churches: 'Kirke',
+      war_memorials: 'Krigsminne',
+      peace_monuments: 'Fredsmonument',
+      underwater_heritage: 'Undervannsarv',
+      intangible_heritage: 'Kulturverdi',
+      // Service
+      mountain_service: 'Serveringssted',
+      accessible_sites: 'Tilgjengelig sted'
     }
     
     return typeNames[type] || 'Ukjent plass'

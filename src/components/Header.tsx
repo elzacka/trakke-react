@@ -1,17 +1,11 @@
-// src/components/Header.tsx - Header med integrert søkefelt
+// src/components/Header.tsx - Simplified header without search
 
 import React from 'react'
-import { SearchBox } from './SearchBox/SearchBox'
-import { SearchResult } from '../services/searchService'
-import { POI } from '../data/pois'
 import './Header.css'
 
-interface HeaderProps {
-  pois: POI[]
-  onLocationSelect: (result: SearchResult) => void
-}
+interface HeaderProps {}
 
-export function Header({ pois, onLocationSelect }: HeaderProps) {
+export function Header({}: HeaderProps) {
   return (
     <div className="header">
       <div className="header-content">
@@ -29,15 +23,6 @@ export function Header({ pois, onLocationSelect }: HeaderProps) {
             Tråkke
           </h1>
           <p className="tagline">Oppdag Bykle og Valle med turskoa på (app under utvikling)</p>
-        </div>
-        
-        <div className="search-wrapper">
-          <SearchBox 
-            pois={pois}
-            onLocationSelect={onLocationSelect}
-            placeholder="Søk utgangspunkt, koordinater eller sted..."
-            className="header-search"
-          />
         </div>
       </div>
     </div>

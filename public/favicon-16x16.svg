@@ -1,0 +1,12 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- Light background for better visibility -->
+  <rect width="16" height="16" rx="2" fill="#f8f9fa"/>
+  
+  <!-- Very simple, bold tree for 16x16 size -->
+  <!-- Tree crown (bold triangle) -->
+  <polygon points="8,2 5,9 11,9" fill="#19461A"/>
+  <!-- Smaller layer for depth -->
+  <polygon points="8,3 6,8 10,8" fill="#486A47"/>
+  <!-- Tree trunk (thick enough to be visible) -->
+  <rect x="7" y="9" width="2" height="5" fill="#8B4513"/>
+</svg>

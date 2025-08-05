@@ -1,45 +1,64 @@
 import React from 'react'
-import { POI, POIType, categoryConfig } from '../data/pois'
+import { POI, POIType, categoryConfig, categoryTree, CategoryState } from '../data/pois'
+import { SearchBox } from './SearchBox/SearchBox'
+import { SearchResult } from '../services/searchService'
+import { HierarchicalCategoryFilter } from './HierarchicalCategoryFilter'
 import './Sidebar.css'
 
 interface SidebarProps {
   collapsed: boolean
   onToggle: () => void
-  activeCategories: Set<POIType>
-  onToggleCategory: (categoryId: POIType) => void
+  categoryState: CategoryState
+  onCategoryToggle: (nodeId: string) => void
+  onExpandToggle: (nodeId: string) => void
   filteredPOIs: POI[]
   totalPOIs: number
   loading: boolean
   error: string | null
   onRefresh: () => void
   lastUpdated: Date | null
+  // Weather props (optional for backward compatibility)
+  weatherEnabled?: boolean
+  onToggleWeather?: () => void
+  poisWithWeather?: number
+  goodWeatherPOIs?: POI[]
+  hasWeatherData?: boolean
+  onRefreshWeather?: () => void
+  weatherLastUpdated?: Date | null
+  // Heritage props
+  heritageEnabled?: boolean
+  onToggleHeritage?: () => void
+  heritageTotal?: number
+  // Search props
+  pois: POI[]
+  onLocationSelect: (result: SearchResult) => void
 }
 
 export function Sidebar({ 
   collapsed, 
   onToggle, 
-  activeCategories, 
-  onToggleCategory,
+  categoryState,
+  onCategoryToggle,
+  onExpandToggle,
   filteredPOIs,
   totalPOIs,
   loading,
   error,
   onRefresh,
-  lastUpdated
+  lastUpdated,
+  weatherEnabled = false,
+  onToggleWeather,
+  poisWithWeather = 0,
+  goodWeatherPOIs = [],
+  hasWeatherData = false,
+  onRefreshWeather,
+  weatherLastUpdated,
+  heritageEnabled = false,
+  onToggleHeritage,
+  heritageTotal = 0,
+  pois,
+  onLocationSelect
 }: SidebarProps) {
-  // Oppdatert med korrekte POIType verdier
-  const categories: POIType[] = [
-    'hiking', 
-    'swimming', 
-    'camping_site',
-    'tent_spot',
-    'hammock_spot',
-    'under_stars',
-    'wilderness_shelter',
-    'waterfalls', 
-    'viewpoints', 
-    'history'
-  ]
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -55,99 +74,114 @@ export function Sidebar({
 
       {!collapsed && (
         <div className="sidebar-content">
+          <div className="title-section">
+            <h1 className="sidebar-title">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                height="28px" 
+                viewBox="0 -960 960 960" 
+                width="28px" 
+                fill="#2c5530"
+              >
+                <path d="M280-80v-160H0l154-240H80l280-400 120 172 120-172 280 400h-74l154 240H680v160H520v-160h-80v160H280Zm389-240h145L659-560h67L600-740l-71 101 111 159h-74l103 160Zm-523 0h428L419-560h67L360-740 234-560h67L146-320Zm0 0h155-67 252-67 155-428Zm523 0H566h74-111 197-67 155-145Zm-149 80h160-160Zm201 0Z"/>
+              </svg>
+              Tråkke
+            </h1>
+          </div>
+
+          <div className="search-section">
+            <SearchBox 
+              pois={pois}
+              onLocationSelect={onLocationSelect}
+              placeholder="Søk etter sted, koordinater etc."
+            />
+          </div>
+
           <div className="filter-section">
-            <h3>
-              <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '18px', marginRight: '8px' }}>
-                map
-              </span>
-              Se/ta bort på kart
-            </h3>
-            
-            <div className="filter-group">
-              {categories.map(categoryId => {
-                const config = categoryConfig[categoryId]
-                return (
-                  <div key={categoryId} className="filter-item">
-                    <input 
-                      type="checkbox" 
-                      id={categoryId}
-                      checked={activeCategories.has(categoryId)}
-                      onChange={() => onToggleCategory(categoryId)}
-                    />
-                    <div 
-                      className="icon-preview" 
-                      style={{ backgroundColor: config.color }}
-                    >
-                      <span style={{ 
-                        fontFamily: 'Material Symbols Outlined', 
-                        fontSize: '16px', 
-                        color: 'white' 
-                      }}>
-                        {config.icon}
-                      </span>
-                    </div>
-                    <label htmlFor={categoryId}>{config.name}</label>
-                  </div>
-                )
-              })}
-            </div>
+            <HierarchicalCategoryFilter
+              categoryTree={categoryTree}
+              categoryState={categoryState}
+              onCategoryToggle={onCategoryToggle}
+              onExpandToggle={onExpandToggle}
+            />
           </div>
 
-          <div className="legend">
-            <h4>
-              <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '18px', marginRight: '8px' }}>
-                info
-              </span>
-              Veiledning
-            </h4>
-            <p>Klikk på ikonene i kartet for mer info om hvert punkt. Du kan zoome og dra kartet for å utforske området.</p>
-          </div>
+          {/* Weather Controls */}
+          {onToggleWeather && (
+            <div className="weather-section">
+              <button
+                onClick={onToggleWeather}
+                className={`weather-toggle ${weatherEnabled ? 'active' : ''}`}
+                style={{
+                  padding: '8px 12px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: weatherEnabled ? '#2c5530' : '#e0e0e0',
+                  color: weatherEnabled ? 'white' : '#666',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  marginBottom: '8px',
+                  width: '100%'
+                }}
+              >
+                {weatherEnabled ? 'Se vær' : '☁️ Vær av'}
+              </button>
 
-          <div className="stats">
-            <p><strong>Synlige punkter:</strong> {filteredPOIs.length}</p>
-            <p><strong>Totalt i området:</strong> {totalPOIs}</p>
-            
-            {loading && (
-              <p style={{ color: '#2c5530', fontStyle: 'italic' }}>
-                <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px', marginRight: '4px' }}>
-                  refresh
-                </span>
-                Laster data...
-              </p>
-            )}
-            
-            {error && (
-              <div style={{ color: '#d32f2f', marginTop: '0.5rem' }}>
-                <p style={{ margin: '0', fontSize: '0.85rem' }}>
-                  <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px', marginRight: '4px' }}>
-                    error
-                  </span>
-                  Feil: {error}
-                </p>
-                <button 
-                  onClick={onRefresh}
+              {weatherEnabled && onRefreshWeather && (
+                <button
+                  onClick={onRefreshWeather}
                   style={{
-                    background: 'none',
-                    border: '1px solid #d32f2f',
-                    color: '#d32f2f',
-                    padding: '0.25rem 0.5rem',
+                    padding: '4px 8px',
+                    border: '1px solid #ccc',
                     borderRadius: '4px',
-                    fontSize: '0.8rem',
+                    backgroundColor: 'white',
                     cursor: 'pointer',
-                    marginTop: '0.25rem'
+                    fontSize: '12px',
+                    marginTop: '4px',
+                    width: '100%'
                   }}
                 >
-                  Prøv igjen
+                  🔄 Oppdater Vær
                 </button>
-              </div>
-            )}
-            
-            {lastUpdated && !loading && (
-              <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
-                Sist oppdatert: {lastUpdated.toLocaleTimeString('no-NO')}
-              </p>
-            )}
-          </div>
+              )}
+              
+              {weatherEnabled && weatherLastUpdated && (
+                <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
+                  Vær oppdatert: {weatherLastUpdated.toLocaleTimeString('nb-NO')}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Heritage Controls */}
+          {onToggleHeritage && (
+            <div className="heritage-section">
+              <button
+                onClick={onToggleHeritage}
+                className={`heritage-toggle ${heritageEnabled ? 'active' : ''}`}
+                style={{
+                  padding: '8px 12px',
+                  border: 'none',
+                  borderRadius: '6px',
+                  backgroundColor: heritageEnabled ? '#8B4B8B' : '#e0e0e0',
+                  color: heritageEnabled ? 'white' : '#666',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  marginBottom: '8px',
+                  width: '100%'
+                }}
+              >
+                {heritageEnabled ? '🏛️ Kulturarv på' : '🏛️ Kulturarv av'}
+              </button>
+
+              {heritageEnabled && heritageTotal > 0 && (
+                <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
+                  Kulturminner: {heritageTotal}
+                </p>
+              )}
+            </div>
+          )}
+
         </div>
       )}
     </aside>

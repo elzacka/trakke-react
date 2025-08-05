@@ -1,0 +1,15 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Light background for better visibility -->
+  <rect width="32" height="32" rx="4" fill="#f8f9fa"/>
+  
+  <!-- Simple, bold tree design that will be visible at small sizes -->
+  <!-- Tree crown (large, bold triangle) -->
+  <polygon points="16,6 10,18 22,18" fill="#19461A" stroke="#19461A" stroke-width="1"/>
+  <!-- Second layer for depth -->
+  <polygon points="16,8 11,16 21,16" fill="#486A47" stroke="#486A47" stroke-width="1"/>
+  <!-- Tree trunk (thick and visible) -->
+  <rect x="14" y="18" width="4" height="8" fill="#8B4513"/>
+  
+  <!-- Add a small highlight for dimension -->
+  <polygon points="16,8 13,14 19,14" fill="#5a8a5b" stroke="#5a8a5b" stroke-width="1"/>
+</svg>

@@ -12,7 +12,7 @@ export interface POIDataState {
 
 export function usePOIData() {
   const [state, setState] = useState<POIDataState>({
-    pois: manualPoisData, // Start med manuelle data umiddelbart
+    pois: [], // Start with empty array - no manual data
     loading: false,
     error: null,
     lastUpdated: null
@@ -28,7 +28,7 @@ export function usePOIData() {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
-      console.log('🗺️ Henter camping-data fra OpenStreetMap...')
+      // Fetching camping data from OpenStreetMap
       
       // Timeout for API call (25 sekunder som i query + buffer)
       const timeoutPromise = new Promise<never>((_, reject) =>
@@ -40,7 +40,7 @@ export function usePOIData() {
       // Race mellom API call og timeout
       const osmElements = await Promise.race([osmDataPromise, timeoutPromise])
       
-      console.log(`📍 Fant ${osmElements.length} OSM elementer`)
+      // Found OSM elements
       
       const osmPois: POI[] = []
       
@@ -70,12 +70,12 @@ export function usePOIData() {
         }
       }
       
-      console.log(`✅ Konverterte ${osmPois.length} egnede camping-spotter`)
+      // Converted suitable camping spots
       
-      // Kombiner manuelle og OSM data
-      const allPois = [...manualPoisData, ...osmPois]
+      // Use only OSM data (no manual POIs)
+      const allPois = osmPois
       
-      // Oppdater global state (optional, kan fjernes hvis ikke nødvendig)
+      // Update global state
       updatePoisData(osmPois)
       
       setState({
@@ -112,7 +112,7 @@ export function usePOIData() {
   }, [osmService])
 
   const refreshData = useCallback(() => {
-    console.log('🔄 Manuell refresh av OSM data...')
+    // Manual refresh of OSM data
     fetchOSMData()
   }, [fetchOSMData])
 
