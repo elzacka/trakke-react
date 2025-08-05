@@ -339,13 +339,13 @@ export const categoryTree: CategoryNode[] = [
       },
       {
         id: 'tent_area',
-        name: 'Egnet for telt',
+        name: 'Teltplasser',
         parent: 'accommodation',
         poiTypes: ['tent_area']
       },
       {
         id: 'wild_camping',
-        name: 'Egnet for hengekøye',
+        name: 'Hengekøyeplasser',
         parent: 'accommodation',
         poiTypes: ['wild_camping']
       }
