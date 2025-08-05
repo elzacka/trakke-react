@@ -106,10 +106,10 @@ export function useHeritageData({
     fetchHeritageData()
   }, [fetchHeritageData])
 
-  // Refresh function
+  // Refresh function - include missing dependencies
   const refreshData = useCallback(async () => {
     await fetchHeritageData()
-  }, [fetchHeritageData])
+  }, [fetchHeritageData, bbox, convertToPOI]) // Include all dependencies to satisfy ESLint
 
   return {
     heritagePOIs,

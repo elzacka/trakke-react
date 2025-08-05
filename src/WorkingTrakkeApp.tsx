@@ -17,7 +17,60 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-// Unused helper functions removed during popup fix
+// Create custom POI markers with Material Icons
+function createCustomPOIMarker(poiType: POIType): L.DivIcon {
+  const config = categoryConfig[poiType]
+  if (!config) {
+    return L.divIcon({
+      html: `
+        <div style="
+          background: #666;
+          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          font-family: 'Material Symbols Outlined';
+          font-size: 18px;
+          cursor: pointer;
+        ">help</div>
+      `,
+      className: 'custom-poi-marker',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16]
+    })
+  }
+
+  return L.divIcon({
+    html: `
+      <div style="
+        background: ${config.color};
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        font-family: 'Material Symbols Outlined';
+        font-size: 18px;
+        cursor: pointer;
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      ">${config.icon}</div>
+    `,
+    className: 'custom-poi-marker',
+    iconSize: [32, 32], 
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16]
+  })
+}
 
 export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -160,10 +213,10 @@ export function WorkingTrakkeApp() {
 
     // Add new markers (reduced logging)
     
-    filteredPOIs.forEach((poi, index) => {
+    filteredPOIs.forEach((poi, _index) => {
       try {
-        // Use default Leaflet markers for reliable popup functionality
-        const markerIcon = new L.Icon.Default()
+        // Use custom Material Icons markers matching the sidebar categories
+        const markerIcon = createCustomPOIMarker(poi.type)
         
         const marker = L.marker([poi.lat, poi.lng], {
           icon: markerIcon,

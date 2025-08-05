@@ -310,7 +310,7 @@ export const categoryTree: CategoryNode[] = [
   {
     id: 'accommodation',
     name: 'Sove',
-    icon: 'bed',
+    icon: 'snooze',
     color: '#8B4513',
     children: [
       {
