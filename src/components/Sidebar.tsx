@@ -127,7 +127,7 @@ export function Sidebar({
                   width: '100%'
                 }}
               >
-                {weatherEnabled ? 'Test: Se været' : 'Test: Ikke se værdata'}
+                {weatherEnabled ? 'Se værdata' : 'Ikke se værdata'}
               </button>
 
               {weatherEnabled && onRefreshWeather && (
@@ -144,7 +144,7 @@ export function Sidebar({
                     width: '100%'
                   }}
                 >
-                  For test: Oppdater vær
+                  Oppdater værdata
                 </button>
               )}
               
@@ -179,7 +179,7 @@ export function Sidebar({
                   width: '100%'
                 }}
               >
-                {heritageEnabled ? 'Test: Aktiver Historiske steder' : 'Test: Deaktiver Historiske steder'}
+                {heritageEnabled ? 'Historiske steder på' : 'Historiske steder av'}
               </button>
 
               {heritageEnabled && heritageTotal > 0 && (
