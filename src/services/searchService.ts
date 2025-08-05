@@ -150,6 +150,54 @@ function searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
     .slice(0, 5)
 }
 
+// Norwegian translations for Nominatim place types
+const norwegianPlaceTypes: Record<string, string> = {
+  // Administrative
+  'administrative': 'administrativt område',
+  'city': 'by',
+  'town': 'by',
+  'village': 'tettsted',
+  'hamlet': 'grend',
+  'municipality': 'kommune',
+  'county': 'fylke',
+  'state': 'fylke',
+  'country': 'land',
+  
+  // Geographic features
+  'peak': 'fjelltopp',
+  'mountain': 'fjell',
+  'hill': 'ås',
+  'valley': 'dal',
+  'lake': 'innsjø',
+  'river': 'elv',
+  'island': 'øy',
+  'fjord': 'fjord',
+  'bay': 'bukt',
+  'beach': 'strand',
+  'forest': 'skog',
+  
+  // Infrastructure
+  'railway': 'jernbane',
+  'station': 'stasjon',
+  'airport': 'flyplass',
+  'harbour': 'havn',
+  'port': 'havn',
+  'bridge': 'bru',
+  'tunnel': 'tunnel',
+  
+  // Places
+  'farm': 'gård',
+  'house': 'hus',
+  'building': 'bygning',
+  'church': 'kirke',
+  'school': 'skole',
+  'hospital': 'sykehus',
+  'park': 'park',
+  'square': 'torg',
+  'street': 'gate',
+  'road': 'vei'
+}
+
 // Nominatim search
 async function searchNominatim(query: string): Promise<SearchResult[]> {
   try {
@@ -232,6 +280,9 @@ async function searchNominatim(query: string): Promise<SearchResult[]> {
         
         const type: SearchResult['type'] = item.address?.house_number ? 'address' : 'place'
 
+        // Translate place type to Norwegian
+        const norwegianType = item.type ? norwegianPlaceTypes[item.type] || item.type : undefined
+        
         return {
           id: `nominatim_${item.place_id}`,
           name,
@@ -240,8 +291,8 @@ async function searchNominatim(query: string): Promise<SearchResult[]> {
           lng,
           type,
           source: 'nominatim',
-          description: item.type ? 
-            `${item.type} i ${item.address?.municipality || item.address?.county || 'Norge'}` : 
+          description: norwegianType ? 
+            `${norwegianType} i ${item.address?.municipality || item.address?.county || 'Norge'}` : 
             undefined,
           bbox
         }

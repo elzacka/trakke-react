@@ -1,6 +1,6 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { POI, updatePoisData, manualPoisData } from '../data/pois'
+import { POI, updatePoisData } from '../data/pois'
 import { OSMService } from '../services/osmService'
 
 export interface POIDataState {
@@ -12,10 +12,10 @@ export interface POIDataState {
 
 export function usePOIData() {
   const [state, setState] = useState<POIDataState>({
-    pois: manualPoisData, // Start with manual POI data for immediate display
-    loading: false,
+    pois: [], // Start with empty array - OSM data will populate
+    loading: true, // Show loading while fetching OSM data
     error: null,
-    lastUpdated: new Date() // Set initial timestamp
+    lastUpdated: null
   })
 
   // Prevent multiple initial loads
@@ -25,9 +25,9 @@ export function usePOIData() {
   const osmService = useMemo(() => new OSMService(), [])
 
   const fetchOSMData = useCallback(async () => {
-    // Don't set loading to true since we already have manual POIs to show
-    setState(prev => ({ ...prev, error: null }))
-    console.log('🔄 Loading additional POIs from OpenStreetMap (in background)...')
+    // Set loading state while fetching OSM data
+    setState(prev => ({ ...prev, loading: true, error: null }))
+    console.log('🔄 Loading POIs from OpenStreetMap...')
     
     try {
       // Shorter timeout for better UX (8 seconds per query)
@@ -164,10 +164,10 @@ export function usePOIData() {
         }
       }
       
-      // Combine manual POIs with OSM data
-      const allPois = [...manualPoisData, ...osmPois]
+      // Use only OSM data - no manual POIs
+      const allPois = osmPois
       
-      console.log(`✅ Loaded ${manualPoisData.length} manual + ${campingElements.length} camping + ${warMemorialElements.length} war memorial + ${outdoorRecreationElements.length} outdoor + ${hutAndServiceElements.length} hut/service + ${serviceInfrastructureElements.length} infrastructure POIs = ${allPois.length} total`)
+      console.log(`✅ Loaded ${campingElements.length} camping + ${warMemorialElements.length} war memorial + ${outdoorRecreationElements.length} outdoor + ${hutAndServiceElements.length} hut/service + ${serviceInfrastructureElements.length} infrastructure POIs = ${allPois.length} total from OSM`)
       
       // Update global state
       updatePoisData(allPois)
@@ -200,8 +200,8 @@ export function usePOIData() {
         error: errorMessage
       }))
       
-      // Ikke krasj appen - behold manuelle data
-      // (state.pois forblir manualPoisData)
+      // Ikke krasj appen - return empty array on error
+      // (state.pois forblir tom array)
     }
   }, [osmService])
 
