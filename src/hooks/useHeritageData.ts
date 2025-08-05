@@ -99,17 +99,17 @@ export function useHeritageData({
     } finally {
       setLoading(false)
     }
-  }, [enabled]) // Removed bbox and convertToPOI to prevent infinite loops
+  }, [enabled, bbox, convertToPOI]) // Include all dependencies for consistency
 
   // Initial load
   useEffect(() => {
     fetchHeritageData()
   }, [fetchHeritageData])
 
-  // Refresh function - include missing dependencies
+  // Refresh function - use fetchHeritageData which already has all dependencies
   const refreshData = useCallback(async () => {
     await fetchHeritageData()
-  }, [fetchHeritageData, bbox, convertToPOI]) // Include all dependencies to satisfy ESLint
+  }, [fetchHeritageData]) // Only fetchHeritageData needed since it includes all deps
 
   return {
     heritagePOIs,
