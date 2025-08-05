@@ -54,6 +54,118 @@ export class OSMService {
   }
 
   /**
+   * Henter krigsminne og kulturarv POI-er fra OpenStreetMap med norsk språkstøtte
+   */
+  async getWarMemorialPOIs(): Promise<OSMElement[]> {
+    const query = this.buildWarMemorialQuery()
+    
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Trakke/1.0 hei@tazk.no'
+        },
+        body: `data=${encodeURIComponent(query)}`
+      })
+      
+      if (!response.ok) {
+        throw new Error(`OSM API error: ${response.status}`)
+      }
+      
+      const data: OSMResponse = await response.json()
+      return data.elements
+    } catch (error) {
+      console.error('Error fetching OSM war memorial data:', error)
+      return []
+    }
+  }
+
+  /**
+   * Henter friluftsliv POI-er (tursti, topper, badeplasser etc.) med norsk språkstøtte
+   */
+  async getOutdoorRecreationPOIs(): Promise<OSMElement[]> {
+    const query = this.buildOutdoorRecreationQuery()
+    
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Trakke/1.0 hei@tazk.no'
+        },
+        body: `data=${encodeURIComponent(query)}`
+      })
+      
+      if (!response.ok) {
+        throw new Error(`OSM API error: ${response.status}`)
+      }
+      
+      const data: OSMResponse = await response.json()
+      return data.elements
+    } catch (error) {
+      console.error('Error fetching OSM outdoor recreation data:', error)
+      return []
+    }
+  }
+
+  /**
+   * Henter hytter og serveringssteder (DNT hytter, turisthytter etc.) med norsk språkstøtte
+   */
+  async getHutAndServicePOIs(): Promise<OSMElement[]> {
+    const query = this.buildHutAndServiceQuery()
+    
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Trakke/1.0 hei@tazk.no'
+        },
+        body: `data=${encodeURIComponent(query)}`
+      })
+      
+      if (!response.ok) {
+        throw new Error(`OSM API error: ${response.status}`)
+      }
+      
+      const data: OSMResponse = await response.json()
+      return data.elements
+    } catch (error) {
+      console.error('Error fetching OSM hut and service data:', error)
+      return []
+    }
+  }
+
+  /**
+   * Henter service og infrastruktur POI-er (parkering, toaletter, transport etc.) med norsk språkstøtte
+   */
+  async getServiceInfrastructurePOIs(): Promise<OSMElement[]> {
+    const query = this.buildServiceInfrastructureQuery()
+    
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Trakke/1.0 hei@tazk.no'
+        },
+        body: `data=${encodeURIComponent(query)}`
+      })
+      
+      if (!response.ok) {
+        throw new Error(`OSM API error: ${response.status}`)
+      }
+      
+      const data: OSMResponse = await response.json()
+      return data.elements
+    } catch (error) {
+      console.error('Error fetching OSM service infrastructure data:', error)
+      return []
+    }
+  }
+
+  /**
    * Bygger Overpass QL query for camping-relaterte POI-er
    */
   private buildCampingQuery(): string {
@@ -93,6 +205,224 @@ export class OSMService {
         // Åpne områder
         node["natural"="grassland"](${south},${west},${north},${east});
         way["natural"="grassland"](${south},${west},${north},${east});
+      );
+      out center meta;
+    `
+  }
+
+  /**
+   * Bygger Overpass QL query for krigsminne og kulturarv POI-er med norsk språkstøtte
+   */
+  private buildWarMemorialQuery(): string {
+    const { south, west, north, east } = NORWAY_BBOX
+    
+    return `
+      [out:json][timeout:25];
+      (
+        // Krigsminne og minnesmerker
+        node["historic"="memorial"](${south},${west},${north},${east});
+        way["historic"="memorial"](${south},${west},${north},${east});
+        
+        // Monumenter og statuer
+        node["historic"="monument"](${south},${west},${north},${east});
+        way["historic"="monument"](${south},${west},${north},${east});
+        
+        // Fredsmonumenter og fredsstøtter
+        node["memorial"="peace"](${south},${west},${north},${east});
+        way["memorial"="peace"](${south},${west},${north},${east});
+        
+        // Krigsgravplasser og krigskirkegårder
+        node["memorial"="war_grave"](${south},${west},${north},${east});
+        way["memorial"="war_grave"](${south},${west},${north},${east});
+        
+        // Befestninger og bunkers
+        node["historic"="bunker"](${south},${west},${north},${east});
+        way["historic"="bunker"](${south},${west},${north},${east});
+        
+        // Historiske kirker og stave kirker
+        node["amenity"="place_of_worship"]["religion"="christian"]["denomination"="lutheran"](${south},${west},${north},${east});
+        way["amenity"="place_of_worship"]["religion"="christian"]["denomination"="lutheran"](${south},${west},${north},${east});
+        
+        // Fornminner og arkeologiske steder
+        node["historic"="archaeological_site"](${south},${west},${north},${east});
+        way["historic"="archaeological_site"](${south},${west},${north},${east});
+        
+        // Gravhauger og steinalder-steder
+        node["historic"="tomb"](${south},${west},${north},${east});
+        way["historic"="tomb"](${south},${west},${north},${east});
+        
+        // Ruiner av historiske bygninger
+        node["historic"="ruins"](${south},${west},${north},${east});
+        way["historic"="ruins"](${south},${west},${north},${east});
+      );
+      out center meta;
+    `
+  }
+
+  /**
+   * Bygger Overpass QL query for friluftsliv POI-er (turer, topper, badeplasser etc.)
+   */
+  private buildOutdoorRecreationQuery(): string {
+    const { south, west, north, east } = NORWAY_BBOX
+    
+    return `
+      [out:json][timeout:25];
+      (
+        // Tursti og vandreruter
+        way["highway"="path"]["foot"!="no"](${south},${west},${north},${east});
+        way["highway"="track"]["foot"!="no"](${south},${west},${north},${east});
+        relation["route"="hiking"](${south},${west},${north},${east});
+        relation["route"="foot"](${south},${west},${north},${east});
+        
+        // Fjelltopper og høyeste punkter
+        node["natural"="peak"](${south},${west},${north},${east});
+        node["mountain_pass"](${south},${west},${north},${east});
+        
+        // Skiløyper og vinterstier
+        way["piste:type"="nordic"](${south},${west},${north},${east});
+        way["piste:type"="downhill"](${south},${west},${north},${east});
+        relation["route"="ski"](${south},${west},${north},${east});
+        
+        // Badeplasser og strender
+        node["leisure"="swimming_area"](${south},${west},${north},${east});
+        way["leisure"="swimming_area"](${south},${west},${north},${east});
+        node["natural"="beach"](${south},${west},${north},${east});
+        way["natural"="beach"](${south},${west},${north},${east});
+        node["amenity"="swimming_pool"]["access"="public"](${south},${west},${north},${east});
+        
+        // Elver og innsjøer
+        way["natural"="water"]["water"="lake"](${south},${west},${north},${east});
+        way["waterway"="river"](${south},${west},${north},${east});
+        way["waterway"="stream"](${south},${west},${north},${east});
+        
+        // Isfiskeplasser (vannområder med winter_sport=ice_fishing)
+        node["sport"="fishing"]["seasonal"="winter"](${south},${west},${north},${east});
+        way["sport"="fishing"]["seasonal"="winter"](${south},${west},${north},${east});
+        
+        // Naturperler - fosser, grotter, utsiktspunkt
+        node["waterway"="waterfall"](${south},${west},${north},${east});
+        node["natural"="cave_entrance"](${south},${west},${north},${east});
+        node["tourism"="viewpoint"](${south},${west},${north},${east});
+        way["tourism"="viewpoint"](${south},${west},${north},${east});
+        
+        // Kulturlandskap og seterområder
+        node["place"="farm"](${south},${west},${north},${east});
+        way["place"="farm"](${south},${west},${north},${east});
+        node["landuse"="farmland"](${south},${west},${north},${east});
+        way["landuse"="farmland"](${south},${west},${north},${east});
+      );
+      out center meta;
+    `
+  }
+
+  /**
+   * Bygger Overpass QL query for hytter og serveringssteder
+   */
+  private buildHutAndServiceQuery(): string {
+    const { south, west, north, east } = NORWAY_BBOX
+    
+    return `
+      [out:json][timeout:25];
+      (
+        // DNT serverte hytter
+        node["tourism"="alpine_hut"]["operator"~"DNT|Den Norske Turistforening"](${south},${west},${north},${east});
+        way["tourism"="alpine_hut"]["operator"~"DNT|Den Norske Turistforening"](${south},${west},${north},${east});
+        
+        // Selvbetjente hytter
+        node["tourism"="wilderness_hut"](${south},${west},${north},${east});
+        way["tourism"="wilderness_hut"](${south},${west},${north},${east});
+        node["tourism"="alpine_hut"]["fee"="no"](${south},${west},${north},${east});
+        way["tourism"="alpine_hut"]["fee"="no"](${south},${west},${north},${east});
+        
+        // Gapahuk og vindskjul
+        node["amenity"="shelter"](${south},${west},${north},${east});
+        way["amenity"="shelter"](${south},${west},${north},${east});
+        
+        // Serveringssteder i fjellet
+        node["amenity"="restaurant"]["location"~"mountain|alpine"](${south},${west},${north},${east});
+        node["amenity"="cafe"]["location"~"mountain|alpine"](${south},${west},${north},${east});
+        node["tourism"="guest_house"]["location"~"mountain|alpine"](${south},${west},${north},${east});
+        
+        // Tilgjengelige steder (Universal Design)
+        node["wheelchair"="yes"]["tourism"](${south},${west},${north},${east});
+        way["wheelchair"="yes"]["tourism"](${south},${west},${north},${east});
+        node["wheelchair"="yes"]["leisure"](${south},${west},${north},${east});
+        way["wheelchair"="yes"]["leisure"](${south},${west},${north},${east});
+      );
+      out center meta;
+    `
+  }
+
+  /**
+   * Bygger Overpass QL query for service og infrastruktur POI-er
+   */
+  private buildServiceInfrastructureQuery(): string {
+    const { south, west, north, east } = NORWAY_BBOX
+    
+    return `
+      [out:json][timeout:25];
+      (
+        // Parkering
+        node["amenity"="parking"](${south},${west},${north},${east});
+        way["amenity"="parking"](${south},${west},${north},${east});
+        
+        // Rasteplasser
+        node["highway"="rest_area"](${south},${west},${north},${east});
+        way["highway"="rest_area"](${south},${west},${north},${east});
+        node["amenity"="bench"](${south},${west},${north},${east});
+        way["amenity"="bench"](${south},${west},${north},${east});
+        
+        // Toaletter
+        node["amenity"="toilets"](${south},${west},${north},${east});
+        way["amenity"="toilets"](${south},${west},${north},${east});
+        
+        // Drikkevann
+        node["amenity"="drinking_water"](${south},${west},${north},${east});
+        node["man_made"="water_well"](${south},${west},${north},${east});
+        node["natural"="spring"](${south},${west},${north},${east});
+        
+        // Bålplasser (allerede i camping query, men legger til flere)
+        node["leisure"="fireplace"](${south},${west},${north},${east});
+        way["leisure"="fireplace"](${south},${west},${north},${east});
+        node["amenity"="bbq"](${south},${west},${north},${east});
+        
+        // Informasjonstavler
+        node["tourism"="information"]["information"="board"](${south},${west},${north},${east});
+        node["tourism"="information"]["information"="map"](${south},${west},${north},${east});
+        
+        // Transport - taubaner og gondoler
+        node["aerialway"="gondola"](${south},${west},${north},${east});
+        way["aerialway"="gondola"](${south},${west},${north},${east});
+        node["aerialway"="cable_car"](${south},${west},${north},${east});
+        way["aerialway"="cable_car"](${south},${west},${north},${east});
+        node["aerialway"="chair_lift"](${south},${west},${north},${east});
+        way["aerialway"="chair_lift"](${south},${west},${north},${east});
+        
+        // Transport - kollektivtransport
+        node["public_transport"="stop_position"](${south},${west},${north},${east});
+        node["highway"="bus_stop"](${south},${west},${north},${east});
+        
+        // Transport - togstasjoner
+        node["railway"="station"](${south},${west},${north},${east});
+        way["railway"="station"](${south},${west},${north},${east});
+        node["public_transport"="station"]["railway"="yes"](${south},${west},${north},${east});
+        
+        // Fiskeplasser
+        node["sport"="fishing"](${south},${west},${north},${east});
+        way["sport"="fishing"](${south},${west},${north},${east});
+        node["leisure"="fishing"](${south},${west},${north},${east});
+        way["leisure"="fishing"](${south},${west},${north},${east});
+        
+        // Kanopadling
+        node["sport"="canoe"](${south},${west},${north},${east});
+        way["sport"="canoe"](${south},${west},${north},${east});
+        node["sport"="kayak"](${south},${west},${north},${east});
+        way["sport"="kayak"](${south},${west},${north},${east});
+        relation["route"="canoe"](${south},${west},${north},${east});
+        
+        // Hengekøyeplasser (spesielle områder)
+        node["leisure"="hammock"](${south},${west},${north},${east});
+        way["leisure"="hammock"](${south},${west},${north},${east});
       );
       out center meta;
     `
@@ -143,6 +473,229 @@ export class OSMService {
       hammockSuitable, 
       underStarsSuitable,
       confidence
+    }
+  }
+
+  /**
+   * Konverterer krigsminne/kulturarv OSM element til vårt POI format
+   */
+  convertWarMemorialToPOI(element: OSMElement): POI {
+    const lat = element.lat || element.center?.lat || 0
+    const lon = element.lon || element.center?.lon || 0
+    const tags = element.tags
+    
+    // Determine type based on OSM tags
+    let type: POIType = 'war_memorials'
+    
+    if (tags.historic === 'memorial' && (tags.memorial === 'war' || tags['memorial:type'] === 'war')) {
+      type = 'war_memorials'
+    } else if (tags.memorial === 'peace' || tags.name?.toLowerCase().includes('fred')) {
+      type = 'peace_monuments'
+    } else if (tags.historic === 'archaeological_site' || tags.historic === 'tomb') {
+      type = 'archaeological'
+    } else if (tags.amenity === 'place_of_worship' || tags.building === 'church') {
+      type = 'churches'
+    } else if (tags.historic === 'bunker' || tags.military) {
+      type = 'war_memorials'
+    } else if (tags.historic === 'ruins') {
+      type = 'protected_buildings'
+    } else if (tags.historic === 'monument') {
+      type = 'war_memorials'
+    }
+    
+    // Generate Norwegian name and description
+    const name = this.getPreferredNorwegianName(tags) || this.generateWarMemorialName(tags, type)
+    const description = this.getPreferredNorwegianDescription(tags) || this.generateWarMemorialDescription(tags)
+    
+    return {
+      id: `osm_${element.type}_${element.id}`,
+      name,
+      lat,
+      lng: lon,
+      description,
+      type,
+      metadata: {
+        historic_type: tags.historic || 'unknown',
+        memorial_type: tags.memorial || tags['memorial:type'] || 'unknown',
+        period: tags['start_date'] || tags.year || 'ukjent',
+        ...(tags.architect ? { architect: tags.architect } : {}),
+        ...(tags.inscription ? { inscription: tags.inscription } : {}),
+        ...((tags['wikipedia:no'] || tags.wikipedia) ? { wikipedia_no: tags['wikipedia:no'] || tags.wikipedia } : {}),
+        ...(tags.wikidata ? { wikidata: tags.wikidata } : {})
+      },
+      api_source: 'osm',
+      last_updated: new Date().toISOString()
+    }
+  }
+
+  /**
+   * Konverterer friluftsliv OSM element til vårt POI format
+   */
+  convertOutdoorRecreationToPOI(element: OSMElement): POI {
+    const lat = element.lat || element.center?.lat || 0
+    const lon = element.lon || element.center?.lon || 0
+    const tags = element.tags
+    
+    // Determine type based on OSM tags
+    let type: POIType = 'hiking'
+    
+    if (tags.natural === 'peak' || tags.mountain_pass) {
+      type = 'mountain_peaks'
+    } else if (tags['piste:type'] || tags.route === 'ski') {
+      type = 'ski_trails'
+    } else if (tags.leisure === 'swimming_area' || tags.natural === 'beach' || tags.amenity === 'swimming_pool') {
+      type = 'swimming'
+    } else if (tags.natural === 'beach') {
+      type = 'beach'
+    } else if (tags.natural === 'water' || tags.waterway) {
+      type = 'lakes_rivers'
+    } else if (tags.sport === 'fishing' && tags.seasonal === 'winter') {
+      type = 'ice_fishing'
+    } else if (tags.waterway === 'waterfall' || tags.natural === 'cave_entrance' || tags.tourism === 'viewpoint') {
+      type = 'nature_gems'
+    } else if (tags.tourism === 'viewpoint') {
+      type = 'viewpoints'
+    } else if (tags.place === 'farm' || tags.landuse === 'farmland') {
+      type = 'cultural_landscapes'
+    } else if (tags.highway === 'path' || tags.highway === 'track' || tags.route === 'hiking' || tags.route === 'foot') {
+      type = 'hiking'
+    }
+    
+    const name = this.getPreferredNorwegianName(tags) || this.generateOutdoorRecreationName(tags, type)
+    const description = this.getPreferredNorwegianDescription(tags) || this.generateOutdoorRecreationDescription(tags)
+    
+    return {
+      id: `osm_${element.type}_${element.id}`,
+      name,
+      lat,
+      lng: lon,
+      description,
+      type,
+      metadata: {
+        outdoor_type: tags.highway || tags.natural || tags.leisure || tags.tourism || 'unknown',
+        ...(tags.sac_scale || tags.difficulty ? { difficulty: tags.sac_scale || tags.difficulty } : {}),
+        ...(tags.surface ? { surface: tags.surface } : {}),
+        ...(tags.ele ? { elevation: tags.ele } : {}),
+        ...(tags.operator ? { operator: tags.operator } : {}),
+        ...(tags.opening_hours ? { opening_hours: tags.opening_hours } : {}),
+        ...(tags.wikipedia && { wikipedia_no: tags['wikipedia:no'] || tags.wikipedia }),
+        ...(tags.wikidata && { wikidata: tags.wikidata })
+      },
+      api_source: 'osm',
+      last_updated: new Date().toISOString()
+    }
+  }
+
+  /**
+   * Konverterer hytter/service OSM element til vårt POI format
+   */
+  convertHutAndServiceToPOI(element: OSMElement): POI {
+    const lat = element.lat || element.center?.lat || 0
+    const lon = element.lon || element.center?.lon || 0
+    const tags = element.tags
+    
+    // Determine type based on OSM tags
+    let type: POIType = 'wilderness_shelter'
+    
+    if (tags.tourism === 'alpine_hut' && (tags.operator?.includes('DNT') || tags.fee === 'yes')) {
+      type = 'staffed_huts'
+    } else if (tags.tourism === 'alpine_hut' && tags.fee === 'no') {
+      type = 'self_service_huts'
+    } else if (tags.tourism === 'wilderness_hut') {
+      type = 'self_service_huts'
+    } else if (tags.amenity === 'shelter') {
+      type = 'wilderness_shelter'
+    } else if (tags.amenity === 'restaurant' || tags.amenity === 'cafe' || tags.tourism === 'guest_house') {
+      type = 'mountain_service'
+    } else if (tags.wheelchair === 'yes') {
+      type = 'accessible_sites'
+    }
+    
+    const name = this.getPreferredNorwegianName(tags) || this.generateHutAndServiceName(tags, type)
+    const description = this.getPreferredNorwegianDescription(tags) || this.generateHutAndServiceDescription(tags)
+    
+    return {
+      id: `osm_${element.type}_${element.id}`,
+      name,
+      lat,
+      lng: lon,
+      description,
+      type,
+      metadata: {
+        hut_type: tags.tourism || tags.amenity || 'unknown',
+        ...(tags.operator ? { operator: tags.operator } : {}),
+        ...(tags.fee ? { fee: tags.fee } : {}),
+        ...(tags.capacity ? { capacity: tags.capacity } : {}),
+        ...(tags.reservation ? { reservation: tags.reservation } : {}),
+        ...(tags.wheelchair ? { wheelchair: tags.wheelchair } : {}),
+        ...(tags.opening_hours ? { opening_hours: tags.opening_hours } : {}),
+        ...(tags.website && { website: tags.website }),
+        ...(tags.phone && { phone: tags.phone })
+      },
+      api_source: 'osm',
+      last_updated: new Date().toISOString()
+    }
+  }
+
+  /**
+   * Konverterer service/infrastruktur OSM element til vårt POI format
+   */
+  convertServiceInfrastructureToPOI(element: OSMElement): POI {
+    const lat = element.lat || element.center?.lat || 0
+    const lon = element.lon || element.center?.lon || 0
+    const tags = element.tags
+    
+    // Determine type based on OSM tags
+    let type: POIType = 'rest_areas'
+    
+    if (tags.amenity === 'parking') {
+      type = 'parking'
+    } else if (tags.highway === 'rest_area' || tags.amenity === 'bench') {
+      type = 'rest_areas'
+    } else if (tags.amenity === 'toilets') {
+      type = 'toilets'
+    } else if (tags.amenity === 'drinking_water' || tags.man_made === 'water_well' || tags.natural === 'spring') {
+      type = 'drinking_water'
+    } else if (tags.leisure === 'fireplace' || tags.amenity === 'bbq') {
+      type = 'fire_places'
+    } else if (tags.tourism === 'information') {
+      type = 'information_boards'
+    } else if (tags.aerialway) {
+      type = 'cable_cars'
+    } else if (tags.public_transport === 'stop_position' || tags.highway === 'bus_stop') {
+      type = 'public_transport'
+    } else if (tags.railway === 'station') {
+      type = 'train_stations'
+    } else if (tags.sport === 'fishing' || tags.leisure === 'fishing') {
+      type = 'fishing_spots'
+    } else if (tags.sport === 'canoe' || tags.sport === 'kayak' || tags.route === 'canoe') {
+      type = 'canoeing'
+    } else if (tags.leisure === 'hammock') {
+      type = 'hammock_spots'
+    }
+    
+    const name = this.getPreferredNorwegianName(tags) || this.generateServiceInfrastructureName(tags, type)
+    const description = this.getPreferredNorwegianDescription(tags) || this.generateServiceInfrastructureDescription(tags)
+    
+    return {
+      id: `osm_${element.type}_${element.id}`,
+      name,
+      lat,
+      lng: lon,
+      description,
+      type,
+      metadata: {
+        service_type: tags.amenity || tags.highway || tags.tourism || tags.aerialway || tags.railway || tags.sport || tags.leisure || 'unknown',
+        ...(tags.access ? { access: tags.access } : {}),
+        ...(tags.fee ? { fee: tags.fee } : {}),
+        ...(tags.capacity ? { capacity: tags.capacity } : {}),
+        ...(tags.opening_hours ? { opening_hours: tags.opening_hours } : {}),
+        ...(tags.operator ? { operator: tags.operator } : {}),
+        ...(tags.website && { website: tags.website }),
+        ...(tags.phone && { phone: tags.phone })
+      },
+      api_source: 'osm',
+      last_updated: new Date().toISOString()
     }
   }
 
@@ -212,12 +765,12 @@ export class OSMService {
       lakes_rivers: 'Vannkilde',
       ice_fishing: 'Isfiskeplass',
       // Overnatting
-      staffed_huts: 'Serverte hytte',
-      self_service_huts: 'Selvbetjent hytte',
+      staffed_huts: 'Betjent DNT-hytte',
+      self_service_huts: 'Ubetjent hytte',
       wilderness_shelter: 'Gapahuk',
       camping_site: 'Campingplass',
       tent_area: 'Teltområde',
-      wild_camping: 'Fri camping',
+      wild_camping: 'Hengekøyeplass',
       // Naturopplevelser
       nature_gems: 'Naturperle',
       viewpoints: 'Utsiktspunkt',
@@ -233,7 +786,20 @@ export class OSMService {
       intangible_heritage: 'Kulturverdi',
       // Service
       mountain_service: 'Serveringssted',
-      accessible_sites: 'Tilgjengelig sted'
+      accessible_sites: 'Tilgjengelig sted',
+      // Bergen-inspirerte kategorier
+      fishing_spots: 'Fiskeplass',
+      canoeing: 'Kanopadling',
+      parking: 'Parkering',
+      rest_areas: 'Rasteplass',
+      cable_cars: 'Taubane',
+      public_transport: 'Holdeplass',
+      train_stations: 'Togstasjon',
+      information_boards: 'Informasjonstavle',
+      toilets: 'Toalett',
+      drinking_water: 'Drikkevann',
+      fire_places: 'Bålplass',
+      hammock_spots: 'Hengekøyeplass'
     }
     
     return typeNames[type] || 'Ukjent plass'
@@ -327,5 +893,303 @@ export class OSMService {
     }
     
     return treeTypes
+  }
+
+  /**
+   * Henter foretrukket norsk navn fra OSM tags
+   */
+  private getPreferredNorwegianName(tags: Record<string, string>): string | null {
+    // Prioriter norske navn
+    if (tags['name:no']) return tags['name:no']
+    if (tags['name:nb']) return tags['name:nb']  // Bokmål
+    if (tags['name:nn']) return tags['name:nn']  // Nynorsk
+    if (tags.name) return tags.name
+    if (tags['alt_name:no']) return tags['alt_name:no']
+    if (tags.alt_name) return tags.alt_name
+    return null
+  }
+
+  /**
+   * Henter foretrukket norsk beskrivelse fra OSM tags
+   */
+  private getPreferredNorwegianDescription(tags: Record<string, string>): string | null {
+    // Prioriter norske beskrivelser
+    if (tags['description:no']) return tags['description:no']
+    if (tags['description:nb']) return tags['description:nb']
+    if (tags['description:nn']) return tags['description:nn']
+    if (tags.description) return tags.description
+    if (tags.inscription) return `Inskripsjon: ${tags.inscription}`
+    return null
+  }
+
+  /**
+   * Genererer norsk navn for krigsminne/kulturarv POI
+   */
+  private generateWarMemorialName(tags: Record<string, string>, type: POIType): string {
+    const typeNames: Record<string, string> = {
+      'war_memorials': 'Krigsminne',
+      'peace_monuments': 'Fredsmonument', 
+      'archaeological': 'Fornminne',
+      'churches': 'Kirke',
+      'protected_buildings': 'Historisk bygning'
+    }
+    
+    const baseName = typeNames[type] || 'Kulturminne'
+    
+    // Legg til stedsnavn hvis tilgjengelig
+    if (tags.addr_place || tags['addr:place']) {
+      return `${baseName} i ${tags.addr_place || tags['addr:place']}`
+    }
+    if (tags.addr_city || tags['addr:city']) {
+      return `${baseName} i ${tags.addr_city || tags['addr:city']}`
+    }
+    
+    return baseName
+  }
+
+  /**
+   * Genererer norsk beskrivelse for krigsminne/kulturarv POI
+   */
+  private generateWarMemorialDescription(tags: Record<string, string>): string {
+    const descriptions = []
+    
+    if (tags.historic) {
+      const historicTypes: Record<string, string> = {
+        'memorial': 'Minnesmerke',
+        'monument': 'Monument',
+        'bunker': 'Bunkers fra krigen',
+        'archaeological_site': 'Arkeologisk lokalitet',
+        'tomb': 'Gravsted',
+        'ruins': 'Ruiner'
+      }
+      descriptions.push(historicTypes[tags.historic] || `Historisk ${tags.historic}`)
+    }
+    
+    if (tags.memorial) {
+      const memorialTypes: Record<string, string> = {
+        'war': 'til minne om krigen',
+        'peace': 'fredsmonument',
+        'war_grave': 'krigsgrav'
+      }
+      descriptions.push(memorialTypes[tags.memorial] || `minnesmerke for ${tags.memorial}`)
+    }
+    
+    if (tags['start_date'] || tags.year) {
+      descriptions.push(`fra ${tags['start_date'] || tags.year}`)
+    }
+    
+    if (tags.inscription) {
+      descriptions.push(`Inskripsjon: "${tags.inscription}"`)
+    }
+    
+    return descriptions.length > 0 
+      ? descriptions.join('. ').charAt(0).toUpperCase() + descriptions.join('. ').slice(1) + '.'
+      : 'Historisk kulturminne i Norge.'
+  }
+
+  /**
+   * Genererer norsk navn for friluftsliv POI
+   */
+  private generateOutdoorRecreationName(tags: Record<string, string>, type: POIType): string {
+    const typeNames: Record<string, string> = {
+      'hiking': 'Tursti',
+      'mountain_peaks': 'Fjelltopp',
+      'ski_trails': 'Skiløype',
+      'swimming': 'Badeplass',
+      'beach': 'Strand',
+      'lakes_rivers': 'Vannkilde',
+      'ice_fishing': 'Isfiskeplass',
+      'nature_gems': 'Naturperle',
+      'viewpoints': 'Utsiktspunkt',
+      'cultural_landscapes': 'Kulturlandskap'
+    }
+    
+    const baseName = typeNames[type] || 'Utendørsområde'
+    
+    // Add elevation for peaks
+    if (type === 'mountain_peaks' && tags.ele) {
+      return `${baseName} (${tags.ele}m)`
+    }
+    
+    // Add place name if available
+    if (tags.addr_place || tags['addr:place']) {
+      return `${baseName} i ${tags.addr_place || tags['addr:place']}`
+    }
+    if (tags.addr_city || tags['addr:city']) {
+      return `${baseName} i ${tags.addr_city || tags['addr:city']}`
+    }
+    
+    return tags.ref ? `${baseName} ${tags.ref}` : baseName
+  }
+
+  /**
+   * Genererer norsk beskrivelse for friluftsliv POI
+   */
+  private generateOutdoorRecreationDescription(tags: Record<string, string>): string {
+    const descriptions = []
+    
+    if (tags.natural === 'peak' && tags.ele) {
+      descriptions.push(`Fjelltopp ${tags.ele} meter over havet`)
+    }
+    
+    if (tags.surface) {
+      const surfaceTypes: Record<string, string> = {
+        'paved': 'asfaltert',
+        'unpaved': 'grus',
+        'gravel': 'grus',
+        'dirt': 'jord',
+        'grass': 'gress',
+        'sand': 'sand'
+      }
+      descriptions.push(`Underlag: ${surfaceTypes[tags.surface] || tags.surface}`)
+    }
+    
+    if (tags.sac_scale) {
+      const difficultyMap: Record<string, string> = {
+        'hiking': 'lett tur',
+        'mountain_hiking': 'fjelltur',
+        'demanding_mountain_hiking': 'krevende fjelltur',
+        'alpine_hiking': 'alpin tur'
+      }
+      descriptions.push(`Vanskelighetsgrad: ${difficultyMap[tags.sac_scale] || tags.sac_scale}`)
+    }
+    
+    if (tags.operator) {
+      descriptions.push(`Driftes av ${tags.operator}`)
+    }
+    
+    return descriptions.length > 0 
+      ? descriptions.join('. ') + '.'
+      : 'Friluftsliv og naturopplevelser i Norge.'
+  }
+
+  /**
+   * Genererer norsk navn for hytter/service POI
+   */
+  private generateHutAndServiceName(tags: Record<string, string>, type: POIType): string {
+    const typeNames: Record<string, string> = {
+      'staffed_huts': 'Betjent DNT-hytte',
+      'self_service_huts': 'Ubetjent hytte',
+      'wilderness_shelter': 'Gapahuk',
+      'mountain_service': 'Serveringssted',
+      'accessible_sites': 'Tilgjengelig sted'
+    }
+    
+    const baseName = typeNames[type] || 'Hytte'
+    
+    // Add operator name if DNT
+    if (tags.operator?.includes('DNT')) {
+      return `DNT ${baseName}`
+    }
+    
+    // Add place name if available
+    if (tags.addr_place || tags['addr:place']) {
+      return `${baseName} i ${tags.addr_place || tags['addr:place']}`
+    }
+    
+    return baseName
+  }
+
+  /**
+   * Genererer norsk beskrivelse for hytter/service POI
+   */
+  private generateHutAndServiceDescription(tags: Record<string, string>): string {
+    const descriptions = []
+    
+    if (tags.capacity) {
+      descriptions.push(`Kapasitet: ${tags.capacity} personer`)
+    }
+    
+    if (tags.fee === 'yes') {
+      descriptions.push('Servering og betaling påkrevd')
+    } else if (tags.fee === 'no') {
+      descriptions.push('Selvbetjent og gratis')
+    }
+    
+    if (tags.reservation === 'required') {
+      descriptions.push('Forhåndsbestilling påkrevd')
+    } else if (tags.reservation === 'recommended') {
+      descriptions.push('Forhåndsbestilling anbefales')
+    }
+    
+    if (tags.wheelchair === 'yes') {
+      descriptions.push('Tilrettelagt for rullestol')
+    }
+    
+    if (tags.opening_hours) {
+      descriptions.push(`Åpningstider: ${tags.opening_hours}`)
+    }
+    
+    return descriptions.length > 0 
+      ? descriptions.join('. ') + '.'
+      : 'Overnatting og service i norsk natur.'
+  }
+
+  /**
+   * Genererer norsk navn for service/infrastruktur POI
+   */
+  private generateServiceInfrastructureName(tags: Record<string, string>, type: POIType): string {
+    const typeNames: Record<string, string> = {
+      'parking': 'Parkering',
+      'rest_areas': 'Rasteplass',
+      'toilets': 'Toalett',
+      'drinking_water': 'Drikkevann',
+      'fire_places': 'Bålplass',
+      'information_boards': 'Informasjonstavle',
+      'cable_cars': 'Taubane',
+      'public_transport': 'Holdeplass',
+      'train_stations': 'Togstasjon',
+      'fishing_spots': 'Fiskeplass',
+      'canoeing': 'Kanopadling',
+      'hammock_spots': 'Hengekøyeplass'
+    }
+    
+    const baseName = typeNames[type] || 'Service'
+    
+    // Add operator or location if available
+    if (tags.operator) {
+      return `${tags.operator} ${baseName}`
+    }
+    
+    if (tags.addr_place || tags['addr:place']) {
+      return `${baseName} i ${tags.addr_place || tags['addr:place']}`
+    }
+    
+    return baseName
+  }
+
+  /**
+   * Genererer norsk beskrivelse for service/infrastruktur POI
+   */
+  private generateServiceInfrastructureDescription(tags: Record<string, string>): string {
+    const descriptions = []
+    
+    if (tags.capacity) {
+      descriptions.push(`Kapasitet: ${tags.capacity}`)
+    }
+    
+    if (tags.access === 'private') {
+      descriptions.push('Privat tilgang')
+    } else if (tags.access === 'public') {
+      descriptions.push('Offentlig tilgjengelig')
+    }
+    
+    if (tags.fee === 'yes') {
+      descriptions.push('Avgift påkrevd')
+    } else if (tags.fee === 'no') {
+      descriptions.push('Gratis')
+    }
+    
+    if (tags.opening_hours) {
+      descriptions.push(`Åpningstider: ${tags.opening_hours}`)
+    }
+    
+    if (tags.operator) {
+      descriptions.push(`Driftes av ${tags.operator}`)
+    }
+    
+    return descriptions.length > 0 
+      ? descriptions.join('. ') + '.'
+      : 'Service og infrastruktur for friluftsaktiviteter.'
   }
 }

@@ -30,52 +30,144 @@ export function usePOIData() {
     console.log('🔄 Loading additional POIs from OpenStreetMap (in background)...')
     
     try {
-      // Fetching camping data from OpenStreetMap (non-blocking)
-      
-      // Shorter timeout for better UX (8 seconds)
+      // Shorter timeout for better UX (8 seconds per query)
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('OSM API timeout etter 8 sekunder')), 8000)
       )
       
-      const osmDataPromise = osmService.getCampingPOIs()
+      // Fetch all OSM data types in parallel
+      const [campingDataPromise, warMemorialDataPromise, outdoorRecreationDataPromise, hutAndServiceDataPromise, serviceInfrastructureDataPromise] = [
+        osmService.getCampingPOIs(),
+        osmService.getWarMemorialPOIs(),
+        osmService.getOutdoorRecreationPOIs(),
+        osmService.getHutAndServicePOIs(),
+        osmService.getServiceInfrastructurePOIs()
+      ]
       
-      // Race mellom API call og timeout
-      const osmElements = await Promise.race([osmDataPromise, timeoutPromise])
-      
-      // Found OSM elements
+      // Race each API call against timeout
+      const [campingElements, warMemorialElements, outdoorRecreationElements, hutAndServiceElements, serviceInfrastructureElements] = await Promise.all([
+        Promise.race([campingDataPromise, timeoutPromise]).catch(err => {
+          console.warn('⚠️ Camping POIs failed to load:', err)
+          return []
+        }),
+        Promise.race([warMemorialDataPromise, timeoutPromise]).catch(err => {
+          console.warn('⚠️ War memorial POIs failed to load:', err)
+          return []
+        }),
+        Promise.race([outdoorRecreationDataPromise, timeoutPromise]).catch(err => {
+          console.warn('⚠️ Outdoor recreation POIs failed to load:', err)
+          return []
+        }),
+        Promise.race([hutAndServiceDataPromise, timeoutPromise]).catch(err => {
+          console.warn('⚠️ Hut and service POIs failed to load:', err)
+          return []
+        }),
+        Promise.race([serviceInfrastructureDataPromise, timeoutPromise]).catch(err => {
+          console.warn('⚠️ Service infrastructure POIs failed to load:', err)
+          return []
+        })
+      ])
       
       const osmPois: POI[] = []
       
-      // Safer element processing med error handling
-      for (const element of osmElements) {
+      // Process camping elements
+      for (const element of campingElements) {
         try {
-          // Valider at element har nødvendige data
           if (!element.id || (!element.lat && !element.center?.lat)) {
-            console.warn('⚠️ Ugyldig OSM element:', element.id)
+            console.warn('⚠️ Ugyldig camping element:', element.id)
             continue
           }
           
           const suitability = osmService.analyzeCampingSuitability(element)
           
-          // Kun inkluder hvis vi har rimelig confidence
           if (suitability.confidence > 0.4) {
             const poi = osmService.convertToPOI(element, suitability)
             
-            // Ekstra validering av POI
             if (poi.lat !== 0 && poi.lng !== 0) {
               osmPois.push(poi)
             }
           }
         } catch (elementError) {
-          console.warn('⚠️ Feil ved prosessering av OSM element:', element.id, elementError)
-          // Fortsett med neste element istedenfor å krasje
+          console.warn('⚠️ Feil ved prosessering av camping element:', element.id, elementError)
+        }
+      }
+      
+      // Process war memorial elements
+      for (const element of warMemorialElements) {
+        try {
+          if (!element.id || (!element.lat && !element.center?.lat)) {
+            console.warn('⚠️ Ugyldig krigsminne element:', element.id)
+            continue
+          }
+          
+          const poi = osmService.convertWarMemorialToPOI(element)
+          
+          if (poi.lat !== 0 && poi.lng !== 0) {
+            osmPois.push(poi)
+          }
+        } catch (elementError) {
+          console.warn('⚠️ Feil ved prosessering av krigsminne element:', element.id, elementError)
+        }
+      }
+      
+      // Process outdoor recreation elements
+      for (const element of outdoorRecreationElements) {
+        try {
+          if (!element.id || (!element.lat && !element.center?.lat)) {
+            console.warn('⚠️ Ugyldig friluftsliv element:', element.id)
+            continue
+          }
+          
+          const poi = osmService.convertOutdoorRecreationToPOI(element)
+          
+          if (poi.lat !== 0 && poi.lng !== 0) {
+            osmPois.push(poi)
+          }
+        } catch (elementError) {
+          console.warn('⚠️ Feil ved prosessering av friluftsliv element:', element.id, elementError)
+        }
+      }
+      
+      // Process hut and service elements
+      for (const element of hutAndServiceElements) {
+        try {
+          if (!element.id || (!element.lat && !element.center?.lat)) {
+            console.warn('⚠️ Ugyldig hytte/service element:', element.id)
+            continue
+          }
+          
+          const poi = osmService.convertHutAndServiceToPOI(element)
+          
+          if (poi.lat !== 0 && poi.lng !== 0) {
+            osmPois.push(poi)
+          }
+        } catch (elementError) {
+          console.warn('⚠️ Feil ved prosessering av hytte/service element:', element.id, elementError)
+        }
+      }
+      
+      // Process service infrastructure elements
+      for (const element of serviceInfrastructureElements) {
+        try {
+          if (!element.id || (!element.lat && !element.center?.lat)) {
+            console.warn('⚠️ Ugyldig service/infrastruktur element:', element.id)
+            continue
+          }
+          
+          const poi = osmService.convertServiceInfrastructureToPOI(element)
+          
+          if (poi.lat !== 0 && poi.lng !== 0) {
+            osmPois.push(poi)
+          }
+        } catch (elementError) {
+          console.warn('⚠️ Feil ved prosessering av service/infrastruktur element:', element.id, elementError)
         }
       }
       
       // Combine manual POIs with OSM data
       const allPois = [...manualPoisData, ...osmPois]
       
-      console.log(`✅ Loaded ${manualPoisData.length} manual POIs + ${osmPois.length} OSM POIs = ${allPois.length} total`)
+      console.log(`✅ Loaded ${manualPoisData.length} manual + ${campingElements.length} camping + ${warMemorialElements.length} war memorial + ${outdoorRecreationElements.length} outdoor + ${hutAndServiceElements.length} hut/service + ${serviceInfrastructureElements.length} infrastructure POIs = ${allPois.length} total`)
       
       // Update global state
       updatePoisData(allPois)

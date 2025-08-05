@@ -32,6 +32,19 @@ export type POIType =
   // Service og tilgjengelighet
   | 'mountain_service'    // Serveringssteder i fjellet
   | 'accessible_sites'    // Tilrettelagt for funksjonshemmede
+  // Bergen-inspirerte kategorier
+  | 'fishing_spots'       // Fiskevann og fisketillatelse områder
+  | 'canoeing'            // Kanopadling
+  | 'parking'             // Parkering
+  | 'rest_areas'          // Rasteplasser
+  | 'cable_cars'          // Gondolbaner og taubaner
+  | 'public_transport'    // Kollektivtransport holdeplasser
+  | 'train_stations'      // Togstasjoner
+  | 'information_boards'  // Informasjonstavler
+  | 'toilets'             // Toaletter
+  | 'drinking_water'      // Drikkevann områder
+  | 'fire_places'         // Bål- og grillplasser
+  | 'hammock_spots'       // Dedikerte hengekøyeplasser
 
 export interface CampingMetadata {
   terrain: 'flat' | 'sloped' | 'rocky' | 'soft'
@@ -209,13 +222,13 @@ export const categoryConfig: CategoryConfigMap = {
   churches: {
     color: '#9370DB',
     icon: 'church',
-    name: 'Kirker og religiøse steder',
+    name: 'Kirker',
     description: 'Stavkirker, steinkirker og hellige steder'
   },
   war_memorials: { 
     color: '#8B4B8B', 
     icon: 'military_tech',
-    name: 'Krigsminnesmerker',
+    name: 'Krigsminner',
     description: 'Monumenter fra 2. verdenskrig og andre konflikter'
   },
   peace_monuments: {
@@ -248,6 +261,79 @@ export const categoryConfig: CategoryConfigMap = {
     icon: 'accessible',
     name: 'Universell utforming',
     description: 'Tilrettelagt for funksjonshemmede'
+  },
+  // Bergen-inspirerte kategorier
+  fishing_spots: {
+    color: '#008B8B',
+    icon: 'phishing',
+    name: 'Fiskeplasser',
+    description: 'Fiskevann og områder med fisketillatelse'
+  },
+  canoeing: {
+    color: '#40E0D0',
+    icon: 'kayaking',
+    name: 'Kanopadling',
+    description: 'Kajakk og kano ruter og utleie'
+  },
+  parking: {
+    color: '#808080',
+    icon: 'local_parking',
+    name: 'Parkering',
+    description: 'Parkeringsplasser for friluftsområder'
+  },
+  rest_areas: {
+    color: '#DDA0DD',
+    icon: 'deck',
+    name: 'Rasteplasser',
+    description: 'Rasteplasser med benker og bord'
+  },
+  cable_cars: {
+    color: '#FF6347',
+    icon: 'cable_car',
+    name: 'Taubaner',
+    description: 'Gondolbaner og skiheiser'
+  },
+  public_transport: {
+    color: '#4682B4',
+    icon: 'directions_bus',
+    name: 'Kollektivtransport',
+    description: 'Buss og trikk holdeplasser'
+  },
+  train_stations: {
+    color: '#2F4F4F',
+    icon: 'train',
+    name: 'Togstasjoner',
+    description: 'Jernbane stasjoner og plattformer'
+  },
+  information_boards: {
+    color: '#32CD32',
+    icon: 'info',
+    name: 'Informasjonstavler',
+    description: 'Skilt og informasjonstavler'
+  },
+  toilets: {
+    color: '#8FBC8F',
+    icon: 'wc',
+    name: 'Toaletter',
+    description: 'Offentlige toaletter'
+  },
+  drinking_water: {
+    color: '#87CEEB',
+    icon: 'water_drop',
+    name: 'Drikkevann',
+    description: 'Vannkilder og drikkevannspost'
+  },
+  fire_places: {
+    color: '#DC143C',
+    icon: 'local_fire_department',
+    name: 'Bålplasser',
+    description: 'Bål- og grillplasser'
+  },
+  hammock_spots: {
+    color: '#90EE90',
+    icon: 'weekend',
+    name: 'Hengekøyeplasser',
+    description: 'Egnede plasser for hengekøye'
   }
 }
 
@@ -261,13 +347,13 @@ export const categoryTree: CategoryNode[] = [
     children: [
       {
         id: 'hiking',
-        name: 'Dagsturer',
+        name: 'Turstier',
         parent: 'outdoor_activities',
         poiTypes: ['hiking']
       },
       {
         id: 'mountain_peaks',
-        name: 'Toppturer',
+        name: 'Fjelltopper',
         parent: 'outdoor_activities',
         poiTypes: ['mountain_peaks']
       },
@@ -307,13 +393,13 @@ export const categoryTree: CategoryNode[] = [
     children: [
       {
         id: 'staffed_huts',
-        name: 'Betjente hytter',
+        name: 'Betjente DNT-hytter',
         parent: 'accommodation',
         poiTypes: ['staffed_huts']
       },
       {
         id: 'self_service_huts',
-        name: 'Selvbetjente hytter',
+        name: 'Ubetjente hytter',
         parent: 'accommodation',
         poiTypes: ['self_service_huts']
       },
@@ -337,9 +423,15 @@ export const categoryTree: CategoryNode[] = [
       },
       {
         id: 'wild_camping',
-        name: 'Hengekøyeplasser',
+        name: 'Fri camping',
         parent: 'accommodation',
         poiTypes: ['wild_camping']
+      },
+      {
+        id: 'hammock_spots',
+        name: 'Hengekøyeplasser',
+        parent: 'accommodation',
+        poiTypes: ['hammock_spots']
       }
     ]
   },
@@ -371,7 +463,7 @@ export const categoryTree: CategoryNode[] = [
     children: [
       {
         id: 'churches',
-        name: 'Kirker og religiøse steder',
+        name: 'Kirker',
         parent: 'cultural_heritage',
         poiTypes: ['churches']
       },
@@ -383,9 +475,99 @@ export const categoryTree: CategoryNode[] = [
       },
       {
         id: 'archaeological',
-        name: 'Kulturminner',
+        name: 'Fornminner',
         parent: 'cultural_heritage',
         poiTypes: ['archaeological']
+      }
+    ]
+  },
+  {
+    id: 'services_infrastructure',
+    name: 'Service',
+    icon: 'local_gas_station',
+    color: '#FF8C00',
+    children: [
+      {
+        id: 'parking',
+        name: 'Parkering',
+        parent: 'services_infrastructure',
+        poiTypes: ['parking']
+      },
+      {
+        id: 'rest_areas',
+        name: 'Rasteplasser',
+        parent: 'services_infrastructure',
+        poiTypes: ['rest_areas']
+      },
+      {
+        id: 'toilets',
+        name: 'Toaletter',
+        parent: 'services_infrastructure',
+        poiTypes: ['toilets']
+      },
+      {
+        id: 'drinking_water',
+        name: 'Drikkevann',
+        parent: 'services_infrastructure',
+        poiTypes: ['drinking_water']
+      },
+      {
+        id: 'fire_places',
+        name: 'Bålplasser',
+        parent: 'services_infrastructure',
+        poiTypes: ['fire_places']
+      },
+      {
+        id: 'information_boards',
+        name: 'Informasjon',
+        parent: 'services_infrastructure',
+        poiTypes: ['information_boards']
+      }
+    ]
+  },
+  {
+    id: 'transport',
+    name: 'Transport',
+    icon: 'directions_transit',
+    color: '#4682B4',
+    children: [
+      {
+        id: 'cable_cars',
+        name: 'Taubaner',
+        parent: 'transport',
+        poiTypes: ['cable_cars']
+      },
+      {
+        id: 'public_transport',
+        name: 'Kollektivtransport',
+        parent: 'transport',
+        poiTypes: ['public_transport']
+      },
+      {
+        id: 'train_stations',
+        name: 'Togstasjoner',
+        parent: 'transport',
+        poiTypes: ['train_stations']
+      }
+    ]
+  },
+  {
+    id: 'water_activities_extended',
+    name: 'Vann og fiske',
+    icon: 'sailing',
+    color: '#008B8B',
+    children: [
+      {
+        id: 'fishing_spots',
+        name: 'Fiskeplasser',
+        parent: 'water_activities_extended',
+        poiTypes: ['fishing_spots']
+      },
+      {
+        id: 'canoeing',
+        name: 'Kanopadling',
+        parent: 'water_activities_extended',
+        poiTypes: ['canoeing']
       }
     ]
   }

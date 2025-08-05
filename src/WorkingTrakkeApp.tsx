@@ -138,6 +138,48 @@ export function WorkingTrakkeApp() {
 
         mapInstanceRef.current = map
 
+        // Add click event to display coordinates
+        map.on('click', (e) => {
+          const lat = e.latlng.lat.toFixed(6)
+          const lng = e.latlng.lng.toFixed(6)
+          
+          // Create popup with coordinates
+          const popup = L.popup()
+            .setLatLng(e.latlng)
+            .setContent(`
+              <div style="min-width: 200px; text-align: center;">
+                <strong>📍 Koordinater</strong><br>
+                <div style="font-family: monospace; margin: 8px 0;">
+                  <div>Bredde: ${lat}</div>
+                  <div>Lengde: ${lng}</div>
+                </div>
+                <small style="color: #666;">Klikk for å kopiere</small>
+              </div>
+            `)
+            .openOn(map)
+          
+          // Add click to copy functionality
+          popup.getElement()?.addEventListener('click', () => {
+            const coordinates = `${lat}, ${lng}`
+            navigator.clipboard.writeText(coordinates).then(() => {
+              console.log('📋 Koordinater kopiert:', coordinates)
+              // Update popup content to show copied confirmation
+              popup.setContent(`
+                <div style="min-width: 200px; text-align: center;">
+                  <strong>✅ Kopiert!</strong><br>
+                  <div style="font-family: monospace; margin: 8px 0;">
+                    <div>Bredde: ${lat}</div>
+                    <div>Lengde: ${lng}</div>
+                  </div>
+                  <small style="color: #28a745;">Koordinater kopiert til utklippstavle</small>
+                </div>
+              `)
+            }).catch(err => {
+              console.error('Feil ved kopiering:', err)
+            })
+          })
+        })
+
         // Force map to resize multiple times to ensure proper sizing
         setTimeout(() => {
           map.invalidateSize()
