@@ -154,7 +154,7 @@ export function Sidebar({
                     Vær oppdatert: {weatherLastUpdated.toLocaleTimeString('nb-NO')}
                   </p>
                   <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-                    Status 5/8-25: Appen er under utvikling. Suss, Lene.
+                    Status 5. aug: Appen er under arbeid. Suss, L.
                   </p>
                 </>
               )}
