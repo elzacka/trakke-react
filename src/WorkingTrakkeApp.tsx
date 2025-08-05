@@ -4,7 +4,7 @@ import L from 'leaflet'
 // Header component will be added later if needed
 import { Sidebar } from './components/Sidebar'
 import { SearchResult } from './services/searchService'
-import { useCombinedPOIData } from './hooks/useCombinedPOIData'
+import { usePOIData } from './hooks/usePOIData'
 import { POIType, categoryConfig, categoryTree, CategoryState, CategoryNode } from './data/pois'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
@@ -75,7 +75,6 @@ function createCustomPOIMarker(poiType: POIType): L.DivIcon {
 export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [_searchResult, setSearchResult] = useState<SearchResult | null>(null)
-  const [heritageEnabled, setHeritageEnabled] = useState(false) // Keep disabled - causes network errors
   
   // Initialize category state - all unchecked and collapsed by default
   const [categoryState, setCategoryState] = useState<CategoryState>({
@@ -91,20 +90,14 @@ export function WorkingTrakkeApp() {
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
 
-  // Use combined POI data hook (outdoor + heritage, no weather)
+  // Use simple POI data (no heritage, no weather)
   const {
-    allPOIs: pois,
-    outdoorPOIs: _outdoorPOIs,
-    heritagePOIs: _heritagePOIs,
+    pois,
     loading,
     error,
     lastUpdated,
-    heritageTotal,
-    refreshOutdoorData,
-    refreshHeritageData
-  } = useCombinedPOIData({
-    heritageEnabled
-  })
+    refreshData: refreshOutdoorData
+  } = usePOIData()
 
   // Initialize map
   useEffect(() => {
@@ -357,17 +350,11 @@ export function WorkingTrakkeApp() {
   // clearSearch function removed as it was unused
 
 
-  const toggleHeritage = useCallback(() => {
-    setHeritageEnabled(prev => !prev)
-  }, [])
 
-  // Combined refresh function
+  // Refresh function
   const refreshData = useCallback(() => {
     refreshOutdoorData()
-    if (heritageEnabled) {
-      refreshHeritageData()
-    }
-  }, [refreshOutdoorData, refreshHeritageData, heritageEnabled])
+  }, [refreshOutdoorData])
 
   // Filter POIs based on active categories
   const activePOITypes = getActivePOITypes()
@@ -389,9 +376,6 @@ export function WorkingTrakkeApp() {
           error={combinedError}
           onRefresh={refreshData}
           lastUpdated={lastUpdated}
-          heritageEnabled={heritageEnabled}
-          onToggleHeritage={toggleHeritage}
-          heritageTotal={heritageTotal}
           pois={pois}
           onLocationSelect={handleSearch}
         />

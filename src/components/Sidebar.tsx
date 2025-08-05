@@ -17,10 +17,6 @@ interface SidebarProps {
   error: string | null
   onRefresh: () => void
   lastUpdated: Date | null
-  // Heritage props
-  heritageEnabled?: boolean
-  onToggleHeritage?: () => void
-  heritageTotal?: number
   // Search props
   pois: POI[]
   onLocationSelect: (result: SearchResult) => void
@@ -38,9 +34,6 @@ export function Sidebar({
   error: _error,
   onRefresh: _onRefresh,
   lastUpdated: _lastUpdated,
-  heritageEnabled = false,
-  onToggleHeritage,
-  heritageTotal = 0,
   pois,
   onLocationSelect
 }: SidebarProps) {
@@ -95,34 +88,6 @@ export function Sidebar({
           </div>
 
 
-          {/* Heritage Controls */}
-          {onToggleHeritage && (
-            <div className="heritage-section">
-              <button
-                onClick={onToggleHeritage}
-                className={`heritage-toggle ${heritageEnabled ? 'active' : ''}`}
-                style={{
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: '6px',
-                  backgroundColor: heritageEnabled ? '#8B4B8B' : '#e0e0e0',
-                  color: heritageEnabled ? 'white' : '#666',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  marginBottom: '8px',
-                  width: '100%'
-                }}
-              >
-                {heritageEnabled ? 'Historiske steder på' : 'Historiske steder av'}
-              </button>
-
-              {heritageEnabled && heritageTotal > 0 && (
-                <p style={{ margin: '4px 0', fontSize: '12px', color: '#888' }}>
-                  Kulturminner: {heritageTotal}
-                </p>
-              )}
-            </div>
-          )}
 
         </div>
       )}

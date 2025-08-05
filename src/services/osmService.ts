@@ -36,6 +36,7 @@ export class OSMService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Trakke/1.0 hei@tazk.no'
         },
         body: `data=${encodeURIComponent(query)}`
       })

@@ -1,6 +1,6 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { POI, updatePoisData } from '../data/pois'
+import { POI, updatePoisData, manualPoisData } from '../data/pois'
 import { OSMService } from '../services/osmService'
 
 export interface POIDataState {
@@ -12,10 +12,10 @@ export interface POIDataState {
 
 export function usePOIData() {
   const [state, setState] = useState<POIDataState>({
-    pois: [], // Start with empty array - no manual data
+    pois: manualPoisData, // Start with manual POI data for immediate display
     loading: false,
     error: null,
-    lastUpdated: null
+    lastUpdated: new Date() // Set initial timestamp
   })
 
   // Prevent multiple initial loads
@@ -25,14 +25,16 @@ export function usePOIData() {
   const osmService = useMemo(() => new OSMService(), [])
 
   const fetchOSMData = useCallback(async () => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
+    // Don't set loading to true since we already have manual POIs to show
+    setState(prev => ({ ...prev, error: null }))
+    console.log('🔄 Loading additional POIs from OpenStreetMap (in background)...')
     
     try {
-      // Fetching camping data from OpenStreetMap
+      // Fetching camping data from OpenStreetMap (non-blocking)
       
-      // Timeout for API call (25 sekunder som i query + buffer)
+      // Shorter timeout for better UX (8 seconds)
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('OSM API timeout etter 30 sekunder')), 30000)
+        setTimeout(() => reject(new Error('OSM API timeout etter 8 sekunder')), 8000)
       )
       
       const osmDataPromise = osmService.getCampingPOIs()
@@ -70,13 +72,13 @@ export function usePOIData() {
         }
       }
       
-      // Converted suitable camping spots
+      // Combine manual POIs with OSM data
+      const allPois = [...manualPoisData, ...osmPois]
       
-      // Use only OSM data (no manual POIs)
-      const allPois = osmPois
+      console.log(`✅ Loaded ${manualPoisData.length} manual POIs + ${osmPois.length} OSM POIs = ${allPois.length} total`)
       
       // Update global state
-      updatePoisData(osmPois)
+      updatePoisData(allPois)
       
       setState({
         pois: allPois,
