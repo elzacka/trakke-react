@@ -5,7 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 // Fix Leaflet default marker icons issue
-delete (L.Icon.Default.prototype as any)._getIconUrl
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -17,7 +17,7 @@ class MapErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error?: Error }
 > {
-  constructor(props: any) {
+  constructor(props: { children: ReactNode }) {
     super(props)
     this.state = { hasError: false }
   }
@@ -65,13 +65,13 @@ export function MapTest() {
     // Clean up any existing maps when component mounts
     const containers = document.querySelectorAll('.leaflet-container')
     containers.forEach(container => {
-      if ((container as any)._leaflet_id) {
+      if ((container as HTMLElement & { _leaflet_id?: string })._leaflet_id) {
         try {
-          const map = (container as any)._leaflet_map
+          const map = (container as HTMLElement & { _leaflet_map?: L.Map })._leaflet_map
           if (map) {
             map.remove()
           }
-        } catch (e) {
+        } catch (_e) {
           console.log('Cleaned up old map container')
         }
       }

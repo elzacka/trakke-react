@@ -1,24 +1,24 @@
 // Working TrakkeApp with manual Leaflet implementation
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import L from 'leaflet'
-import { Header } from './components/Header'
+// Header component will be added later if needed
 import { Sidebar } from './components/Sidebar'
 import { SearchResult } from './services/searchService'
 import { useCombinedPOIData } from './hooks/useCombinedPOIData'
-import { POIType, categoryConfig, POI, categoryTree, CategoryState, CategoryNode } from './data/pois'
+import { POIType, categoryConfig, categoryTree, CategoryState, CategoryNode } from './data/pois'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
 
 // Fix Leaflet default marker icons issue
-delete (L.Icon.Default.prototype as any)._getIconUrl
+delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-// Create custom POI icons with improved click handling
-function createCustomIcon(poiType: POIType): L.DivIcon {
+// Create custom POI icons with improved click handling (currently unused)
+function _createCustomIcon(poiType: POIType): L.DivIcon {
   const config = categoryConfig[poiType]
   return L.divIcon({
     html: `<div class="poi-marker" style="
@@ -44,8 +44,8 @@ function createCustomIcon(poiType: POIType): L.DivIcon {
   })
 }
 
-// Helper function to collect all POI types from category tree
-function collectAllPOITypes(nodes: CategoryNode[]): POIType[] {
+// Helper function to collect all POI types from category tree (currently unused)
+function _collectAllPOITypes(nodes: CategoryNode[]): POIType[] {
   const types: POIType[] = []
   
   function traverse(node: CategoryNode) {
@@ -63,7 +63,7 @@ function collectAllPOITypes(nodes: CategoryNode[]): POIType[] {
 
 export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
+  const [_searchResult, setSearchResult] = useState<SearchResult | null>(null)
   const [weatherEnabled, setWeatherEnabled] = useState(true) // Re-enabled now that OSM POIs work
   const [heritageEnabled, setHeritageEnabled] = useState(false) // Keep disabled - causes network errors
   
@@ -84,8 +84,8 @@ export function WorkingTrakkeApp() {
   // Use combined POI data hook (outdoor + heritage + weather)
   const {
     allPOIs: pois,
-    outdoorPOIs,
-    heritagePOIs,
+    outdoorPOIs: _outdoorPOIs,
+    heritagePOIs: _heritagePOIs,
     loading,
     error,
     lastUpdated,
@@ -229,7 +229,7 @@ export function WorkingTrakkeApp() {
         }
 
         // Use default Leaflet markers temporarily to fix popup issue
-        let markerIcon = new L.Icon.Default()
+        const markerIcon = new L.Icon.Default()
         
         // TODO: Re-enable custom icons once popup clicking is confirmed working
         // try {
@@ -255,74 +255,7 @@ export function WorkingTrakkeApp() {
           L.DomEvent.stopPropagation(e)
         })
 
-        // Create popup content with weather data and metadata
-        let popupContent = `
-        <div style="min-width: 200px;">
-          <h3 style="margin: 0 0 10px 0; color: ${categoryConfig[poi.type]?.color || '#666'};">
-            ${poi.name || 'Ukjent sted'}
-          </h3>
-          <p style="margin: 5px 0;">${poi.description || 'Ingen beskrivelse tilgjengelig'}</p>
-        `
-
-        // Add metadata if available
-        if (poi.metadata && typeof poi.metadata === 'object') {
-          const metadataEntries = Object.entries(poi.metadata).filter(([key, value]) => 
-            value != null && value !== '' && value !== 'unknown' && 
-            typeof value === 'string' && key !== 'confidence'
-          )
-          
-          if (metadataEntries.length > 0) {
-            popupContent += `
-              <div style="background: #f0f8f0; padding: 8px; border-radius: 4px; margin: 8px 0;">
-                <strong>Detaljer:</strong><br>
-            `
-            
-            metadataEntries.forEach(([key, value]) => {
-              // Translate key names to Norwegian
-              const norwegianKeys: Record<string, string> = {
-                terrain: 'Terreng',
-                trees: 'Trær',
-                water_nearby: 'Vann i nærheten',
-                wind_protection: 'Vindly',
-                legal_status: 'Legal status',
-                facilities: 'Fasiliteter',
-                season_best: 'Beste sesong',
-                difficulty_access: 'Tilgjengelighet',
-                tree_types: 'Tretyper'
-              }
-              const displayKey = norwegianKeys[key] || key
-              popupContent += `<div><em>${displayKey}:</em> ${value}</div>`
-            })
-            
-            popupContent += `</div>`
-          }
-        }
-
-        // Add weather data if available
-        if (poi.weather) {
-          popupContent += `
-            <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin: 8px 0;">
-              <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">
-                <strong>Vær:</strong> ${poi.weather.description} - ${poi.weather.temperature}°C
-              </div>
-              ${poi.weather.precipitation > 0 ? `<div>Nedbør: ${poi.weather.precipitation}mm</div>` : ''}
-              <div>Vind: ${poi.weather.windSpeed} km/t</div>
-            </div>
-          `
-        }
-
-        // Add source info
-        if (poi.api_source) {
-          popupContent += `
-            <div style="font-size: 12px; color: #666; margin-top: 8px;">
-              Kilde: ${poi.api_source}
-            </div>
-          `
-        }
-
-        popupContent += '</div>'
-
-        // Remove verbose popup debug logging
+        // Legacy popup content code removed
         
         // Simple popup content to avoid rendering issues
         const simplePopup = `
@@ -462,7 +395,7 @@ export function WorkingTrakkeApp() {
       mapInstanceRef.current.setView([result.lat, result.lng], 14)
       
       // Add a temporary marker for the search result
-      const displayName = result.display_name || result.name || result.address || 'Søkeresultat'
+      const displayName = result.displayName || result.name || 'Søkeresultat'
       const searchMarker = L.marker([result.lat, result.lng])
         .bindPopup(`<div style="min-width: 150px;"><strong>${displayName}</strong><br><em>Søkeresultat</em></div>`)
         .addTo(mapInstanceRef.current!)
@@ -470,9 +403,7 @@ export function WorkingTrakkeApp() {
     }
   }, [])
 
-  const clearSearch = useCallback(() => {
-    setSearchResult(null)
-  }, [])
+  // clearSearch function removed as it was unused
 
   const toggleWeather = useCallback(() => {
     setWeatherEnabled(prev => !prev)

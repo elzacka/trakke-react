@@ -57,7 +57,7 @@ export interface POI {
   description: string
   type: POIType
   metadata?: POIMetadata
-  api_source?: 'ut_no' | 'osm' | 'kartverket' | 'manual'
+  api_source?: 'ut_no' | 'osm' | 'kartverket' | 'manual' | 'riksantikvaren'
   last_updated?: string
   weather?: {
     temperature: number
@@ -263,13 +263,13 @@ export const categoryConfig: CategoryConfigMap = {
 export const categoryTree: CategoryNode[] = [
   {
     id: 'outdoor_activities',
-    name: 'Tråkke',
+    name: 'Turløyper',
     icon: 'hiking',
     color: '#228B22',
     children: [
       {
         id: 'hiking',
-        name: 'Dagstur',
+        name: 'Dagsturer',
         parent: 'outdoor_activities',
         poiTypes: ['hiking']
       },
@@ -295,27 +295,15 @@ export const categoryTree: CategoryNode[] = [
     children: [
       {
         id: 'swimming',
-        name: 'Badeplass',
+        name: 'Badeplasser',
         parent: 'water_activities',
         poiTypes: ['swimming']
       },
       {
         id: 'beach',
-        name: 'Strand',
+        name: 'Badeplasser med strand',
         parent: 'water_activities',
         poiTypes: ['beach']
-      },
-      {
-        id: 'lakes_rivers',
-        name: 'Elver og innsjøer',
-        parent: 'water_activities',
-        poiTypes: ['lakes_rivers']
-      },
-      {
-        id: 'ice_fishing',
-        name: 'Isfiske',
-        parent: 'water_activities',
-        poiTypes: ['ice_fishing']
       }
     ]
   },
@@ -345,19 +333,19 @@ export const categoryTree: CategoryNode[] = [
       },
       {
         id: 'camping_site',
-        name: 'Camping',
+        name: 'Campingplasser',
         parent: 'accommodation',
         poiTypes: ['camping_site']
       },
       {
         id: 'tent_area',
-        name: 'Telt',
+        name: 'Egnet for telt',
         parent: 'accommodation',
         poiTypes: ['tent_area']
       },
       {
         id: 'wild_camping',
-        name: 'Hengekøye',
+        name: 'Egnet for hengekøye',
         parent: 'accommodation',
         poiTypes: ['wild_camping']
       }
@@ -365,13 +353,13 @@ export const categoryTree: CategoryNode[] = [
   },
   {
     id: 'nature_experiences',
-    name: 'Naturopplevelser',
+    name: 'Naturperler',
     icon: 'nature',
     color: '#20B2AA',
     children: [
       {
         id: 'nature_gems',
-        name: 'Naturperler',
+        name: 'Fosser',
         parent: 'nature_experiences',
         poiTypes: ['nature_gems']
       },
@@ -380,39 +368,15 @@ export const categoryTree: CategoryNode[] = [
         name: 'Utsiktspunkter',
         parent: 'nature_experiences',
         poiTypes: ['viewpoints']
-      },
-      {
-        id: 'cultural_landscapes',
-        name: 'Kulturlandskap',
-        parent: 'nature_experiences',
-        poiTypes: ['cultural_landscapes']
       }
     ]
   },
   {
     id: 'cultural_heritage',
-    name: 'Historie',
+    name: 'Historiske steder',
     icon: 'museum',
     color: '#8B4B8B',
     children: [
-      {
-        id: 'archaeological',
-        name: 'Kulturminner',
-        parent: 'cultural_heritage',
-        poiTypes: ['archaeological']
-      },
-      {
-        id: 'protected_buildings',
-        name: 'Vernede bygninger',
-        parent: 'cultural_heritage',
-        poiTypes: ['protected_buildings']
-      },
-      {
-        id: 'industrial_heritage',
-        name: 'Tekniske kulturminner',
-        parent: 'cultural_heritage',
-        poiTypes: ['industrial_heritage']
-      },
       {
         id: 'churches',
         name: 'Kirker og religiøse steder',
@@ -426,42 +390,10 @@ export const categoryTree: CategoryNode[] = [
         poiTypes: ['war_memorials']
       },
       {
-        id: 'peace_monuments',
-        name: 'Fredsmonumenter',
+        id: 'archaeological',
+        name: 'Kulturminner',
         parent: 'cultural_heritage',
-        poiTypes: ['peace_monuments']
-      },
-      {
-        id: 'underwater_heritage',
-        name: 'Undervannskulturarv',
-        parent: 'cultural_heritage',
-        poiTypes: ['underwater_heritage']
-      },
-      {
-        id: 'intangible_heritage',
-        name: 'Immaterielle kulturverdier',
-        parent: 'cultural_heritage',
-        poiTypes: ['intangible_heritage']
-      }
-    ]
-  },
-  {
-    id: 'services',
-    name: 'Service og tilgjengelighet',
-    icon: 'support',
-    color: '#FF8C00',
-    children: [
-      {
-        id: 'mountain_service',
-        name: 'Serveringssteder',
-        parent: 'services',
-        poiTypes: ['mountain_service']
-      },
-      {
-        id: 'accessible_sites',
-        name: 'Universell utforming',
-        parent: 'services',
-        poiTypes: ['accessible_sites']
+        poiTypes: ['archaeological']
       }
     ]
   }

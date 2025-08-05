@@ -48,9 +48,9 @@ export function useHeritageData({
       description: riksPOI.description,
       type: categoryMap[riksPOI.category] || 'history_other',
       metadata: {
-        period: riksPOI.period,
-        protection_status: riksPOI.protection_status,
-        source_url: riksPOI.source_url,
+        period: riksPOI.period || 'unknown',
+        protection_status: riksPOI.protection_status || 'unknown',
+        source_url: riksPOI.source_url || 'unknown',
         heritage_category: riksPOI.category
       },
       api_source: 'riksantikvaren' as const,

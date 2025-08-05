@@ -28,7 +28,7 @@ export interface RiksantikvarenApiResponse {
       VERNESTATUS?: string
       KOMMUNE?: string
       FYLKE?: string
-      SHAPE?: any
+      SHAPE?: Record<string, unknown>
     }
     geometry: {
       x: number
@@ -64,7 +64,7 @@ export class RiksantikvarenService {
             name: data.name,
             description: data.description,
             geometryType: data.geometryType,
-            fields: data.fields?.map((f: any) => ({ name: f.name, type: f.type }))
+            fields: data.fields?.map((f: { name: string; type: string }) => ({ name: f.name, type: f.type }))
           })
         } else {
           console.log(`❌ ${endpoint.name}: HTTP ${response.status}`)
