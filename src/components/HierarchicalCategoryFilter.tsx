@@ -15,6 +15,8 @@ export function HierarchicalCategoryFilter({
   onExpandToggle
 }: HierarchicalCategoryFilterProps) {
   
+  // Category filter component ready
+  
   const renderCategoryNode = (node: CategoryNode, level: number = 0) => {
     const hasChildren = node.children && node.children.length > 0
     const isExpanded = categoryState.expanded[node.id] || false

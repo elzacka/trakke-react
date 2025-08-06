@@ -37,6 +37,8 @@ export function Sidebar({
   pois,
   onLocationSelect
 }: SidebarProps) {
+  
+  // Sidebar component ready
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>

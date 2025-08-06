@@ -89,6 +89,7 @@ export function WorkingTrakkeApp() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
+  const updatePOIMarkersWithZoomRef = useRef<(() => void) | null>(null)
 
   // Use simple POI data (no heritage, no weather)
   const {
@@ -129,7 +130,7 @@ export function WorkingTrakkeApp() {
           zoomAnimation: true,
           fadeAnimation: true,
           markerZoomAnimation: true
-        }).setView([65.0, 10.0], 5) // Center of Norway with zoom level to show whole country
+        }).setView([64.5, 11.0], 6) // Center on central Norway with zoom to show most of the country
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -137,6 +138,14 @@ export function WorkingTrakkeApp() {
         }).addTo(map)
 
         mapInstanceRef.current = map
+
+        // Add zoom event to update POI visibility based on zoom level
+        map.on('zoomend', () => {
+          // Call the function through ref to avoid dependency issues
+          if (updatePOIMarkersWithZoomRef.current) {
+            updatePOIMarkersWithZoomRef.current()
+          }
+        })
 
         // Add click event to display coordinates
         map.on('click', (e) => {
@@ -223,6 +232,65 @@ export function WorkingTrakkeApp() {
     return activeTypes
   }, [categoryState])
 
+  // Function to determine if POI should be visible at current zoom level
+  const shouldShowPOIAtZoom = useCallback((poiType: POIType, zoomLevel: number): boolean => {
+    // Zoom level thresholds based on OSM best practices and Norwegian outdoor recreation needs
+    
+    // High priority POIs (always visible from zoom 11+)
+    const highPriorityTypes: POIType[] = [
+      'viewpoints', 'nature_gems', 'staffed_huts', 'camping_site', 
+      'war_memorials', 'churches', 'mountain_peaks'
+    ]
+    
+    // Medium priority POIs (visible from zoom 13+)  
+    const mediumPriorityTypes: POIType[] = [
+      'hiking', 'swimming', 'beach', 'self_service_huts', 'wilderness_shelter',
+      'archaeological', 'protected_buildings', 'parking', 'cable_cars'
+    ]
+    
+    // Low priority POIs (visible from zoom 15+)
+    const lowPriorityTypes: POIType[] = [
+      'tent_area', 'wild_camping', 'hammock_spots', 'rest_areas', 'toilets',
+      'drinking_water', 'fire_places', 'information_boards', 'public_transport'
+    ]
+    
+    // Very detailed POIs (visible from zoom 17+)
+    const detailTypes: POIType[] = [
+      'train_stations', 'fishing_spots', 'canoeing', 'mountain_service',
+      'accessible_sites', 'ski_trails', 'lakes_rivers', 'ice_fishing'
+    ]
+    
+    if (highPriorityTypes.includes(poiType)) return zoomLevel >= 4
+    if (mediumPriorityTypes.includes(poiType)) return zoomLevel >= 5
+    if (lowPriorityTypes.includes(poiType)) return zoomLevel >= 7
+    if (detailTypes.includes(poiType)) return zoomLevel >= 9
+    
+    // Default: show at zoom 6+ for any unlisted types
+    return zoomLevel >= 6
+  }, [])
+
+  // Function to update POI markers based on zoom level
+  const updatePOIMarkersWithZoom = useCallback(() => {
+    if (!mapInstanceRef.current) return
+    
+    const currentZoom = mapInstanceRef.current.getZoom()
+    
+    markersRef.current.forEach(marker => {
+      const poiType = (marker as unknown as { poiType?: POIType }).poiType
+      if (poiType) {
+        const shouldShow = shouldShowPOIAtZoom(poiType, currentZoom)
+        if (shouldShow && !mapInstanceRef.current!.hasLayer(marker)) {
+          mapInstanceRef.current!.addLayer(marker)
+        } else if (!shouldShow && mapInstanceRef.current!.hasLayer(marker)) {
+          mapInstanceRef.current!.removeLayer(marker)
+        }
+      }
+    })
+  }, [shouldShowPOIAtZoom])
+
+  // Store function in ref to avoid dependency issues in useEffect
+  updatePOIMarkersWithZoomRef.current = updatePOIMarkersWithZoom
+
   // Update POI markers when data changes
   useEffect(() => {
     if (!mapInstanceRef.current) return
@@ -237,9 +305,12 @@ export function WorkingTrakkeApp() {
     const activePOITypes = getActivePOITypes()
     const filteredPOIs = pois.filter(poi => activePOITypes.has(poi.type))
 
-    // Minimal logging to prevent infinite loops
+    // Minimal logging for development
+    if (filteredPOIs.length > 0) {
+      console.log(`📍 ${filteredPOIs.length} POIs visible on map`)
+    }
 
-    // Add new markers (reduced logging)
+    // Add new markers
     
     filteredPOIs.forEach((poi, _index) => {
       try {
@@ -253,6 +324,9 @@ export function WorkingTrakkeApp() {
           riseOnHover: true,
           riseOffset: 250
         })
+        
+        // Store POI type on marker for zoom-based filtering
+        ;(marker as unknown as { poiType: POIType }).poiType = poi.type
         
         // Create simple, clean popup content
         const popupContent = `
@@ -283,8 +357,14 @@ export function WorkingTrakkeApp() {
           L.DomEvent.stopPropagation(e)
         })
         
-        marker.addTo(mapInstanceRef.current!)
+        // Add marker to reference array first
         markersRef.current.push(marker)
+        
+        // Only add to map if zoom level is appropriate
+        const currentZoom = mapInstanceRef.current!.getZoom()
+        if (shouldShowPOIAtZoom(poi.type, currentZoom)) {
+          marker.addTo(mapInstanceRef.current!)
+        }
       } catch (error) {
         console.error(`❌ Failed to create marker for POI ${poi.name}:`, error)
       }
@@ -293,7 +373,7 @@ export function WorkingTrakkeApp() {
     // Test marker removed to prevent interference
 
     // Markers added successfully (logging removed to prevent loops)
-  }, [pois, getActivePOITypes])
+  }, [pois, categoryState, shouldShowPOIAtZoom])
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev)
@@ -403,6 +483,8 @@ export function WorkingTrakkeApp() {
   const filteredPOIs = pois.filter(poi => activePOITypes.has(poi.type))
   const combinedError = error
 
+  // App ready to render
+  
   return (
     <div className="app">      
       <main className="app-main">

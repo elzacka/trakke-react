@@ -14,12 +14,12 @@ export interface OSMResponse {
   elements: OSMElement[]
 }
 
-// Bounding box for hele Norge
+// Bounding box for all of Norway (mainland + Svalbard)
 const NORWAY_BBOX = {
-  south: 57.8,   // Sør-Norge (Lindesnes)
-  west: 4.5,     // Vest-Norge (inkludert Shetland)  
-  north: 71.2,   // Nord-Norge (Nordkapp)
-  east: 31.5     // Øst-Norge (Finnmark grense til Russland)
+  south: 57.5,   // Lindesnes (southernmost point)
+  west: 4.0,     // Western coast including Shetland time zone areas
+  north: 71.5,   // Nordkapp and beyond  
+  east: 31.5     // Eastern border with Russia (Finnmark)
 }
 
 export class OSMService {
@@ -174,37 +174,13 @@ export class OSMService {
     return `
       [out:json][timeout:25];
       (
-        // Eksisterende campingplasser
+        // Basic camping and shelter features
         node["tourism"="camp_site"](${south},${west},${north},${east});
         way["tourism"="camp_site"](${south},${west},${north},${east});
-        
-        // Vindskjul og gapahuk
         node["amenity"="shelter"](${south},${west},${north},${east});
         way["amenity"="shelter"](${south},${west},${north},${east});
-        
-        // DNT-hytter og andre hytter
         node["tourism"="wilderness_hut"](${south},${west},${north},${east});
         way["tourism"="wilderness_hut"](${south},${west},${north},${east});
-        
-        // Picnic-områder (ofte flate og egnede for telt)
-        node["leisure"="picnic_site"](${south},${west},${north},${east});
-        way["leisure"="picnic_site"](${south},${west},${north},${east});
-        
-        // Bålplasser
-        node["leisure"="fireplace"](${south},${west},${north},${east});
-        way["leisure"="fireplace"](${south},${west},${north},${east});
-        
-        // Naturlige badeplasser (ofte flate områder)
-        node["natural"="beach"](${south},${west},${north},${east});
-        way["natural"="beach"](${south},${west},${north},${east});
-        
-        // Clearings i skog (potensielle camping-spotter)
-        node["natural"="clearing"](${south},${west},${north},${east});
-        way["natural"="clearing"](${south},${west},${north},${east});
-        
-        // Åpne områder
-        node["natural"="grassland"](${south},${west},${north},${east});
-        way["natural"="grassland"](${south},${west},${north},${east});
       );
       out center meta;
     `
@@ -219,41 +195,15 @@ export class OSMService {
     return `
       [out:json][timeout:25];
       (
-        // Krigsminne og minnesmerker
+        // Basic historical and cultural features
         node["historic"="memorial"](${south},${west},${north},${east});
         way["historic"="memorial"](${south},${west},${north},${east});
-        
-        // Monumenter og statuer
         node["historic"="monument"](${south},${west},${north},${east});
         way["historic"="monument"](${south},${west},${north},${east});
-        
-        // Fredsmonumenter og fredsstøtter
-        node["memorial"="peace"](${south},${west},${north},${east});
-        way["memorial"="peace"](${south},${west},${north},${east});
-        
-        // Krigsgravplasser og krigskirkegårder
-        node["memorial"="war_grave"](${south},${west},${north},${east});
-        way["memorial"="war_grave"](${south},${west},${north},${east});
-        
-        // Befestninger og bunkers
-        node["historic"="bunker"](${south},${west},${north},${east});
-        way["historic"="bunker"](${south},${west},${north},${east});
-        
-        // Historiske kirker og stave kirker
-        node["amenity"="place_of_worship"]["religion"="christian"]["denomination"="lutheran"](${south},${west},${north},${east});
-        way["amenity"="place_of_worship"]["religion"="christian"]["denomination"="lutheran"](${south},${west},${north},${east});
-        
-        // Fornminner og arkeologiske steder
+        node["amenity"="place_of_worship"](${south},${west},${north},${east});
+        way["amenity"="place_of_worship"](${south},${west},${north},${east});
         node["historic"="archaeological_site"](${south},${west},${north},${east});
         way["historic"="archaeological_site"](${south},${west},${north},${east});
-        
-        // Gravhauger og steinalder-steder
-        node["historic"="tomb"](${south},${west},${north},${east});
-        way["historic"="tomb"](${south},${west},${north},${east});
-        
-        // Ruiner av historiske bygninger
-        node["historic"="ruins"](${south},${west},${north},${east});
-        way["historic"="ruins"](${south},${west},${north},${east});
       );
       out center meta;
     `
@@ -268,48 +218,15 @@ export class OSMService {
     return `
       [out:json][timeout:25];
       (
-        // Tursti og vandreruter
-        way["highway"="path"]["foot"!="no"](${south},${west},${north},${east});
-        way["highway"="track"]["foot"!="no"](${south},${west},${north},${east});
-        relation["route"="hiking"](${south},${west},${north},${east});
-        relation["route"="foot"](${south},${west},${north},${east});
-        
-        // Fjelltopper og høyeste punkter
+        // Basic outdoor recreation features
         node["natural"="peak"](${south},${west},${north},${east});
-        node["mountain_pass"](${south},${west},${north},${east});
-        
-        // Skiløyper og vinterstier
-        way["piste:type"="nordic"](${south},${west},${north},${east});
-        way["piste:type"="downhill"](${south},${west},${north},${east});
-        relation["route"="ski"](${south},${west},${north},${east});
-        
-        // Badeplasser og strender
+        node["tourism"="viewpoint"](${south},${west},${north},${east});
+        way["tourism"="viewpoint"](${south},${west},${north},${east});
+        node["waterway"="waterfall"](${south},${west},${north},${east});
         node["leisure"="swimming_area"](${south},${west},${north},${east});
         way["leisure"="swimming_area"](${south},${west},${north},${east});
         node["natural"="beach"](${south},${west},${north},${east});
         way["natural"="beach"](${south},${west},${north},${east});
-        node["amenity"="swimming_pool"]["access"="public"](${south},${west},${north},${east});
-        
-        // Elver og innsjøer
-        way["natural"="water"]["water"="lake"](${south},${west},${north},${east});
-        way["waterway"="river"](${south},${west},${north},${east});
-        way["waterway"="stream"](${south},${west},${north},${east});
-        
-        // Isfiskeplasser (vannområder med winter_sport=ice_fishing)
-        node["sport"="fishing"]["seasonal"="winter"](${south},${west},${north},${east});
-        way["sport"="fishing"]["seasonal"="winter"](${south},${west},${north},${east});
-        
-        // Naturperler - fosser, grotter, utsiktspunkt
-        node["waterway"="waterfall"](${south},${west},${north},${east});
-        node["natural"="cave_entrance"](${south},${west},${north},${east});
-        node["tourism"="viewpoint"](${south},${west},${north},${east});
-        way["tourism"="viewpoint"](${south},${west},${north},${east});
-        
-        // Kulturlandskap og seterområder
-        node["place"="farm"](${south},${west},${north},${east});
-        way["place"="farm"](${south},${west},${north},${east});
-        node["landuse"="farmland"](${south},${west},${north},${east});
-        way["landuse"="farmland"](${south},${west},${north},${east});
       );
       out center meta;
     `
@@ -324,30 +241,13 @@ export class OSMService {
     return `
       [out:json][timeout:25];
       (
-        // DNT serverte hytter
-        node["tourism"="alpine_hut"]["operator"~"DNT|Den Norske Turistforening"](${south},${west},${north},${east});
-        way["tourism"="alpine_hut"]["operator"~"DNT|Den Norske Turistforening"](${south},${west},${north},${east});
-        
-        // Selvbetjente hytter
-        node["tourism"="wilderness_hut"](${south},${west},${north},${east});
-        way["tourism"="wilderness_hut"](${south},${west},${north},${east});
-        node["tourism"="alpine_hut"]["fee"="no"](${south},${west},${north},${east});
-        way["tourism"="alpine_hut"]["fee"="no"](${south},${west},${north},${east});
-        
-        // Gapahuk og vindskjul
-        node["amenity"="shelter"](${south},${west},${north},${east});
-        way["amenity"="shelter"](${south},${west},${north},${east});
-        
-        // Serveringssteder i fjellet
-        node["amenity"="restaurant"]["location"~"mountain|alpine"](${south},${west},${north},${east});
-        node["amenity"="cafe"]["location"~"mountain|alpine"](${south},${west},${north},${east});
-        node["tourism"="guest_house"]["location"~"mountain|alpine"](${south},${west},${north},${east});
-        
-        // Tilgjengelige steder (Universal Design)
-        node["wheelchair"="yes"]["tourism"](${south},${west},${north},${east});
-        way["wheelchair"="yes"]["tourism"](${south},${west},${north},${east});
-        node["wheelchair"="yes"]["leisure"](${south},${west},${north},${east});
-        way["wheelchair"="yes"]["leisure"](${south},${west},${north},${east});
+        // Basic hut and service features
+        node["tourism"="alpine_hut"](${south},${west},${north},${east});
+        way["tourism"="alpine_hut"](${south},${west},${north},${east});
+        node["amenity"="restaurant"](${south},${west},${north},${east});
+        way["amenity"="restaurant"](${south},${west},${north},${east});
+        node["amenity"="cafe"](${south},${west},${north},${east});
+        way["amenity"="cafe"](${south},${west},${north},${east});
       );
       out center meta;
     `
@@ -362,67 +262,14 @@ export class OSMService {
     return `
       [out:json][timeout:25];
       (
-        // Parkering
+        // Basic service and infrastructure features
         node["amenity"="parking"](${south},${west},${north},${east});
         way["amenity"="parking"](${south},${west},${north},${east});
-        
-        // Rasteplasser
-        node["highway"="rest_area"](${south},${west},${north},${east});
-        way["highway"="rest_area"](${south},${west},${north},${east});
-        node["amenity"="bench"](${south},${west},${north},${east});
-        way["amenity"="bench"](${south},${west},${north},${east});
-        
-        // Toaletter
         node["amenity"="toilets"](${south},${west},${north},${east});
         way["amenity"="toilets"](${south},${west},${north},${east});
-        
-        // Drikkevann
         node["amenity"="drinking_water"](${south},${west},${north},${east});
-        node["man_made"="water_well"](${south},${west},${north},${east});
-        node["natural"="spring"](${south},${west},${north},${east});
-        
-        // Bålplasser (allerede i camping query, men legger til flere)
-        node["leisure"="fireplace"](${south},${west},${north},${east});
-        way["leisure"="fireplace"](${south},${west},${north},${east});
-        node["amenity"="bbq"](${south},${west},${north},${east});
-        
-        // Informasjonstavler
-        node["tourism"="information"]["information"="board"](${south},${west},${north},${east});
-        node["tourism"="information"]["information"="map"](${south},${west},${north},${east});
-        
-        // Transport - taubaner og gondoler
-        node["aerialway"="gondola"](${south},${west},${north},${east});
-        way["aerialway"="gondola"](${south},${west},${north},${east});
-        node["aerialway"="cable_car"](${south},${west},${north},${east});
-        way["aerialway"="cable_car"](${south},${west},${north},${east});
-        node["aerialway"="chair_lift"](${south},${west},${north},${east});
-        way["aerialway"="chair_lift"](${south},${west},${north},${east});
-        
-        // Transport - kollektivtransport
-        node["public_transport"="stop_position"](${south},${west},${north},${east});
-        node["highway"="bus_stop"](${south},${west},${north},${east});
-        
-        // Transport - togstasjoner
-        node["railway"="station"](${south},${west},${north},${east});
-        way["railway"="station"](${south},${west},${north},${east});
-        node["public_transport"="station"]["railway"="yes"](${south},${west},${north},${east});
-        
-        // Fiskeplasser
-        node["sport"="fishing"](${south},${west},${north},${east});
-        way["sport"="fishing"](${south},${west},${north},${east});
-        node["leisure"="fishing"](${south},${west},${north},${east});
-        way["leisure"="fishing"](${south},${west},${north},${east});
-        
-        // Kanopadling
-        node["sport"="canoe"](${south},${west},${north},${east});
-        way["sport"="canoe"](${south},${west},${north},${east});
-        node["sport"="kayak"](${south},${west},${north},${east});
-        way["sport"="kayak"](${south},${west},${north},${east});
-        relation["route"="canoe"](${south},${west},${north},${east});
-        
-        // Hengekøyeplasser (spesielle områder)
-        node["leisure"="hammock"](${south},${west},${north},${east});
-        way["leisure"="hammock"](${south},${west},${north},${east});
+        node["tourism"="information"](${south},${west},${north},${east});
+        way["tourism"="information"](${south},${west},${north},${east});
       );
       out center meta;
     `
@@ -812,10 +659,29 @@ export class OSMService {
     if (suitability.hammockSuitable) descriptions.push('Egnet for hengekøye')
     if (suitability.underStarsSuitable) descriptions.push('Egnet for å sove under åpen himmel')
     
-    if (tags.description) descriptions.push(tags.description)
-    if (tags.shelter_type) descriptions.push(`Type: ${tags.shelter_type}`)
+    // Use Norwegian description if available, otherwise generate based on features
+    const norwegianDescription = this.getPreferredNorwegianDescription(tags)
+    if (norwegianDescription) {
+      descriptions.push(norwegianDescription)
+    } else if (tags.amenity || tags.tourism || tags.natural) {
+      // Generate contextual description based on OSM tags
+      descriptions.push(this.generateContextualDescription(tags))
+    }
     
     return descriptions.join('. ') || 'Potensielt overnattingssted i naturen.'
+  }
+
+  private generateContextualDescription(tags: Record<string, string>): string {
+    // Generate Norwegian descriptions based on OSM tags
+    if (tags.tourism === 'camp_site') return 'Etablert campingplass'
+    if (tags.amenity === 'shelter') return 'Skjul eller gapahuk'
+    if (tags.tourism === 'wilderness_hut') return 'Hytte i naturen'
+    if (tags.natural === 'beach') return 'Strand eller badeplass'
+    if (tags.natural === 'clearing') return 'Åpen plass i skogen'
+    if (tags.natural === 'grassland') return 'Åpent grasområde'
+    if (tags.leisure === 'picnic_site') return 'Rasteplass med bord og benker'
+    if (tags.leisure === 'fireplace') return 'Plass med bålmuligheter'
+    return 'Naturområde'
   }
 
   private getTerrainType(tags: Record<string, string>): 'flat' | 'sloped' | 'rocky' | 'soft' {
@@ -851,20 +717,20 @@ export class OSMService {
 
   private getFacilities(tags: Record<string, string>): string[] {
     const facilities = []
-    if (tags.fireplace === 'yes' || tags.leisure === 'fireplace') facilities.push('fireplace')
-    if (tags.toilets === 'yes') facilities.push('toilet')
-    if (tags.amenity === 'shelter') facilities.push('shelter')
-    if (tags.drinking_water === 'yes' || tags.amenity === 'drinking_water') facilities.push('water')
-    if (tags.amenity === 'toilets') facilities.push('toilet')
+    if (tags.fireplace === 'yes' || tags.leisure === 'fireplace') facilities.push('bålplass')
+    if (tags.toilets === 'yes') facilities.push('toalett')
+    if (tags.amenity === 'shelter') facilities.push('skjul')
+    if (tags.drinking_water === 'yes' || tags.amenity === 'drinking_water') facilities.push('drikkevann')
+    if (tags.amenity === 'toilets') facilities.push('toalett')
     return facilities
   }
 
   private getBestSeasons(tags: Record<string, string>): string[] {
     // Enkel analyse - kan forbedres med mer data
-    if (tags.seasonal === 'summer') return ['summer']
-    if (tags.winter === 'yes') return ['summer', 'winter']
-    if (tags.amenity === 'shelter') return ['all_year']
-    return ['summer'] // default for Norge
+    if (tags.seasonal === 'summer') return ['sommer']
+    if (tags.winter === 'yes') return ['sommer', 'vinter']
+    if (tags.amenity === 'shelter') return ['hele året']
+    return ['sommer'] // default for Norge
   }
 
   private getAccessDifficulty(tags: Record<string, string>): 'easy' | 'moderate' | 'difficult' {
@@ -880,16 +746,16 @@ export class OSMService {
 
   private getTreeTypes(tags: Record<string, string>): string[] {
     const treeTypes = []
-    if (tags.leaf_type === 'broadleaved') treeTypes.push('birch')
-    if (tags.leaf_type === 'needleleaved') treeTypes.push('pine', 'spruce')
-    if (tags.leaf_type === 'mixed') treeTypes.push('birch', 'pine', 'spruce')
-    if (tags.species && tags.species.includes('pine')) treeTypes.push('pine')
-    if (tags.species && tags.species.includes('spruce')) treeTypes.push('spruce')
-    if (tags.species && tags.species.includes('birch')) treeTypes.push('birch')
+    if (tags.leaf_type === 'broadleaved') treeTypes.push('bjørk')
+    if (tags.leaf_type === 'needleleaved') treeTypes.push('furu', 'gran')
+    if (tags.leaf_type === 'mixed') treeTypes.push('bjørk', 'furu', 'gran')
+    if (tags.species && tags.species.includes('pine')) treeTypes.push('furu')
+    if (tags.species && tags.species.includes('spruce')) treeTypes.push('gran')
+    if (tags.species && tags.species.includes('birch')) treeTypes.push('bjørk')
     
     // Default hvis ingen spesifikk info
     if (treeTypes.length === 0 && (tags.natural === 'forest' || tags.natural === 'wood')) {
-      treeTypes.push('mixed')
+      treeTypes.push('blandingsskog')
     }
     
     return treeTypes

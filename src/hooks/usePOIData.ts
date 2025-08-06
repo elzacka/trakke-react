@@ -1,6 +1,6 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { POI, updatePoisData } from '../data/pois'
+import { POI, updatePoisData, manualPoisData } from '../data/pois'
 import { OSMService } from '../services/osmService'
 
 export interface POIDataState {
@@ -12,10 +12,10 @@ export interface POIDataState {
 
 export function usePOIData() {
   const [state, setState] = useState<POIDataState>({
-    pois: [], // Start with empty array - OSM data will populate
-    loading: true, // Show loading while fetching OSM data
+    pois: manualPoisData, // Start with manual POI data for immediate display
+    loading: false, // Don't show loading initially - load data in background
     error: null,
-    lastUpdated: null
+    lastUpdated: new Date() // Set initial timestamp
   })
 
   // Prevent multiple initial loads
@@ -25,48 +25,69 @@ export function usePOIData() {
   const osmService = useMemo(() => new OSMService(), [])
 
   const fetchOSMData = useCallback(async () => {
-    // Set loading state while fetching OSM data
-    setState(prev => ({ ...prev, loading: true, error: null }))
-    console.log('🔄 Loading POIs from OpenStreetMap...')
+    // Load OSM data in background without blocking UI
+    setState(prev => ({ ...prev, error: null }))
+    console.log('🔄 Loading POIs from OpenStreetMap in background...')
     
     try {
-      // Shorter timeout for better UX (8 seconds per query)
+      // Extended timeout for Norway-wide OSM API queries (20 seconds per query)
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('OSM API timeout etter 8 sekunder')), 8000)
+        setTimeout(() => reject(new Error('OSM API timeout etter 20 sekunder')), 20000)
       )
       
-      // Fetch all OSM data types in parallel
-      const [campingDataPromise, warMemorialDataPromise, outdoorRecreationDataPromise, hutAndServiceDataPromise, serviceInfrastructureDataPromise] = [
+      // Fetch OSM data sequentially to avoid rate limiting (2-second delays)
+      console.log('🔄 Fetching camping POIs...')
+      const campingElements = await Promise.race([
         osmService.getCampingPOIs(),
-        osmService.getWarMemorialPOIs(),
-        osmService.getOutdoorRecreationPOIs(),
-        osmService.getHutAndServicePOIs(),
-        osmService.getServiceInfrastructurePOIs()
-      ]
+        timeoutPromise
+      ]).catch(err => {
+        console.warn('⚠️ Camping POIs failed to load:', err)
+        return []
+      })
       
-      // Race each API call against timeout
-      const [campingElements, warMemorialElements, outdoorRecreationElements, hutAndServiceElements, serviceInfrastructureElements] = await Promise.all([
-        Promise.race([campingDataPromise, timeoutPromise]).catch(err => {
-          console.warn('⚠️ Camping POIs failed to load:', err)
-          return []
-        }),
-        Promise.race([warMemorialDataPromise, timeoutPromise]).catch(err => {
-          console.warn('⚠️ War memorial POIs failed to load:', err)
-          return []
-        }),
-        Promise.race([outdoorRecreationDataPromise, timeoutPromise]).catch(err => {
-          console.warn('⚠️ Outdoor recreation POIs failed to load:', err)
-          return []
-        }),
-        Promise.race([hutAndServiceDataPromise, timeoutPromise]).catch(err => {
-          console.warn('⚠️ Hut and service POIs failed to load:', err)
-          return []
-        }),
-        Promise.race([serviceInfrastructureDataPromise, timeoutPromise]).catch(err => {
-          console.warn('⚠️ Service infrastructure POIs failed to load:', err)
-          return []
-        })
-      ])
+      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      
+      console.log('🔄 Fetching war memorial POIs...')
+      const warMemorialElements = await Promise.race([
+        osmService.getWarMemorialPOIs(),
+        timeoutPromise
+      ]).catch(err => {
+        console.warn('⚠️ War memorial POIs failed to load:', err)
+        return []
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      
+      console.log('🔄 Fetching outdoor recreation POIs...')
+      const outdoorRecreationElements = await Promise.race([
+        osmService.getOutdoorRecreationPOIs(),
+        timeoutPromise
+      ]).catch(err => {
+        console.warn('⚠️ Outdoor recreation POIs failed to load:', err)
+        return []
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      
+      console.log('🔄 Fetching hut and service POIs...')
+      const hutAndServiceElements = await Promise.race([
+        osmService.getHutAndServicePOIs(),
+        timeoutPromise
+      ]).catch(err => {
+        console.warn('⚠️ Hut and service POIs failed to load:', err)
+        return []
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      
+      console.log('🔄 Fetching service infrastructure POIs...')
+      const serviceInfrastructureElements = await Promise.race([
+        osmService.getServiceInfrastructurePOIs(),
+        timeoutPromise
+      ]).catch(err => {
+        console.warn('⚠️ Service infrastructure POIs failed to load:', err)
+        return []
+      })
       
       const osmPois: POI[] = []
       
@@ -164,10 +185,17 @@ export function usePOIData() {
         }
       }
       
-      // Use only OSM data - no manual POIs
-      const allPois = osmPois
+      // Combine manual POIs with OSM data
+      const allPois = [...manualPoisData, ...osmPois]
       
-      console.log(`✅ Loaded ${campingElements.length} camping + ${warMemorialElements.length} war memorial + ${outdoorRecreationElements.length} outdoor + ${hutAndServiceElements.length} hut/service + ${serviceInfrastructureElements.length} infrastructure POIs = ${allPois.length} total from OSM`)
+      console.log(`✅ OSM API Results:`)
+      console.log(`   Camping elements: ${campingElements.length}`)
+      console.log(`   War memorial elements: ${warMemorialElements.length}`)
+      console.log(`   Outdoor recreation elements: ${outdoorRecreationElements.length}`)
+      console.log(`   Hut/service elements: ${hutAndServiceElements.length}`)
+      console.log(`   Infrastructure elements: ${serviceInfrastructureElements.length}`)
+      console.log(`   Manual POIs: ${manualPoisData.length}`)
+      console.log(`   Total POIs: ${allPois.length} (${osmPois.length} from OSM + ${manualPoisData.length} manual)`)
       
       // Update global state
       updatePoisData(allPois)
