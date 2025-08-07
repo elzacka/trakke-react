@@ -14,12 +14,13 @@ export interface OSMResponse {
   elements: OSMElement[]
 }
 
-// Bounding box for all of Norway (mainland + Svalbard)
+// Smaller test bounding box around central Norway (Oslo-Bergen-Trondheim region)
+// This is a temporary fix - the original Norway-wide bbox was too large for Overpass API
 const NORWAY_BBOX = {
-  south: 57.5,   // Lindesnes (southernmost point)
-  west: 4.0,     // Western coast including Shetland time zone areas
-  north: 71.5,   // Nordkapp and beyond  
-  east: 31.5     // Eastern border with Russia (Finnmark)
+  south: 59.0,   // South of Oslo
+  west: 5.0,     // West coast near Bergen
+  north: 64.0,   // North to Trondheim area  
+  east: 12.0     // East of Oslo
 }
 
 export class OSMService {
@@ -172,7 +173,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:10];
+      [out:json][timeout:60];
       (
         // Basic camping and shelter features
         node["tourism"="camp_site"](${south},${west},${north},${east});
@@ -193,7 +194,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:10];
+      [out:json][timeout:60];
       (
         // Basic historical and cultural features
         node["historic"="memorial"](${south},${west},${north},${east});
@@ -216,7 +217,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:10];
+      [out:json][timeout:60];
       (
         // Basic outdoor recreation features
         node["natural"="peak"](${south},${west},${north},${east});
@@ -239,7 +240,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:10];
+      [out:json][timeout:60];
       (
         // Basic hut and service features
         node["tourism"="alpine_hut"](${south},${west},${north},${east});
@@ -260,7 +261,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:10];
+      [out:json][timeout:60];
       (
         // Basic service and infrastructure features
         node["amenity"="parking"](${south},${west},${north},${east});
