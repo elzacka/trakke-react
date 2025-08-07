@@ -30,64 +30,73 @@ export function usePOIData() {
     console.log('🔄 Loading POIs from OpenStreetMap in background...')
     
     try {
-      // Extended timeout for Norway-wide OSM API queries (20 seconds per query)
+      // OSM API has 15-second queue timeout - use 12 seconds to stay within limits
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('OSM API timeout etter 20 sekunder')), 20000)
+        setTimeout(() => reject(new Error('OSM API timeout etter 12 sekunder')), 12000)
       )
       
-      // Fetch OSM data sequentially to avoid rate limiting (2-second delays)
-      console.log('🔄 Fetching camping POIs...')
-      const campingElements = await Promise.race([
-        osmService.getCampingPOIs(),
-        timeoutPromise
-      ]).catch(err => {
-        console.warn('⚠️ Camping POIs failed to load:', err)
+      // Helper function to retry OSM requests with exponential backoff for 429 errors
+      const fetchWithRetry = async (fetchFn: () => Promise<any>, name: string, maxRetries: number = 3): Promise<any> => {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const result = await Promise.race([fetchFn(), timeoutPromise])
+            return result
+          } catch (error: any) {
+            console.warn(`⚠️ ${name} attempt ${attempt} failed:`, error)
+            
+            // If it's a 429 error and we have retries left, wait longer and retry
+            if (error?.message?.includes('429') && attempt < maxRetries) {
+              const backoffDelay = Math.min(10000 + (attempt * 5000), 30000) // 10s, 15s, 20s max
+              console.log(`🔄 Retrying ${name} in ${backoffDelay/1000}s due to rate limiting...`)
+              await new Promise(resolve => setTimeout(resolve, backoffDelay))
+              continue
+            }
+            
+            // Final attempt failed or non-429 error
+            return []
+          }
+        }
         return []
-      })
+      }
+
+      // Fetch OSM data sequentially with proper retry logic
+      console.log('🔄 Fetching camping POIs...')
+      const campingElements = await fetchWithRetry(
+        () => osmService.getCampingPOIs(),
+        'Camping POIs'
+      )
       
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay per OSM guidelines
       
       console.log('🔄 Fetching war memorial POIs...')
-      const warMemorialElements = await Promise.race([
-        osmService.getWarMemorialPOIs(),
-        timeoutPromise
-      ]).catch(err => {
-        console.warn('⚠️ War memorial POIs failed to load:', err)
-        return []
-      })
+      const warMemorialElements = await fetchWithRetry(
+        () => osmService.getWarMemorialPOIs(),
+        'War Memorial POIs'
+      )
       
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay per OSM guidelines
       
       console.log('🔄 Fetching outdoor recreation POIs...')
-      const outdoorRecreationElements = await Promise.race([
-        osmService.getOutdoorRecreationPOIs(),
-        timeoutPromise
-      ]).catch(err => {
-        console.warn('⚠️ Outdoor recreation POIs failed to load:', err)
-        return []
-      })
+      const outdoorRecreationElements = await fetchWithRetry(
+        () => osmService.getOutdoorRecreationPOIs(),
+        'Outdoor Recreation POIs'
+      )
       
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay per OSM guidelines
       
       console.log('🔄 Fetching hut and service POIs...')
-      const hutAndServiceElements = await Promise.race([
-        osmService.getHutAndServicePOIs(),
-        timeoutPromise
-      ]).catch(err => {
-        console.warn('⚠️ Hut and service POIs failed to load:', err)
-        return []
-      })
+      const hutAndServiceElements = await fetchWithRetry(
+        () => osmService.getHutAndServicePOIs(),
+        'Hut and Service POIs'
+      )
       
-      await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+      await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay per OSM guidelines
       
       console.log('🔄 Fetching service infrastructure POIs...')
-      const serviceInfrastructureElements = await Promise.race([
-        osmService.getServiceInfrastructurePOIs(),
-        timeoutPromise
-      ]).catch(err => {
-        console.warn('⚠️ Service infrastructure POIs failed to load:', err)
-        return []
-      })
+      const serviceInfrastructureElements = await fetchWithRetry(
+        () => osmService.getServiceInfrastructurePOIs(),
+        'Service Infrastructure POIs'
+      )
       
       const osmPois: POI[] = []
       

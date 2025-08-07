@@ -172,7 +172,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:25];
+      [out:json][timeout:10];
       (
         // Basic camping and shelter features
         node["tourism"="camp_site"](${south},${west},${north},${east});
@@ -193,7 +193,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:25];
+      [out:json][timeout:10];
       (
         // Basic historical and cultural features
         node["historic"="memorial"](${south},${west},${north},${east});
@@ -216,7 +216,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:25];
+      [out:json][timeout:10];
       (
         // Basic outdoor recreation features
         node["natural"="peak"](${south},${west},${north},${east});
@@ -239,7 +239,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:25];
+      [out:json][timeout:10];
       (
         // Basic hut and service features
         node["tourism"="alpine_hut"](${south},${west},${north},${east});
@@ -260,7 +260,7 @@ export class OSMService {
     const { south, west, north, east } = NORWAY_BBOX
     
     return `
-      [out:json][timeout:25];
+      [out:json][timeout:10];
       (
         // Basic service and infrastructure features
         node["amenity"="parking"](${south},${west},${north},${east});
