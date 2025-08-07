@@ -1,7 +1,7 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { POI, updatePoisData, manualPoisData } from '../data/pois'
-import { OSMService } from '../services/osmService'
+import { OSMService, OSMElement } from '../services/osmService'
 
 export interface POIDataState {
   pois: POI[]
@@ -36,16 +36,16 @@ export function usePOIData() {
       )
       
       // Helper function to retry OSM requests with exponential backoff for 429 errors
-      const fetchWithRetry = async (fetchFn: () => Promise<any>, name: string, maxRetries: number = 3): Promise<any> => {
+      const fetchWithRetry = async (fetchFn: () => Promise<OSMElement[]>, name: string, maxRetries: number = 3): Promise<OSMElement[]> => {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
             const result = await Promise.race([fetchFn(), timeoutPromise])
             return result
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.warn(`⚠️ ${name} attempt ${attempt} failed:`, error)
             
             // If it's a 429 error and we have retries left, wait longer and retry
-            if (error?.message?.includes('429') && attempt < maxRetries) {
+            if (error instanceof Error && error.message.includes('429') && attempt < maxRetries) {
               const backoffDelay = Math.min(10000 + (attempt * 5000), 30000) // 10s, 15s, 20s max
               console.log(`🔄 Retrying ${name} in ${backoffDelay/1000}s due to rate limiting...`)
               await new Promise(resolve => setTimeout(resolve, backoffDelay))
