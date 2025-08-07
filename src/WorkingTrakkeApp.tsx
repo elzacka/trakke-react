@@ -373,7 +373,7 @@ export function WorkingTrakkeApp() {
     // Test marker removed to prevent interference
 
     // Markers added successfully (logging removed to prevent loops)
-  }, [pois, categoryState, shouldShowPOIAtZoom])
+  }, [pois, categoryState, shouldShowPOIAtZoom, getActivePOITypes])
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev)
