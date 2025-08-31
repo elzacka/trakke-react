@@ -1,27 +1,46 @@
 import React from 'react'
-import { CategoryNode, CategoryState } from '../data/pois'
+import { CategoryNode, CategoryState, POI } from '../data/pois'
 
 interface HierarchicalCategoryFilterProps {
   categoryTree: CategoryNode[]
   categoryState: CategoryState
   onCategoryToggle: (nodeId: string) => void
   onExpandToggle: (nodeId: string) => void
+  pois: POI[] // Add POI data to determine which categories have actual data
 }
 
 export function HierarchicalCategoryFilter({
   categoryTree,
   categoryState,
   onCategoryToggle,
-  onExpandToggle
+  onExpandToggle,
+  pois
 }: HierarchicalCategoryFilterProps) {
   
-  // Category filter component ready
+  // Function to check if a category has actual POI data (excluding sample data)
+  const categoryHasData = (node: CategoryNode): boolean => {
+    if (node.poiTypes) {
+      // Only consider 'war_memorials' as having real implementation
+      // Check for Krigsminner POIs (identified by ID starting with 'krigsminner_')
+      return node.poiTypes.includes('war_memorials') && 
+             pois.some(poi => poi.type === 'war_memorials' && poi.id.startsWith('krigsminner_'))
+    }
+    
+    // For parent categories, check if any children have data
+    if (node.children) {
+      return node.children.some(child => categoryHasData(child))
+    }
+    
+    return false
+  }
   
   const renderCategoryNode = (node: CategoryNode, level: number = 0) => {
     const hasChildren = node.children && node.children.length > 0
     const isExpanded = categoryState.expanded[node.id] || false
     const isChecked = categoryState.checked[node.id] || false
     const indentLevel = level * 20
+    const hasData = categoryHasData(node)
+    const isDisabled = !hasData
 
     return (
       <div key={node.id} style={{ marginLeft: `${indentLevel}px` }}>
@@ -52,28 +71,35 @@ export function HierarchicalCategoryFilter({
             type="checkbox"
             id={node.id}
             checked={isChecked}
-            onChange={() => onCategoryToggle(node.id)}
-            style={{ marginRight: '8px' }}
+            onChange={() => !isDisabled && onCategoryToggle(node.id)}
+            disabled={isDisabled}
+            style={{ 
+              marginRight: '8px',
+              opacity: isDisabled ? 0.4 : 1,
+              cursor: isDisabled ? 'not-allowed' : 'pointer'
+            }}
           />
           
           {node.icon && (
             <div 
               className="icon-preview" 
               style={{ 
-                backgroundColor: node.color || '#ccc',
+                backgroundColor: isDisabled ? '#ccc' : (node.color || '#ccc'),
                 width: '20px',
                 height: '20px',
                 borderRadius: '50%',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginRight: '8px'
+                marginRight: '8px',
+                opacity: isDisabled ? 0.4 : 1
               }}
             >
               <span style={{ 
                 fontFamily: 'Material Symbols Outlined', 
                 fontSize: '14px', 
-                color: 'white' 
+                color: 'white',
+                opacity: isDisabled ? 0.6 : 1
               }}>
                 {node.icon}
               </span>
@@ -83,9 +109,11 @@ export function HierarchicalCategoryFilter({
           <label 
             htmlFor={node.id}
             style={{ 
-              cursor: 'pointer',
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
               fontSize: '14px',
-              fontWeight: '500'
+              fontWeight: '500',
+              color: isDisabled ? '#999' : 'inherit',
+              opacity: isDisabled ? 0.6 : 1
             }}
           >
             {node.name}

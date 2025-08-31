@@ -1,4 +1,5 @@
 // src/data/pois.ts - Fikset ESLint warning og manglende kategorier
+// GeoJSON will be loaded dynamically
 
 export type POIType = 
   // Friluftsliv - følger DNT og UT.no standarder
@@ -701,3 +702,150 @@ export let poisData: POI[] = []
 export function updatePoisData(newPois: POI[]) {
   poisData = [...newPois]
 }
+
+// GeoJSON conversion function for Krigsminner data
+function convertKrigsminnerGeoJSONToPOIs(geojson: any): POI[] {
+  if (!geojson || !geojson.features) {
+    console.warn('⚠️ Invalid GeoJSON data for Krigsminner')
+    return []
+  }
+
+  const pois: POI[] = []
+  
+  geojson.features.forEach((feature: any, index: number) => {
+    try {
+      // Extract coordinates - handle both Point and Polygon geometries
+      let lat: number, lng: number
+      
+      if (feature.geometry?.type === 'Point') {
+        [lng, lat] = feature.geometry.coordinates
+      } else if (feature.geometry?.type === 'Polygon') {
+        // Use first coordinate of first ring for polygon centroid approximation
+        [lng, lat] = feature.geometry.coordinates[0][0]
+      } else if (feature.geometry?.type === 'MultiPolygon') {
+        // Use first coordinate of first polygon
+        [lng, lat] = feature.geometry.coordinates[0][0][0]
+      } else {
+        console.warn(`⚠️ Unsupported geometry type: ${feature.geometry?.type}`)
+        return
+      }
+
+      // Validate coordinates
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+        console.warn(`⚠️ Invalid coordinates for feature ${index}`)
+        return
+      }
+
+      const props = feature.properties || {}
+      
+      // Generate Norwegian name and description
+      const name = props.name || 
+                   props['name:no'] || 
+                   props['name:nb'] || 
+                   generateKrigsminnerName(props)
+      
+      const description = props.description || 
+                         props['description:no'] || 
+                         props['description:nb'] || 
+                         generateKrigsminnerDescription(props)
+
+      const poi: POI = {
+        id: `krigsminner_${props['@id']?.replace(/[^\w]/g, '_') || index}`,
+        name,
+        lat,
+        lng,
+        description,
+        type: 'war_memorials',
+        metadata: {
+          bunker_type: props.bunker_type || 'unknown',
+          military: props.military || 'bunker',
+          location: props.location || 'surface',
+          man_made: props.man_made,
+          layer: props.layer,
+          historic: props.historic,
+          memorial: props.memorial,
+          ...(props.inscription && { inscription: props.inscription }),
+          ...(props.year && { year: props.year }),
+          ...(props.start_date && { start_date: props.start_date })
+        },
+        api_source: 'manual',
+        last_updated: new Date().toISOString()
+      }
+
+      pois.push(poi)
+    } catch (error) {
+      console.error(`❌ Failed to convert Krigsminner feature ${index}:`, error)
+    }
+  })
+
+  console.log(`✅ Converted ${pois.length} Krigsminner POIs from GeoJSON`)
+  return pois
+}
+
+// Helper function to generate Norwegian names for Krigsminner
+function generateKrigsminnerName(props: any): string {
+  if (props.military === 'bunker') {
+    if (props.bunker_type === 'gun_emplacement') return 'Kanoninnretning'
+    if (props.bunker_type === 'shelter') return 'Skjulsrom'
+    if (props.bunker_type === 'ammunition') return 'Ammunisjonsbunker'
+    if (props.bunker_type === 'command') return 'Kommandoplass'
+    return 'Bunker'
+  }
+  if (props.historic === 'memorial') return 'Krigsminne'
+  if (props.historic === 'monument') return 'Monument'
+  if (props.historic === 'battlefield') return 'Slagmark'
+  if (props.man_made === 'tunnel') return 'Tunnel'
+  return 'Krigsminne'
+}
+
+// Helper function to generate Norwegian descriptions for Krigsminner  
+function generateKrigsminnerDescription(props: any): string {
+  const parts: string[] = []
+  
+  if (props.military === 'bunker') {
+    parts.push('Militært forsvarsverk fra andre verdenskrig')
+  }
+  
+  if (props.bunker_type) {
+    const bunkerTypes: Record<string, string> = {
+      'gun_emplacement': 'kanonplassering',
+      'shelter': 'skjulsrom for sivile eller militære',
+      'ammunition': 'ammunisjonslager', 
+      'command': 'kommandosentral',
+      'observation': 'observasjonspost'
+    }
+    parts.push(`Type: ${bunkerTypes[props.bunker_type] || props.bunker_type}`)
+  }
+  
+  if (props.location === 'underground') {
+    parts.push('Underjordisk anlegg')
+  }
+  
+  if (props.layer && props.layer.includes('-')) {
+    parts.push('Ligger under bakkenivå')
+  }
+
+  if (parts.length === 0) {
+    parts.push('Historisk krigsminnested i Norge')
+  }
+
+  return parts.join('. ') + '.'
+}
+
+// Function to load and convert Krigsminner POIs (async)
+export async function loadKrigsminnerPOIs(): Promise<POI[]> {
+  try {
+    const response = await fetch('./krigsminner1.geojson')
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Krigsminner data: ${response.status}`)
+    }
+    const geojson = await response.json()
+    return convertKrigsminnerGeoJSONToPOIs(geojson)
+  } catch (error) {
+    console.error('❌ Failed to load Krigsminner data:', error)
+    return []
+  }
+}
+
+// Export empty array initially - will be populated by loadKrigsminnerPOIs()
+export const krigsminnerPOIs: POI[] = []

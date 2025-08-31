@@ -86,7 +86,20 @@ export function Sidebar({
               categoryState={categoryState}
               onCategoryToggle={onCategoryToggle}
               onExpandToggle={onExpandToggle}
+              pois={pois}
             />
+          </div>
+          
+          <div className="last-updated-section" style={{
+            marginTop: 'auto',
+            padding: '12px 0',
+            borderTop: '1px solid #eee',
+            fontSize: '12px',
+            color: '#888',
+            textAlign: 'left',
+            margin: '4px 0'
+          }}>
+            Sist oppdatert: 01.09.25
           </div>
 
 

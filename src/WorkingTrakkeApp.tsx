@@ -76,10 +76,10 @@ export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [_searchResult, setSearchResult] = useState<SearchResult | null>(null)
   
-  // Initialize category state - all unchecked and collapsed by default
+  // Initialize category state - auto-expand Kulturarv to show available Krigsminner
   const [categoryState, setCategoryState] = useState<CategoryState>({
     expanded: {
-      // All main categories collapsed by default - user must expand to see subcategories
+      'cultural_heritage': true // Auto-expand Historiske steder to show Krigsminner is available
     }, 
     checked: {
       // All categories unchecked by default - user must select what they want to see

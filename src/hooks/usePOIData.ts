@@ -1,6 +1,6 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { POI, updatePoisData, manualPoisData } from '../data/pois'
+import { POI, updatePoisData, manualPoisData, loadKrigsminnerPOIs } from '../data/pois'
 import { OSMService, OSMElement } from '../services/osmService'
 
 export interface POIDataState {
@@ -25,11 +25,22 @@ export function usePOIData() {
   const osmService = useMemo(() => new OSMService(), [])
 
   const fetchOSMData = useCallback(async () => {
-    // Load OSM data in background without blocking UI
+    // Load OSM data and Krigsminner data in background without blocking UI
     setState(prev => ({ ...prev, error: null }))
-    console.log('🔄 Loading POIs from OpenStreetMap in background...')
+    console.log('🔄 Loading POIs from OpenStreetMap and Krigsminner data in background...')
     
     try {
+      // Load Krigsminner data first
+      console.log('🔄 Loading Krigsminner POIs...')
+      const loadedKrigsminnerPOIs = await loadKrigsminnerPOIs()
+      console.log(`✅ Loaded ${loadedKrigsminnerPOIs.length} Krigsminner POIs`)
+      
+      // Update state immediately with manual + Krigsminner data
+      setState(prev => ({
+        ...prev,
+        pois: [...manualPoisData, ...loadedKrigsminnerPOIs],
+        lastUpdated: new Date()
+      }))
       // OSM API has 15-second queue timeout - use 12 seconds to stay within limits
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('OSM API timeout etter 12 sekunder')), 12000)
@@ -68,13 +79,11 @@ export function usePOIData() {
       
       await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay per OSM guidelines
       
-      console.log('🔄 Fetching war memorial POIs...')
-      const warMemorialElements = await fetchWithRetry(
-        () => osmService.getWarMemorialPOIs(),
-        'War Memorial POIs'
-      )
+      // Skip war memorial POIs from OSM - we have comprehensive Krigsminner data already
+      console.log('ℹ️ Skipping OSM war memorial fetch - using comprehensive Krigsminner dataset instead')
+      const warMemorialElements: OSMElement[] = []
       
-      await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay per OSM guidelines
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Short delay to maintain API rhythm
       
       console.log('🔄 Fetching outdoor recreation POIs...')
       const outdoorRecreationElements = await fetchWithRetry(
@@ -122,23 +131,7 @@ export function usePOIData() {
         }
       }
       
-      // Process war memorial elements
-      for (const element of warMemorialElements) {
-        try {
-          if (!element.id || (!element.lat && !element.center?.lat)) {
-            console.warn('⚠️ Ugyldig krigsminne element:', element.id)
-            continue
-          }
-          
-          const poi = osmService.convertWarMemorialToPOI(element)
-          
-          if (poi.lat !== 0 && poi.lng !== 0) {
-            osmPois.push(poi)
-          }
-        } catch (elementError) {
-          console.warn('⚠️ Feil ved prosessering av krigsminne element:', element.id, elementError)
-        }
-      }
+      // Skip war memorial processing - using comprehensive Krigsminner dataset instead
       
       // Process outdoor recreation elements
       for (const element of outdoorRecreationElements) {
@@ -194,17 +187,18 @@ export function usePOIData() {
         }
       }
       
-      // Combine manual POIs with OSM data
-      const allPois = [...manualPoisData, ...osmPois]
+      // Combine manual POIs with OSM data and Krigsminner data
+      const allPois = [...manualPoisData, ...loadedKrigsminnerPOIs, ...osmPois]
       
-      console.log(`✅ OSM API Results:`)
+      console.log(`✅ Data Loading Results:`)
       console.log(`   Camping elements: ${campingElements.length}`)
-      console.log(`   War memorial elements: ${warMemorialElements.length}`)
+      console.log(`   War memorial elements: 0 (using Krigsminner dataset instead)`)
       console.log(`   Outdoor recreation elements: ${outdoorRecreationElements.length}`)
       console.log(`   Hut/service elements: ${hutAndServiceElements.length}`)
       console.log(`   Infrastructure elements: ${serviceInfrastructureElements.length}`)
       console.log(`   Manual POIs: ${manualPoisData.length}`)
-      console.log(`   Total POIs: ${allPois.length} (${osmPois.length} from OSM + ${manualPoisData.length} manual)`)
+      console.log(`   Krigsminner POIs: ${loadedKrigsminnerPOIs.length}`)
+      console.log(`   Total POIs: ${allPois.length} (${osmPois.length} from OSM + ${manualPoisData.length} manual + ${loadedKrigsminnerPOIs.length} Krigsminner)`)
       
       // Update global state
       updatePoisData(allPois)

@@ -21,6 +21,9 @@
 
 .sidebar-content {
   transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 2rem); /* Full height minus padding */
 }
 
 .sidebar-toggle {
