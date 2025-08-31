@@ -1,6 +1,42 @@
 // src/data/pois.ts - Fikset ESLint warning og manglende kategorier
 // GeoJSON will be loaded dynamically
 
+// TypeScript interfaces for GeoJSON structures
+interface GeoJSONFeature {
+  type: 'Feature'
+  properties: Record<string, string | number | undefined>
+  geometry: {
+    type: 'Point' | 'Polygon' | 'MultiPolygon'
+    coordinates: number[] | number[][] | number[][][]
+  }
+}
+
+interface GeoJSONFeatureCollection {
+  type: 'FeatureCollection'
+  features: GeoJSONFeature[]
+}
+
+interface KrigsminnerProps {
+  [key: string]: string | number | undefined
+  name?: string
+  'name:no'?: string
+  'name:nb'?: string
+  description?: string
+  'description:no'?: string
+  'description:nb'?: string
+  military?: string
+  bunker_type?: string
+  historic?: string
+  memorial?: string
+  location?: string
+  man_made?: string
+  layer?: string
+  inscription?: string
+  year?: string
+  start_date?: string
+  '@id'?: string
+}
+
 export type POIType = 
   // Friluftsliv - følger DNT og UT.no standarder
   | 'hiking'              // Dagstur/vandring
@@ -704,7 +740,7 @@ export function updatePoisData(newPois: POI[]) {
 }
 
 // GeoJSON conversion function for Krigsminner data
-function convertKrigsminnerGeoJSONToPOIs(geojson: any): POI[] {
+function convertKrigsminnerGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI[] {
   if (!geojson || !geojson.features) {
     console.warn('⚠️ Invalid GeoJSON data for Krigsminner')
     return []
@@ -712,19 +748,25 @@ function convertKrigsminnerGeoJSONToPOIs(geojson: any): POI[] {
 
   const pois: POI[] = []
   
-  geojson.features.forEach((feature: any, index: number) => {
+  geojson.features.forEach((feature: GeoJSONFeature, index: number) => {
     try {
       // Extract coordinates - handle both Point and Polygon geometries
       let lat: number, lng: number
       
       if (feature.geometry?.type === 'Point') {
-        [lng, lat] = feature.geometry.coordinates
+        const coords = feature.geometry.coordinates as number[]
+        lng = coords[0]
+        lat = coords[1]
       } else if (feature.geometry?.type === 'Polygon') {
         // Use first coordinate of first ring for polygon centroid approximation
-        [lng, lat] = feature.geometry.coordinates[0][0]
+        const coords = feature.geometry.coordinates as number[][]
+        lng = coords[0][0]
+        lat = coords[0][1]
       } else if (feature.geometry?.type === 'MultiPolygon') {
         // Use first coordinate of first polygon
-        [lng, lat] = feature.geometry.coordinates[0][0][0]
+        const coords = feature.geometry.coordinates as number[][][]
+        lng = coords[0][0][0]
+        lat = coords[0][0][1]
       } else {
         console.warn(`⚠️ Unsupported geometry type: ${feature.geometry?.type}`)
         return
@@ -736,7 +778,7 @@ function convertKrigsminnerGeoJSONToPOIs(geojson: any): POI[] {
         return
       }
 
-      const props = feature.properties || {}
+      const props = (feature.properties || {}) as KrigsminnerProps
       
       // Generate Norwegian name and description
       const name = props.name || 
@@ -760,13 +802,13 @@ function convertKrigsminnerGeoJSONToPOIs(geojson: any): POI[] {
           bunker_type: props.bunker_type || 'unknown',
           military: props.military || 'bunker',
           location: props.location || 'surface',
-          man_made: props.man_made,
-          layer: props.layer,
-          historic: props.historic,
-          memorial: props.memorial,
-          ...(props.inscription && { inscription: props.inscription }),
-          ...(props.year && { year: props.year }),
-          ...(props.start_date && { start_date: props.start_date })
+          man_made: props.man_made || '',
+          layer: props.layer || '',
+          historic: props.historic || '',
+          memorial: props.memorial || '',
+          ...(props.inscription && { inscription: String(props.inscription) }),
+          ...(props.year && { year: String(props.year) }),
+          ...(props.start_date && { start_date: String(props.start_date) })
         },
         api_source: 'manual',
         last_updated: new Date().toISOString()
@@ -783,7 +825,7 @@ function convertKrigsminnerGeoJSONToPOIs(geojson: any): POI[] {
 }
 
 // Helper function to generate Norwegian names for Krigsminner
-function generateKrigsminnerName(props: any): string {
+function generateKrigsminnerName(props: KrigsminnerProps): string {
   if (props.military === 'bunker') {
     if (props.bunker_type === 'gun_emplacement') return 'Kanoninnretning'
     if (props.bunker_type === 'shelter') return 'Skjulsrom'
@@ -799,7 +841,7 @@ function generateKrigsminnerName(props: any): string {
 }
 
 // Helper function to generate Norwegian descriptions for Krigsminner  
-function generateKrigsminnerDescription(props: any): string {
+function generateKrigsminnerDescription(props: KrigsminnerProps): string {
   const parts: string[] = []
   
   if (props.military === 'bunker') {

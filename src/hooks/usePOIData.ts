@@ -81,7 +81,7 @@ export function usePOIData() {
       
       // Skip war memorial POIs from OSM - we have comprehensive Krigsminner data already
       console.log('ℹ️ Skipping OSM war memorial fetch - using comprehensive Krigsminner dataset instead')
-      const warMemorialElements: OSMElement[] = []
+      const _warMemorialElements: OSMElement[] = []
       
       await new Promise(resolve => setTimeout(resolve, 1000)) // Short delay to maintain API rhythm
       
@@ -192,7 +192,7 @@ export function usePOIData() {
       
       console.log(`✅ Data Loading Results:`)
       console.log(`   Camping elements: ${campingElements.length}`)
-      console.log(`   War memorial elements: 0 (using Krigsminner dataset instead)`)
+      console.log(`   War memorial elements: ${_warMemorialElements.length} (using Krigsminner dataset instead)`)
       console.log(`   Outdoor recreation elements: ${outdoorRecreationElements.length}`)
       console.log(`   Hut/service elements: ${hutAndServiceElements.length}`)
       console.log(`   Infrastructure elements: ${serviceInfrastructureElements.length}`)
