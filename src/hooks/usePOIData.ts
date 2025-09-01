@@ -1,6 +1,6 @@
 // src/hooks/usePOIData.ts - Fikset OSM API implementering
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { POI, updatePoisData, manualPoisData, loadKrigsminnerPOIs } from '../data/pois'
+import { POI, updatePoisData, manualPoisData, loadKrigsminnerPOIs, loadUtsiktspunkterPOIs } from '../data/pois'
 import { OSMService, OSMElement } from '../services/osmService'
 
 export interface POIDataState {
@@ -25,20 +25,24 @@ export function usePOIData() {
   const osmService = useMemo(() => new OSMService(), [])
 
   const fetchOSMData = useCallback(async () => {
-    // Load OSM data and Krigsminner data in background without blocking UI
+    // Load OSM data, Krigsminner data, and Utsiktspunkter data in background without blocking UI
     setState(prev => ({ ...prev, error: null }))
-    console.log('🔄 Loading POIs from OpenStreetMap and Krigsminner data in background...')
+    console.log('🔄 Loading POIs from OpenStreetMap, Krigsminner, and Utsiktspunkter data in background...')
     
     try {
-      // Load Krigsminner data first
+      // Load external POI datasets first
       console.log('🔄 Loading Krigsminner POIs...')
       const loadedKrigsminnerPOIs = await loadKrigsminnerPOIs()
       console.log(`✅ Loaded ${loadedKrigsminnerPOIs.length} Krigsminner POIs`)
       
-      // Update state immediately with manual + Krigsminner data
+      console.log('🔄 Loading Utsiktspunkter POIs...')
+      const loadedUtsiktspunkterPOIs = await loadUtsiktspunkterPOIs()
+      console.log(`✅ Loaded ${loadedUtsiktspunkterPOIs.length} Utsiktspunkter POIs`)
+      
+      // Update state immediately with manual + external POI data
       setState(prev => ({
         ...prev,
-        pois: [...manualPoisData, ...loadedKrigsminnerPOIs],
+        pois: [...manualPoisData, ...loadedKrigsminnerPOIs, ...loadedUtsiktspunkterPOIs],
         lastUpdated: new Date()
       }))
       // OSM API has 15-second queue timeout - use 12 seconds to stay within limits
@@ -187,8 +191,8 @@ export function usePOIData() {
         }
       }
       
-      // Combine manual POIs with OSM data and Krigsminner data
-      const allPois = [...manualPoisData, ...loadedKrigsminnerPOIs, ...osmPois]
+      // Combine manual POIs with OSM data and external POI datasets
+      const allPois = [...manualPoisData, ...loadedKrigsminnerPOIs, ...loadedUtsiktspunkterPOIs, ...osmPois]
       
       console.log(`✅ Data Loading Results:`)
       console.log(`   Camping elements: ${campingElements.length}`)
@@ -198,7 +202,8 @@ export function usePOIData() {
       console.log(`   Infrastructure elements: ${serviceInfrastructureElements.length}`)
       console.log(`   Manual POIs: ${manualPoisData.length}`)
       console.log(`   Krigsminner POIs: ${loadedKrigsminnerPOIs.length}`)
-      console.log(`   Total POIs: ${allPois.length} (${osmPois.length} from OSM + ${manualPoisData.length} manual + ${loadedKrigsminnerPOIs.length} Krigsminner)`)
+      console.log(`   Utsiktspunkter POIs: ${loadedUtsiktspunkterPOIs.length}`)
+      console.log(`   Total POIs: ${allPois.length} (${osmPois.length} from OSM + ${manualPoisData.length} manual + ${loadedKrigsminnerPOIs.length} Krigsminner + ${loadedUtsiktspunkterPOIs.length} Utsiktspunkter)`)
       
       // Update global state
       updatePoisData(allPois)

@@ -20,10 +20,16 @@ export function HierarchicalCategoryFilter({
   // Function to check if a category has actual POI data (excluding sample data)
   const categoryHasData = (node: CategoryNode): boolean => {
     if (node.poiTypes) {
-      // Only consider 'war_memorials' as having real implementation
+      // Consider 'war_memorials' and 'viewpoints' as having real implementation
       // Check for Krigsminner POIs (identified by ID starting with 'krigsminner_')
-      return node.poiTypes.includes('war_memorials') && 
-             pois.some(poi => poi.type === 'war_memorials' && poi.id.startsWith('krigsminner_'))
+      const hasKrigsminner = node.poiTypes.includes('war_memorials') && 
+                            pois.some(poi => poi.type === 'war_memorials' && poi.id.startsWith('krigsminner_'))
+      
+      // Check for Utsiktspunkter POIs (identified by ID starting with 'utsiktspunkter_')  
+      const hasUtsiktspunkter = node.poiTypes.includes('viewpoints') &&
+                               pois.some(poi => poi.type === 'viewpoints' && poi.id.startsWith('utsiktspunkter_'))
+      
+      return hasKrigsminner || hasUtsiktspunkter
     }
     
     // For parent categories, check if any children have data

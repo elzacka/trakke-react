@@ -37,6 +37,28 @@ interface KrigsminnerProps {
   '@id'?: string
 }
 
+interface UtsiktspunkterProps {
+  [key: string]: string | number | undefined
+  name?: string
+  'name:no'?: string
+  'name:nb'?: string
+  description?: string
+  'description:no'?: string
+  'description:nb'?: string
+  tourism?: string
+  natural?: string
+  amenity?: string
+  building?: string
+  ele?: string
+  alt_name?: string
+  opening_hours?: string
+  operator?: string
+  website?: string
+  phone?: string
+  wheelchair?: string
+  '@id'?: string
+}
+
 export type POIType = 
   // Friluftsliv - følger DNT og UT.no standarder
   | 'hiking'              // Dagstur/vandring
@@ -874,6 +896,147 @@ function generateKrigsminnerDescription(props: KrigsminnerProps): string {
   return parts.join('. ') + '.'
 }
 
+// GeoJSON conversion function for Utsiktspunkter data
+function convertUtsiktspunkterGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI[] {
+  if (!geojson || !geojson.features) {
+    console.warn('⚠️ Invalid GeoJSON data for Utsiktspunkter')
+    return []
+  }
+
+  const pois: POI[] = []
+  
+  geojson.features.forEach((feature: GeoJSONFeature, index: number) => {
+    try {
+      // Extract coordinates - handle both Point and Polygon geometries
+      let lat: number, lng: number
+      
+      if (feature.geometry?.type === 'Point') {
+        const coords = feature.geometry.coordinates as number[]
+        lng = coords[0]
+        lat = coords[1]
+      } else if (feature.geometry?.type === 'Polygon') {
+        // Use first coordinate of first ring for polygon centroid approximation
+        const coords = feature.geometry.coordinates as number[][]
+        lng = coords[0][0]
+        lat = coords[0][1]
+      } else if (feature.geometry?.type === 'MultiPolygon') {
+        // Use first coordinate of first polygon
+        const coords = feature.geometry.coordinates as number[][][]
+        lng = coords[0][0][0]
+        lat = coords[0][0][1]
+      } else {
+        console.warn(`⚠️ Unsupported geometry type: ${feature.geometry?.type}`)
+        return
+      }
+
+      // Validate coordinates
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+        console.warn(`⚠️ Invalid coordinates for feature ${index}`)
+        return
+      }
+
+      const props = (feature.properties || {}) as UtsiktspunkterProps
+      
+      // Generate Norwegian name and description
+      const name = props.name || 
+                   props['name:no'] || 
+                   props['name:nb'] || 
+                   props.alt_name ||
+                   generateUtsiktspunkterName(props)
+      
+      const description = props.description || 
+                         props['description:no'] || 
+                         props['description:nb'] || 
+                         generateUtsiktspunkterDescription(props)
+
+      const poi: POI = {
+        id: `utsiktspunkter_${props['@id']?.replace(/[^\w]/g, '_') || index}`,
+        name,
+        lat,
+        lng,
+        description,
+        type: 'viewpoints',
+        metadata: {
+          tourism: props.tourism || 'viewpoint',
+          natural: props.natural || '',
+          amenity: props.amenity || '',
+          building: props.building || '',
+          ele: props.ele || '',
+          opening_hours: props.opening_hours || '',
+          operator: props.operator || '',
+          wheelchair: props.wheelchair || '',
+          ...(props.website && { website: String(props.website) }),
+          ...(props.phone && { phone: String(props.phone) })
+        },
+        api_source: 'manual',
+        last_updated: new Date().toISOString()
+      }
+
+      pois.push(poi)
+    } catch (error) {
+      console.error(`❌ Failed to convert Utsiktspunkter feature ${index}:`, error)
+    }
+  })
+
+  console.log(`✅ Converted ${pois.length} Utsiktspunkter POIs from GeoJSON`)
+  return pois
+}
+
+// Helper function to generate Norwegian names for Utsiktspunkter
+function generateUtsiktspunkterName(props: UtsiktspunkterProps): string {
+  if (props.tourism === 'viewpoint') {
+    if (props.natural === 'peak') return 'Fjelltopp'
+    if (props.building === 'tower') return 'Utsiktstårn'
+    if (props.amenity === 'restaurant') return 'Restaurant med utsikt'
+    if (props.natural === 'wood') return 'Utsiktspunkt i skog'
+    return 'Utsiktspunkt'
+  }
+  if (props.amenity === 'restaurant') return 'Restaurant'
+  if (props.building === 'tower') return 'Tårn'
+  return 'Utsiktspunkt'
+}
+
+// Helper function to generate Norwegian descriptions for Utsiktspunkter  
+function generateUtsiktspunkterDescription(props: UtsiktspunkterProps): string {
+  const parts: string[] = []
+  
+  if (props.tourism === 'viewpoint') {
+    parts.push('Utsiktspunkt med panoramautsikt over norsk natur')
+  }
+  
+  if (props.natural === 'peak' && props.ele) {
+    parts.push(`Fjelltopp ${props.ele} meter over havet`)
+  } else if (props.ele) {
+    parts.push(`Høyde: ${props.ele} meter over havet`)
+  }
+  
+  if (props.building === 'tower') {
+    parts.push('Utsiktstårn for bedre oversikt')
+  }
+  
+  if (props.amenity === 'restaurant') {
+    parts.push('Restaurant eller serveringssted')
+  }
+  
+  if (props.wheelchair === 'yes') {
+    parts.push('Tilgjengelig for rullestol')
+  }
+  
+  if (props.opening_hours) {
+    parts.push(`Åpningstider: ${props.opening_hours}`)
+  }
+  
+  if (props.operator) {
+    parts.push(`Driftes av ${props.operator}`)
+  }
+
+  if (parts.length === 0) {
+    parts.push('Flott utsiktspunkt for naturopplevelser i Norge')
+  }
+
+  return parts.join('. ') + '.'
+}
+
 // Function to load and convert Krigsminner POIs (async)
 export async function loadKrigsminnerPOIs(): Promise<POI[]> {
   try {
@@ -889,5 +1052,21 @@ export async function loadKrigsminnerPOIs(): Promise<POI[]> {
   }
 }
 
-// Export empty array initially - will be populated by loadKrigsminnerPOIs()
+// Function to load and convert Utsiktspunkter POIs (async)
+export async function loadUtsiktspunkterPOIs(): Promise<POI[]> {
+  try {
+    const response = await fetch('./utsiktspunkter.geojson')
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Utsiktspunkter data: ${response.status}`)
+    }
+    const geojson = await response.json()
+    return convertUtsiktspunkterGeoJSONToPOIs(geojson)
+  } catch (error) {
+    console.error('❌ Failed to load Utsiktspunkter data:', error)
+    return []
+  }
+}
+
+// Export empty arrays initially - will be populated by load functions
 export const krigsminnerPOIs: POI[] = []
+export const utsiktspunkterPOIs: POI[] = []

@@ -76,10 +76,11 @@ export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [_searchResult, setSearchResult] = useState<SearchResult | null>(null)
   
-  // Initialize category state - auto-expand Kulturarv to show available Krigsminner
+  // Initialize category state - auto-expand sections with available data
   const [categoryState, setCategoryState] = useState<CategoryState>({
     expanded: {
-      'cultural_heritage': true // Auto-expand Historiske steder to show Krigsminner is available
+      'cultural_heritage': true, // Auto-expand Historiske steder to show Krigsminner is available
+      'nature_experiences': true // Auto-expand Naturperler to show Utsiktspunkter is available
     }, 
     checked: {
       // All categories unchecked by default - user must select what they want to see
