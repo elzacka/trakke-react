@@ -17,27 +17,10 @@ export function HierarchicalCategoryFilter({
   pois
 }: HierarchicalCategoryFilterProps) {
   
-  // Function to check if a category has actual POI data (excluding sample data)
-  const categoryHasData = (node: CategoryNode): boolean => {
-    if (node.poiTypes) {
-      // Consider 'war_memorials' and 'viewpoints' as having real implementation
-      // Check for Krigsminner POIs (identified by ID starting with 'krigsminner_')
-      const hasKrigsminner = node.poiTypes.includes('war_memorials') && 
-                            pois.some(poi => poi.type === 'war_memorials' && poi.id.startsWith('krigsminner_'))
-      
-      // Check for Utsiktspunkter POIs (identified by ID starting with 'utsiktspunkter_')  
-      const hasUtsiktspunkter = node.poiTypes.includes('viewpoints') &&
-                               pois.some(poi => poi.type === 'viewpoints' && poi.id.startsWith('utsiktspunkter_'))
-      
-      return hasKrigsminner || hasUtsiktspunkter
-    }
-    
-    // For parent categories, check if any children have data
-    if (node.children) {
-      return node.children.some(child => categoryHasData(child))
-    }
-    
-    return false
+  // All categories are always available with viewport-based loading
+  // POI data loads on-demand when user selects categories
+  const categoryHasData = (_node: CategoryNode): boolean => {
+    return true // All categories are available - data loads when selected
   }
   
   const renderCategoryNode = (node: CategoryNode, level: number = 0) => {
@@ -46,7 +29,7 @@ export function HierarchicalCategoryFilter({
     const isChecked = categoryState.checked[node.id] || false
     const indentLevel = level * 20
     const hasData = categoryHasData(node)
-    const isDisabled = !hasData
+    const isDisabled = false // All categories are always enabled with viewport-based loading
 
     return (
       <div key={node.id} style={{ marginLeft: `${indentLevel}px` }}>

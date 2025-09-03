@@ -1,0 +1,206 @@
+// src/hooks/useOSMOnlyPOIData.ts - Pure OSM API data loading
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { POI, updatePoisData } from '../data/pois'
+import { OSMService } from '../services/osmService'
+
+export interface OSMOnlyPOIDataState {
+  pois: POI[]
+  loading: boolean
+  error: string | null
+  lastUpdated: Date | null
+  loadedCategories: string[]
+}
+
+export function useOSMOnlyPOIData() {
+  const [state, setState] = useState<OSMOnlyPOIDataState>({
+    pois: [], // Start completely empty - pure OSM API
+    loading: false, // Don't block UI - show progress incrementally
+    error: null,
+    lastUpdated: null,
+    loadedCategories: []
+  })
+
+  // Prevent multiple initial loads
+  const hasLoadedRef = useRef(false)
+  const osmService = useRef(new OSMService())
+
+  const fetchOSMData = useCallback(async () => {
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
+
+    console.log('🚀 Loading POI data from OSM API only...')
+    console.log('🔧 Testing OSM API connection...')
+    
+    try {
+      setState(prev => ({ 
+        ...prev, 
+        error: null
+      }))
+      
+      let allOSMPois: POI[] = []
+      const loadedCategories: string[] = []
+      
+      // Test OSM API with a simple query first
+      console.log('📥 Testing OSM API with camping POIs...')
+      const campingElements = await osmService.current.getCampingPOIs()
+      console.log(`📊 Received ${campingElements.length} camping elements from OSM API`)
+      
+      // Process camping elements
+      for (const element of campingElements) {
+        try {
+          if (!element.id || (!element.lat && !element.center?.lat)) {
+            continue
+          }
+          
+          const suitability = osmService.current.analyzeCampingSuitability(element)
+          
+          if (suitability.confidence > 0.4) {
+            const poi = osmService.current.convertToPOI(element, suitability)
+            
+            if (poi.lat !== 0 && poi.lng !== 0) {
+              allOSMPois.push(poi)
+            }
+          }
+        } catch (elementError) {
+          console.warn('⚠️ Error processing camping element:', element.id, elementError)
+        }
+      }
+      
+      if (campingElements.length > 0) {
+        loadedCategories.push('camping_site')
+      }
+      
+      // Show camping POIs immediately
+      setState(prev => ({
+        ...prev,
+        pois: [...allOSMPois],
+        loadedCategories: [...loadedCategories],
+        lastUpdated: new Date()
+      }))
+      
+      // Update global state with current data
+      updatePoisData([...allOSMPois])
+      
+      console.log('⏱️ Waiting 5 seconds before next API call to avoid rate limiting...')
+      await new Promise(resolve => setTimeout(resolve, 5000)) // Increased to 5 seconds
+
+      // Try to load outdoor recreation, but don't fail if it doesn't work
+      try {
+        console.log('📥 Loading outdoor recreation POIs from OSM API...')
+        const outdoorElements = await osmService.current.getOutdoorRecreationPOIs()
+      
+      // Process outdoor recreation elements
+      for (const element of outdoorElements) {
+        try {
+          if (!element.id || (!element.lat && !element.center?.lat)) {
+            continue
+          }
+          
+          const poi = osmService.current.convertOutdoorRecreationToPOI(element)
+          
+          if (poi.lat !== 0 && poi.lng !== 0) {
+            allOSMPois.push(poi)
+          }
+        } catch (elementError) {
+          console.warn('⚠️ Error processing outdoor recreation element:', element.id, elementError)
+        }
+      }
+      
+        if (outdoorElements.length > 0) {
+          loadedCategories.push('hiking', 'viewpoints', 'mountain_peaks')
+        }
+        
+        // Show outdoor recreation POIs immediately
+        setState(prev => ({
+          ...prev,
+          pois: [...allOSMPois],
+          loadedCategories: [...loadedCategories],
+          lastUpdated: new Date()
+        }))
+        
+        // Update global state with current data
+        updatePoisData([...allOSMPois])
+      } catch (outdoorError) {
+        console.warn('⚠️ Failed to load outdoor recreation data, continuing with other categories:', outdoorError)
+      }
+      
+      console.log('⏱️ Waiting 10 seconds before next API call to avoid rate limiting...')
+      await new Promise(resolve => setTimeout(resolve, 10000)) // Even longer delay
+
+      // Try to load huts, but don't fail if it doesn't work
+      try {
+        console.log('📥 Loading hut and service POIs from OSM API...')
+        const hutElements = await osmService.current.getHutAndServicePOIs()
+      
+        // Process hut and service elements
+        for (const element of hutElements) {
+          try {
+            if (!element.id || (!element.lat && !element.center?.lat)) {
+              continue
+            }
+            
+            const poi = osmService.current.convertHutAndServiceToPOI(element)
+            
+            if (poi.lat !== 0 && poi.lng !== 0) {
+              allOSMPois.push(poi)
+            }
+          } catch (elementError) {
+            console.warn('⚠️ Error processing hut/service element:', element.id, elementError)
+          }
+        }
+        
+        if (hutElements.length > 0) {
+          loadedCategories.push('staffed_huts', 'self_service_huts', 'wilderness_shelter')
+        }
+        
+        // Show hut POIs immediately
+        setState(prev => ({
+          ...prev,
+          pois: [...allOSMPois],
+          loadedCategories: [...loadedCategories],
+          lastUpdated: new Date()
+        }))
+        
+        // Update global state with current data
+        updatePoisData([...allOSMPois])
+      } catch (hutError) {
+        console.warn('⚠️ Failed to load hut data, continuing with other categories:', hutError)
+      }
+      
+      console.log(`🎉 OSM API-only loading completed!`)
+      console.log(`📊 Total POIs from OSM API: ${allOSMPois.length}`)
+      console.log(`📋 Loaded categories: ${loadedCategories.join(', ')}`)
+      
+      // Final update with all data
+      setState(prev => ({
+        ...prev,
+        pois: [...allOSMPois],
+        loadedCategories: [...loadedCategories],
+        lastUpdated: new Date()
+      }))
+
+      // Update global state
+      updatePoisData([...allOSMPois])
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      console.error('💥 OSM API loading failed:', error)
+      console.error('💥 Error details:', errorMessage)
+      
+      setState(prev => ({
+        ...prev,
+        error: errorMessage
+      }))
+    }
+  }, [])
+
+  // Auto-start loading on component mount
+  useEffect(() => {
+    fetchOSMData()
+  }, [fetchOSMData])
+
+  return {
+    ...state,
+    refreshData: fetchOSMData
+  }
+}

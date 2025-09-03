@@ -642,8 +642,12 @@ export function isCampingMetadata(metadata: unknown): metadata is CampingMetadat
          typeof (metadata as CampingMetadata).trees === 'boolean'
 }
 
-// Sample POIs for demonstration - covering different categories across Norway
-export const manualPoisData: POI[] = [
+// Manual POIs removed - using API-only data source
+// Empty export for backward compatibility
+export const manualPoisData: POI[] = []
+
+// Original manual POIs kept here for reference but not used
+const removedManualPoisData: POI[] = [
   // Hiking trails
   {
     id: 'sample_preikestolen',
@@ -789,14 +793,19 @@ function convertKrigsminnerGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI
         const coords = feature.geometry.coordinates as number[][][]
         lng = coords[0][0][0]
         lat = coords[0][0][1]
+      } else if (feature.geometry?.type === 'LineString') {
+        // For LineString, use the midpoint of the line
+        const coords = feature.geometry.coordinates as number[][]
+        const midIndex = Math.floor(coords.length / 2)
+        lng = coords[midIndex][0]
+        lat = coords[midIndex][1]
       } else {
-        console.warn(`⚠️ Unsupported geometry type: ${feature.geometry?.type}`)
+        // Skip unsupported geometry types silently
         return
       }
 
-      // Validate coordinates
-      if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-        console.warn(`⚠️ Invalid coordinates for feature ${index}`)
+      // Validate coordinates - skip invalid features without logging every single one
+      if (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng)) {
         return
       }
 
@@ -924,14 +933,19 @@ function convertUtsiktspunkterGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): 
         const coords = feature.geometry.coordinates as number[][][]
         lng = coords[0][0][0]
         lat = coords[0][0][1]
+      } else if (feature.geometry?.type === 'LineString') {
+        // For LineString, use the midpoint of the line
+        const coords = feature.geometry.coordinates as number[][]
+        const midIndex = Math.floor(coords.length / 2)
+        lng = coords[midIndex][0]
+        lat = coords[midIndex][1]
       } else {
-        console.warn(`⚠️ Unsupported geometry type: ${feature.geometry?.type}`)
+        // Skip unsupported geometry types silently
         return
       }
 
-      // Validate coordinates
-      if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-        console.warn(`⚠️ Invalid coordinates for feature ${index}`)
+      // Validate coordinates - skip invalid features without logging every single one
+      if (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng)) {
         return
       }
 
@@ -1037,8 +1051,13 @@ function generateUtsiktspunkterDescription(props: UtsiktspunkterProps): string {
   return parts.join('. ') + '.'
 }
 
-// Function to load and convert Krigsminner POIs (async)
-export async function loadKrigsminnerPOIs(): Promise<POI[]> {
+// GeoJSON loading functions removed - using pure OSM API
+// Empty exports for backward compatibility
+export async function loadKrigsminnerPOIs(): Promise<POI[]> { return [] }
+export async function loadUtsiktspunkterPOIs(): Promise<POI[]> { return [] }
+
+// Original functions kept for reference but not used
+async function removedLoadKrigsminnerPOIs(): Promise<POI[]> {
   try {
     const response = await fetch('./krigsminner1.geojson')
     if (!response.ok) {
@@ -1052,8 +1071,8 @@ export async function loadKrigsminnerPOIs(): Promise<POI[]> {
   }
 }
 
-// Function to load and convert Utsiktspunkter POIs (async)
-export async function loadUtsiktspunkterPOIs(): Promise<POI[]> {
+// Utsiktspunkter loading function removed - using pure OSM API
+async function removedLoadUtsiktspunkterPOIs(): Promise<POI[]> {
   try {
     const response = await fetch('./utsiktspunkter.geojson')
     if (!response.ok) {

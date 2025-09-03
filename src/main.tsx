@@ -1,9 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import WorkingTrakkeApp from './WorkingTrakkeApp'
+import { MapLibreTrakkeApp } from './MapLibreTrakkeApp'
 
-console.log('🚀 Loading Working TrakkeApp with heritage POI integration...')
+console.log('🚀 Loading MapLibre TrakkeApp with Kartverket vector tiles...')
 
 try {
   const root = document.getElementById('root')
@@ -13,11 +13,11 @@ try {
     console.log('✅ Found root element, creating React root...')
     createRoot(root).render(
       <StrictMode>
-        <WorkingTrakkeApp />
+        <MapLibreTrakkeApp />
       </StrictMode>,
     )
-    console.log('✅ Working TrakkeApp with heritage POIs should be rendered')
+    console.log('✅ MapLibre TrakkeApp with Kartverket should be rendered')
   }
 } catch (error) {
-  console.error('❌ Error rendering Working TrakkeApp:', error)
+  console.error('❌ Error rendering MapLibre TrakkeApp:', error)
 }

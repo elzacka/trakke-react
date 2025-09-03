@@ -4,8 +4,8 @@ import L from 'leaflet'
 // Header component will be added later if needed
 import { Sidebar } from './components/Sidebar'
 import { SearchResult } from './services/searchService'
-import { usePOIData } from './hooks/usePOIData'
-import { POIType, categoryConfig, categoryTree, CategoryState, CategoryNode } from './data/pois'
+import { useViewportPOIData } from './hooks/useViewportPOIData'
+import { POI, POIType, categoryConfig, categoryTree, CategoryState, CategoryNode } from './data/pois'
 import 'leaflet/dist/leaflet.css'
 import './App.css'
 
@@ -17,32 +17,67 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-// Create custom POI markers with Material Icons
-function createCustomPOIMarker(poiType: POIType): L.DivIcon {
+// Create custom POI markers with Material Icons using industry-standard zoom scaling
+function createCustomPOIMarker(poiType: POIType, zoom: number = 10): L.DivIcon {
   const config = categoryConfig[poiType]
+  
+  // Industry-standard POI scaling (Google Maps/Mapbox approach)
+  // Progressive scaling tiers optimized for Norway's geographic scale
+  let size: number, fontSize: number
+  
+  if (zoom <= 6) {
+    // Country/continent view: Extremely small icons
+    size = 6
+    fontSize = 8
+  } else if (zoom <= 8) {
+    // Large regional view: Very small icons
+    size = 10
+    fontSize = 10
+  } else if (zoom <= 10) {
+    // Regional view: Small icons
+    size = 14
+    fontSize = 12
+  } else if (zoom <= 12) {
+    // Area view: Medium-small icons
+    size = 18
+    fontSize = 14
+  } else if (zoom <= 14) {
+    // City view: Medium icons
+    size = 22
+    fontSize = 16
+  } else if (zoom <= 16) {
+    // Local view: Large icons
+    size = 28
+    fontSize = 18
+  } else {
+    // Street/detail view: Very large icons
+    size = 34
+    fontSize = 20
+  }
+  
   if (!config) {
     return L.divIcon({
       html: `
         <div style="
           background: #666;
           color: white;
-          width: 32px;
-          height: 32px;
+          width: ${size}px;
+          height: ${size}px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 3px solid white;
+          border: 2px solid white;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           font-family: 'Material Symbols Outlined';
-          font-size: 18px;
+          font-size: ${fontSize}px;
           cursor: pointer;
         ">help</div>
       `,
       className: 'custom-poi-marker',
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      popupAnchor: [0, -16]
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2],
+      popupAnchor: [0, -size/2]
     })
   }
 
@@ -51,30 +86,31 @@ function createCustomPOIMarker(poiType: POIType): L.DivIcon {
       <div style="
         background: ${config.color};
         color: white;
-        width: 32px;
-        height: 32px;
+        width: ${size}px;
+        height: ${size}px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 3px solid white;
+        border: 2px solid white;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         font-family: 'Material Symbols Outlined';
-        font-size: 18px;
+        font-size: ${fontSize}px;
         cursor: pointer;
-        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' ${fontSize};
       ">${config.icon}</div>
     `,
     className: 'custom-poi-marker',
-    iconSize: [32, 32], 
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16]
+    iconSize: [size, size], 
+    iconAnchor: [size/2, size/2],
+    popupAnchor: [0, -size/2]
   })
 }
 
 export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [_searchResult, setSearchResult] = useState<SearchResult | null>(null)
+  const [currentZoom, setCurrentZoom] = useState(6)
   
   // Initialize category state - auto-expand sections with available data
   const [categoryState, setCategoryState] = useState<CategoryState>({
@@ -90,16 +126,18 @@ export function WorkingTrakkeApp() {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
-  const updatePOIMarkersWithZoomRef = useRef<(() => void) | null>(null)
+  const updateMarkersVisibilityRef = useRef<(() => void) | null>(null)
 
-  // Use simple POI data (no heritage, no weather)
+  // Use viewport-based POI data (industry standard approach)
   const {
     pois,
     loading,
     error,
     lastUpdated,
-    refreshData: refreshOutdoorData
-  } = usePOIData()
+    loadPOIsForViewport,
+    clearPOIs
+  } = useViewportPOIData()
+  
 
   // Initialize map
   useEffect(() => {
@@ -140,12 +178,23 @@ export function WorkingTrakkeApp() {
 
         mapInstanceRef.current = map
 
-        // Add zoom event to update POI visibility based on zoom level
+        // Add zoom event to update POI visibility and reload for new zoom level
         map.on('zoomend', () => {
-          // Call the function through ref to avoid dependency issues
-          if (updatePOIMarkersWithZoomRef.current) {
-            updatePOIMarkersWithZoomRef.current()
+          const newZoom = map.getZoom()
+          setCurrentZoom(newZoom)
+          
+          // Update marker scaling and visibility
+          if (updateMarkersVisibilityRef.current) {
+            updateMarkersVisibilityRef.current()
           }
+          
+          // Load POIs for new zoom level if categories are selected
+          loadPOIsForCurrentViewport()
+        })
+
+        // Add map move event to load new POIs when viewport changes
+        map.on('moveend', () => {
+          loadPOIsForCurrentViewport()
         })
 
         // Add click event to display coordinates
@@ -230,8 +279,34 @@ export function WorkingTrakkeApp() {
     }
     
     categoryTree.forEach(checkNode)
+    
+    // Debug: Log active types
+    console.log(`🏷️ Category state:`, Object.entries(categoryState.checked).filter(([_, checked]) => checked))
+    console.log(`🎯 Active POI types:`, Array.from(activeTypes))
+    
     return activeTypes
   }, [categoryState])
+
+  // Load POIs for current viewport based on selected categories
+  const loadPOIsForCurrentViewport = useCallback(async () => {
+    if (!mapInstanceRef.current) return
+
+    const activePOITypes = Array.from(getActivePOITypes())
+    if (activePOITypes.length === 0) {
+      clearPOIs()
+      return
+    }
+
+    const bounds = mapInstanceRef.current.getBounds()
+    const viewportBounds = {
+      north: bounds.getNorth(),
+      south: bounds.getSouth(), 
+      east: bounds.getEast(),
+      west: bounds.getWest()
+    }
+
+    await loadPOIsForViewport(viewportBounds, activePOITypes)
+  }, [getActivePOITypes, loadPOIsForViewport, clearPOIs])
 
   // Function to determine if POI should be visible at current zoom level
   const shouldShowPOIAtZoom = useCallback((poiType: POIType, zoomLevel: number): boolean => {
@@ -271,110 +346,143 @@ export function WorkingTrakkeApp() {
   }, [])
 
   // Function to update POI markers based on zoom level
-  const updatePOIMarkersWithZoom = useCallback(() => {
-    if (!mapInstanceRef.current) return
-    
-    const currentZoom = mapInstanceRef.current.getZoom()
-    
-    markersRef.current.forEach(marker => {
-      const poiType = (marker as unknown as { poiType?: POIType }).poiType
-      if (poiType) {
-        const shouldShow = shouldShowPOIAtZoom(poiType, currentZoom)
-        if (shouldShow && !mapInstanceRef.current!.hasLayer(marker)) {
-          mapInstanceRef.current!.addLayer(marker)
-        } else if (!shouldShow && mapInstanceRef.current!.hasLayer(marker)) {
-          mapInstanceRef.current!.removeLayer(marker)
-        }
-      }
-    })
-  }, [shouldShowPOIAtZoom])
 
-  // Store function in ref to avoid dependency issues in useEffect
-  updatePOIMarkersWithZoomRef.current = updatePOIMarkersWithZoom
-
-  // Update POI markers when data changes
+  // Update POI markers when POI data changes (not category state)
   useEffect(() => {
-    if (!mapInstanceRef.current) return
-
-    // Clear existing markers
-    markersRef.current.forEach(marker => {
-      mapInstanceRef.current?.removeLayer(marker)
-    })
-    markersRef.current = []
-
-    // Filter POIs based on active categories
-    const activePOITypes = getActivePOITypes()
-    const filteredPOIs = pois.filter(poi => activePOITypes.has(poi.type))
-
-    // Minimal logging for development
-    if (filteredPOIs.length > 0) {
-      console.log(`📍 ${filteredPOIs.length} POIs visible on map`)
+    console.log(`🔧 Marker creation effect triggered. POIs: ${pois.length}, map: ${!!mapInstanceRef.current}`)
+    
+    if (!mapInstanceRef.current || pois.length === 0) {
+      console.log(`⚠️ Early return: map=${!!mapInstanceRef.current}, pois=${pois.length}`)
+      return
     }
 
-    // Add new markers
+    console.log(`🎯 Creating markers for ${pois.length} POIs`)
     
-    filteredPOIs.forEach((poi, _index) => {
-      try {
-        // Use custom Material Icons markers matching the sidebar categories
-        const markerIcon = createCustomPOIMarker(poi.type)
-        
-        const marker = L.marker([poi.lat, poi.lng], {
-          icon: markerIcon,
-          interactive: true,
-          keyboard: false, // Prevent keyboard conflicts with map
-          riseOnHover: true,
-          riseOffset: 250
-        })
-        
-        // Store POI type on marker for zoom-based filtering
-        ;(marker as unknown as { poiType: POIType }).poiType = poi.type
-        
-        // Create simple, clean popup content
-        const popupContent = `
-          <div style="padding: 8px; min-width: 200px;">
-            <h3 style="margin: 0 0 6px 0; color: #2c5530; font-size: 15px;">
-              ${poi.name || 'Ukjent sted'}
-            </h3>
-            <p style="margin: 0 0 6px 0; color: #555; font-size: 13px;">
-              ${poi.description || 'Ingen beskrivelse tilgjengelig'}
-            </p>
-            <div style="color: #777; font-size: 11px;">
-              Type: ${categoryConfig[poi.type]?.name || poi.type}
-            </div>
-          </div>
-        `
-        
-        // Bind popup with simple options
-        marker.bindPopup(popupContent, {
-          maxWidth: 300,
-          closeButton: true,
-          autoClose: true,
-          closeOnClick: true,
-          closeOnEscapeKey: true
-        })
-        
-        // Simple click handler - popup opens automatically when marker is clicked
-        marker.on('click', (e) => {
-          L.DomEvent.stopPropagation(e)
-        })
-        
-        // Add marker to reference array first
-        markersRef.current.push(marker)
-        
-        // Only add to map if zoom level is appropriate
-        const currentZoom = mapInstanceRef.current!.getZoom()
-        if (shouldShowPOIAtZoom(poi.type, currentZoom)) {
-          marker.addTo(mapInstanceRef.current!)
-        }
-      } catch (error) {
-        console.error(`❌ Failed to create marker for POI ${poi.name}:`, error)
-      }
-    })
-    
-    // Test marker removed to prevent interference
+    // Use requestAnimationFrame to batch DOM operations
+    requestAnimationFrame(() => {
+      // Clear existing markers
+      markersRef.current.forEach(marker => {
+        mapInstanceRef.current?.removeLayer(marker)
+      })
+      markersRef.current = []
 
-    // Markers added successfully (logging removed to prevent loops)
-  }, [pois, categoryState, shouldShowPOIAtZoom, getActivePOITypes])
+      // Create all markers but don't add to map yet
+      const allMarkers: L.Marker[] = []
+      
+      pois.forEach((poi, index) => {
+        try {
+          const currentMapZoom = mapInstanceRef.current?.getZoom() || 10
+          const markerIcon = createCustomPOIMarker(poi.type, currentMapZoom)
+          
+          // Debug: Log first few POI coordinates
+          if (index < 5) {
+            console.log(`🗺️ Creating marker ${index}: ${poi.name} at [${poi.lat}, ${poi.lng}] type: ${poi.type}`)
+          }
+          
+          const marker = L.marker([poi.lat, poi.lng], {
+            icon: markerIcon,
+            interactive: true,
+            keyboard: false,
+            riseOnHover: true,
+            riseOffset: 250
+          })
+          
+          // Store POI type and reference for filtering
+          ;(marker as unknown as { poiType: POIType }).poiType = poi.type
+          ;(marker as unknown as { poiData: POI }).poiData = poi
+          
+          // Create popup content once
+          const popupContent = `
+            <div style="padding: 8px; min-width: 200px;">
+              <h3 style="margin: 0 0 6px 0; color: #2c5530; font-size: 15px;">
+                ${poi.name || 'Ukjent sted'}
+              </h3>
+              <p style="margin: 0 0 6px 0; color: #555; font-size: 13px;">
+                ${poi.description || 'Ingen beskrivelse tilgjengelig'}
+              </p>
+              <div style="color: #777; font-size: 11px;">
+                Type: ${categoryConfig[poi.type]?.name || poi.type}
+              </div>
+            </div>
+          `
+          
+          marker.bindPopup(popupContent, {
+            maxWidth: 300,
+            closeButton: true,
+            autoClose: true,
+            closeOnClick: true,
+            closeOnEscapeKey: true
+          })
+          
+          marker.on('click', (e) => {
+            L.DomEvent.stopPropagation(e)
+          })
+          
+          allMarkers.push(marker)
+        } catch (error) {
+          console.error(`❌ Failed to create marker for POI ${poi.name}:`, error)
+        }
+      })
+
+      // Store all markers
+      markersRef.current = allMarkers
+      console.log(`✅ Created ${allMarkers.length} markers, applying visibility`)
+      
+      // Apply current filters and zoom visibility
+      updateMarkersVisibility()
+    })
+  }, [pois]) // Only depend on POI data, not category state
+
+  // Separate function to update marker visibility and icon scaling based on categories and zoom
+  const updateMarkersVisibility = useCallback(() => {
+    if (!mapInstanceRef.current) return
+
+    const activePOITypes = getActivePOITypes()
+    const currentZoom = mapInstanceRef.current.getZoom()
+    
+    console.log(`🔍 Updating visibility: ${markersRef.current.length} markers, active types: ${Array.from(activePOITypes).join(', ')}, zoom: ${currentZoom}`)
+    
+    // Use requestAnimationFrame to batch visibility updates and icon scaling
+    requestAnimationFrame(() => {
+      let visibleCount = 0
+      let debugCount = 0
+      markersRef.current.forEach(marker => {
+        const poiType = (marker as unknown as { poiType: POIType }).poiType
+        const shouldShow = activePOITypes.has(poiType) && shouldShowPOIAtZoom(poiType, currentZoom)
+        const isOnMap = mapInstanceRef.current!.hasLayer(marker)
+        
+        // Debug first few markers
+        if (debugCount < 3) {
+          const poiData = (marker as unknown as { poiData: POI }).poiData
+          console.log(`🔍 Marker ${debugCount}: ${poiData?.name} type:${poiType} shouldShow:${shouldShow} isOnMap:${isOnMap} activeTypes:${activePOITypes.has(poiType)} zoomOK:${shouldShowPOIAtZoom(poiType, currentZoom)}`)
+          debugCount++
+        }
+        
+        // Update icon with new zoom-based scaling
+        const newIcon = createCustomPOIMarker(poiType, currentZoom)
+        marker.setIcon(newIcon)
+        
+        // Update visibility
+        if (shouldShow && !isOnMap) {
+          marker.addTo(mapInstanceRef.current!)
+          visibleCount++
+        } else if (!shouldShow && isOnMap) {
+          mapInstanceRef.current!.removeLayer(marker)
+        } else if (shouldShow && isOnMap) {
+          visibleCount++ // Already visible
+        }
+      })
+      console.log(`✅ Visibility update complete: ${visibleCount} markers now visible`)
+    })
+  }, [getActivePOITypes, shouldShowPOIAtZoom])
+
+  // Store function in ref to avoid dependency issues in useEffect
+  updateMarkersVisibilityRef.current = updateMarkersVisibility
+
+  // Update visibility when categories change
+  useEffect(() => {
+    updateMarkersVisibility()
+  }, [categoryState, updateMarkersVisibility])
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev)
@@ -444,7 +552,13 @@ export function WorkingTrakkeApp() {
         checked: newChecked
       }
     })
-  }, [])
+    
+    // Clear POIs and reload for new category selection
+    clearPOIs()
+    setTimeout(() => {
+      loadPOIsForCurrentViewport()
+    }, 100)
+  }, [clearPOIs, loadPOIsForCurrentViewport])
 
   const handleExpandToggle = useCallback((nodeId: string) => {
     setCategoryState(prev => ({
@@ -474,10 +588,15 @@ export function WorkingTrakkeApp() {
 
 
 
+  // Load POIs when categories change
+  useEffect(() => {
+    loadPOIsForCurrentViewport()
+  }, [categoryState, loadPOIsForCurrentViewport])
+
   // Refresh function
   const refreshData = useCallback(() => {
-    refreshOutdoorData()
-  }, [refreshOutdoorData])
+    loadPOIsForCurrentViewport()
+  }, [loadPOIsForCurrentViewport])
 
   // Filter POIs based on active categories
   const activePOITypes = getActivePOITypes()
@@ -506,21 +625,7 @@ export function WorkingTrakkeApp() {
         />
         
         <div className="map-container">
-          {loading && (
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 1000,
-              background: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-            }}>
-              Laster kartdata...
-            </div>
-          )}
+          {/* Viewport-based loading is non-blocking - no loading overlay needed */}
           
           <div 
             ref={mapRef}

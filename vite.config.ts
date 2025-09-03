@@ -17,6 +17,6 @@ export default defineConfig({
     open: true,
   },
   optimizeDeps: {
-    include: ['leaflet', 'react-leaflet']
+    include: ['maplibre-gl']
   }
 })
