@@ -4,193 +4,174 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Structure
 
-This is a React-based outdoor recreation app called "Tråkke" that helps users discover hiking trails, swimming spots, camping areas, and other points of interest (POIs) throughout Norway. The app is focused on Norwegian "friluftsliv" culture with comprehensive coverage of all mainland Norway plus Arctic regions.
+This is a React-based outdoor recreation app called "Tråkke" that helps users discover hiking trails, swimming spots, camping areas, and other points of interest (POIs) throughout Norway. The app focuses on Norwegian "friluftsliv" culture with comprehensive coverage of all mainland Norway plus Arctic regions.
 
 **Tech Stack:**
-- React 19.1.0 + TypeScript 5.8.3 + Vite 7.0.6
-- Leaflet maps (manual implementation, not react-leaflet)
+- React 19.1.0 + TypeScript 5.8.3 + Vite 7.0.4
+- MapLibre GL JS 5.7.0 (replaced Leaflet implementation)
 - Material Symbols for icons
 - CSS for styling (no framework)
 
 **Key Architecture:**
-- Component-based structure with WorkingTrakkeApp as main component
-- Service layer for external APIs (OSM, Nominatim search)
-- Centralized POI data management with TypeScript interfaces
-- Custom Leaflet markers with category-based styling
-- Zoom-based POI display for performance
+- Component-based structure with MapLibreTrakkeApp as main component
+- Service layer for Norwegian place name search via Nominatim
+- Norwegian outdoor recreation POI data with TypeScript interfaces
+- MapLibre GL JS with official Kartverket topographic tiles
+- Category-based POI filtering with real-time viewport updates
 
 ## Development Commands
 
 ```bash
-npm run dev          # Start dev server (usually port 3000, fallback 3001)
-npm run build        # Build for production (TypeScript compile + Vite build)
+npm run dev          # Start dev server (usually port 3000)
+npm run build        # Build for production (TypeScript compile + Vite build)  
 npm run preview      # Preview production build
 npm run lint         # Run ESLint with max 0 warnings (strict policy)
+npm run deploy       # Deploy to GitHub Pages
 ```
 
 ## Current Implementation Status
 
 ### ✅ **Complete Feature Set**
-- **Geographic Coverage**: Full Norway (57.5-71.5°N, 4.0-31.5°E) - all mainland + Arctic regions
-- **POI Categories**: All Norwegian outdoor recreation categories working
-- **Language**: 100% Norwegian (Bokmål) throughout - no English mixing
-- **API Compliance**: All external APIs have proper User-Agent headers and rate limiting
-- **Performance**: Zoom-based POI display prevents map clutter
+- **Geographic Coverage**: Full Norway (57.5-71.5°N, 4.0-31.5°E) using Kartverket official maps
+- **POI Categories**: Norwegian outdoor recreation categories with famous landmarks
+- **Language**: 100% Norwegian (Bokmål) throughout
+- **Map Technology**: MapLibre GL JS with Kartverket WMS topographic tiles
+- **Search**: Norwegian place name search with coordinate display
 
-### **Key Configuration Values**
+### **Critical Configuration Values**
 
-#### **Map Center & Zoom**
+#### **Norwegian Territory Bounds**
 ```typescript
-// WorkingTrakkeApp.tsx line 132
-.setView([64.5, 11.0], 6) // Central Norway, zoom 6 shows most of country
+// MapLibreMap.tsx - Used for initial map bounds and maxBounds
+const NORWAY_BOUNDS = [
+  [3.0, 57.5],   // Southwest (extended west for full coastline)  
+  [32.0, 72.0]   // Northeast (extended north for full coverage)
+]
 ```
 
-#### **Norway Bounding Box**
+#### **Map Initialization**
 ```typescript
-// osmService.ts lines 18-23
-const NORWAY_BBOX = {
-  south: 57.5,   // Lindesnes (southernmost point)
-  west: 4.0,     // Western coast including Shetland time zone areas
-  north: 71.5,   // Nordkapp and beyond  
-  east: 31.5     // Eastern border with Russia (Finnmark)
+// MapLibreMap.tsx - Constructor bounds for complete Norway visibility
+bounds: [
+  [3.0, 57.5],   // Southwest corner - extended for full coastline
+  [32.0, 72.0]   // Northeast corner - extended for full northern coverage
+],
+fitBoundsOptions: {
+  padding: { top: 10, bottom: 10, left: 10, right: 10 }
 }
 ```
 
-#### **Zoom-based POI Display**
+#### **Kartverket Tile Source**
 ```typescript
-// WorkingTrakkeApp.tsx lines 236-257
-// High priority (zoom 11+): viewpoints, nature_gems, staffed_huts, camping_site, war_memorials, churches, mountain_peaks
-// Medium priority (zoom 13+): hiking, swimming, beach, self_service_huts, wilderness_shelter, archaeological, protected_buildings, parking, cable_cars
-// Low priority (zoom 15+): tent_area, wild_camping, hammock_spots, rest_areas, toilets, drinking_water, fire_places, information_boards, public_transport
-// Detail (zoom 17+): train_stations, fishing_spots, canoeing, mountain_service, accessible_sites, ski_trails, lakes_rivers, ice_fishing
+// Official Norwegian topographic tiles
+'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
 ```
 
 ## Code Architecture
 
-### **File Structure**
+### **Core Application Structure**
 ```
 src/
-├── WorkingTrakkeApp.tsx          # Main app component
+├── MapLibreTrakkeApp.tsx         # Main app component - replaced WorkingTrakkeApp
+├── main.tsx                      # Entry point using MapLibreTrakkeApp
 ├── components/
-│   ├── Sidebar.tsx               # Clean sidebar (guidance removed)
-│   ├── SearchBox/                # Norwegian search with 150+ translations
+│   ├── MapLibreMap.tsx           # MapLibre GL map component (core)
+│   ├── CategoryPanel.tsx         # POI category filtering
+│   ├── SearchBox/                # Norwegian search with translations
 │   └── HierarchicalCategoryFilter.tsx
-├── hooks/
-│   └── usePOIData.ts            # Combined manual + OSM data loading
-├── services/
-│   ├── osmService.ts            # Norway-wide OSM queries (simplified)
-│   └── searchService.ts         # Norwegian translation dictionary
-└── data/
-    └── pois.ts                  # POI types and manual Norwegian landmarks
+├── data/
+│   ├── pois.ts                   # POI types and category tree definitions
+│   └── norwegianOutdoorPOIs.ts  # Famous Norwegian outdoor locations
+└── services/
+    └── searchService.ts          # Nominatim search with Norwegian translations
 ```
 
-### Core Data Types
-- `POI` interface: Main data structure for points of interest
-- `POIType`: Union type defining categories (hiking, swimming, camping variants, etc.)
-- `CampingMetadata`: Extended metadata for camping-related POIs
-- `CategoryConfig`: Visual configuration (colors, icons) per POI type
+### **Core Data Types**
+- `POI` interface: Main data structure for points of interest  
+- `CategoryState`: Manages checked/expanded state for category tree
+- `CategoryNode`: Hierarchical category structure with Norwegian names
+- `SearchResult`: Search results from Nominatim with Norwegian place names
 
-### Key Components
-- **WorkingTrakkeApp.tsx**: Main application component with manual Leaflet integration
-- **Sidebar.tsx**: POI filtering and category management
-- **SearchBox/**: Search functionality with Norwegian place name translation
-- **HierarchicalCategoryFilter.tsx**: Category filtering with Material Icons
+### **Key Components**
+- **MapLibreTrakkeApp.tsx**: Main application component managing state and layout
+- **MapLibreMap.tsx**: MapLibre GL map with Kartverket tiles, POI rendering, and coordinate display
+- **CategoryPanel.tsx**: Category filtering UI with expand/collapse functionality
+- **SearchBox/**: Norwegian place name search with real-time suggestions
 
-### Services & Data Layer
-- **osmService.ts**: OpenStreetMap API integration with simplified Norway-wide queries
-- **searchService.ts**: Nominatim search with 150+ Norwegian translations  
-- **usePOIData.ts**: Combined manual + OSM POI data management hook
+### **Data Flow**
+1. Norwegian POI data loaded from `norwegianOutdoorPOIs.ts` (Preikestolen, Besseggen, etc.)
+2. Category state managed in MapLibreTrakkeApp with real-time filtering
+3. Map viewport changes trigger POI filtering based on bounds and active categories
+4. Search integrates Norwegian place names via Nominatim with coordinate results
 
-### Data Flow
-1. POI data starts with manual Norwegian landmarks in `data/pois.ts` (Preikestolen, Besseggen, Nordkapp, etc.)
-2. OSM Overpass API augments data with Norway-wide camping, war memorials, etc.
-3. Components consume data through `usePOIData` hook
-4. Map renders POIs with zoom-based display and category-specific styling
+## Map Technology & Norwegian Integration
 
-## API Integrations
+### **MapLibre GL JS with Kartverket**
+- **Base Tiles**: Official Kartverket WMS topographic tiles
+- **Initial View**: Automatic bounds fitting to show complete Norway
+- **Controls**: Navigation, scale (målestokk), geolocation with Norwegian attribution
+- **Coordinate Display**: Real-time coordinate overlay at map bottom
 
-### **OpenStreetMap Overpass**
-- **Coverage**: All of Norway (57.5-71.5°N, 4.0-31.5°E)
-- **Timeout**: 25 seconds for Overpass QL queries
-- **Rate Limiting**: 20 seconds total timeout for data loading
-- **User-Agent**: Proper headers for API compliance
-- **Categories**: Camping, war memorials, churches, archaeological sites, etc.
+### **Norwegian POI Data**
+- **Famous Landmarks**: Preikestolen, Trolltunga, Nordkapp, Galdhøpiggen
+- **DNT Infrastructure**: Fannaråkhytta, Gjendesheim (staffed huts)
+- **Cultural Sites**: Stave churches (Borgund, Urnes), war memorials
+- **Outdoor Activities**: Skiing (Holmenkollen), fishing (Gaula), waterfalls
 
-### **Nominatim Search**
-- **Language**: Norwegian place names with English fallbacks
-- **Translation**: 150+ Norwegian terms (fjell→mountain, elv→river, etc.)
-- **Rate Limiting**: 1 request/second limit respected
-- **Caching**: 5-minute search result cache
+### **Search & Localization** 
+- **Norwegian Search**: Nominatim API with 150+ Norwegian translations
+- **Coordinate Parsing**: Decimal degrees, DMS, UTM coordinate support
+- **Place Name Translation**: fjell→mountain, elv→river, etc.
+- **Rate Limiting**: 1 request/second with 5-minute caching
 
-## Geographic Scope & Features
+## POI Categories (Norwegian Outdoor Recreation)
 
-### **Current Coverage**
-- **Full Norway**: All mainland + Arctic regions (Svalbard scope ready)
-- **Map Center**: [64.5, 11.0] (Central Norway)
-- **Zoom Strategy**: Smart POI display based on zoom levels (11→13→15→17+ thresholds)
+**Hierarchical Structure:**
+- **Turløyper** (Outdoor Activities): hiking, mountain_peaks, ski_trails
+- **Bade** (Water Activities): swimming, beach  
+- **Sove** (Accommodation): staffed_huts, self_service_huts, camping_site, tent_area
+- **Naturperler** (Nature Experiences): viewpoints, nature_gems (waterfalls)
+- **Historiske steder** (Cultural Heritage): churches, war_memorials, archaeological
+- **Service** (Infrastructure): parking, toilets, information_boards, cable_cars
 
-### **POI Categories** (All Norwegian)
-- **Hiking & Nature**: hiking, viewpoints, nature_gems, mountain_peaks
-- **Water Activities**: swimming, beach, lakes_rivers, canoeing, ice_fishing  
-- **Accommodation**: camping_site, tent_area, staffed_huts, self_service_huts, wilderness_shelter
-- **Culture & History**: war_memorials, churches, archaeological, protected_buildings
-- **Facilities**: parking, toilets, drinking_water, fire_places, information_boards
-- **Transport**: public_transport, train_stations, cable_cars
+## User Experience & Norwegian Standards
 
-## Norwegian Language Guidelines (Klarspråk)
-
-When writing user-facing content, follow Norwegian "klarspråk" principles:
-
-### Core Principles
-- **Find**: Users can find what they need (findable)
-- **Understand**: Clear comprehension (comprehensible)  
-- **Use**: Actionable information (actionable)
-
-### Writing Style
-- **Language**: Contemporary Bokmål throughout
-- **Voice**: Active voice, direct address with "du/deg"
-- **Tone**: Encouraging, reliable, approachable, practical
-- **Terminology**: Consistent outdoor recreation terms
-
-### UI Applications
+### **Language Guidelines (Klarspråk)**
+- **Contemporary Bokmål**: Active voice, direct address with "du/deg"
+- **Outdoor Terminology**: Consistent friluftsliv vocabulary
+- **Clear Actions**: "Søk", "Lagre", "Del rute" for UI elements
 - **Error Messages**: Explain what happened + what user can do
-- **Button Labels**: Clear action verbs ("Søk", "Lagre", "Del rute")
-- **Instructions**: Context-appropriate help for outdoor activities
 
-## Performance & Technical Notes
+### **Map Interaction**
+- **Initial View**: Complete Norwegian territory visible on load
+- **Category Selection**: Real-time POI filtering with expand/collapse
+- **Search Results**: Smooth map centering with 1-second animation
+- **Coordinate Display**: Live mouse coordinates in Norwegian format
 
-### **API Timeouts**
-```typescript
-// usePOIData.ts line 35: 20 seconds for Norway-wide queries
-// osmService.ts: 25 seconds for Overpass QL timeout
-```
+## Technical Implementation Notes
 
-### **Expected Behavior on Load**
-1. **Manual POIs visible** immediately - Norwegian landmarks across Norway
-2. **Map centered** on central Norway (64.5°N, 11.0°E) at zoom 6
-3. **OSM loading message** in console: "🔄 Loading POIs from OpenStreetMap in background..."
-4. **Within 20 seconds**: OSM POIs appear with success message
+### **Performance Considerations**
+- **Viewport-based Loading**: POIs load only when categories selected and in view
+- **Category Pre-selection**: Key categories (viewpoints, hiking, mountains) pre-selected for immediate content
+- **Search Caching**: 5-minute cache for place name results
+- **Map Optimization**: Constructor bounds more reliable than post-init fitBounds calls
 
-### **User Interactions**
-1. **Zoom in** → More POIs appear (progressive zoom thresholds)
-2. **Click categories** → Toggle POI types in sidebar  
-3. **Click POI markers** → Norwegian descriptions only
-4. **Search box** → Norwegian place names and coordinates
+### **API Integration**
+- **Nominatim Search**: Norwegian place name translation with proper User-Agent
+- **Kartverket Tiles**: Official Norwegian topographic maps via WMS
+- **No OSM Dependency**: Removed OpenStreetMap POI loading, uses curated Norwegian data
+
+### **Development Workflow**
+1. **Hot Reload**: Vite dev server with instant updates
+2. **Type Safety**: Strict TypeScript with no ESLint warnings policy
+3. **Norwegian Focus**: All content, coordinates, and interactions in Norwegian context
+4. **Map-First Design**: Geography and outdoor recreation drive all feature decisions
 
 ## Current Status
 
-### **Project State** 
-- **Status**: Norway-wide outdoor recreation app ready
-- **Language**: 100% Norwegian (Bokmål)
-- **Coverage**: Complete Norway mainland + Arctic regions
-- **Technical**: All builds successful, no TypeScript/ESLint issues
-
-### **Git Status**
-- **Branch**: main
-- **Changes**: All recent improvements uncommitted (Norway expansion, translations, zoom UX)
-- **Ready**: Features working and tested, ready for commit
-
-### **Next Steps**
-1. Test app functionality after any server restarts
-2. Consider UX improvements for user guidance
-3. Verify all POI categories load correctly across Norway
+- **Primary Component**: MapLibreTrakkeApp.tsx (replaces WorkingTrakkeApp)
+- **Map Technology**: MapLibre GL JS with Kartverket tiles (replaced Leaflet)
+- **Data Source**: Curated Norwegian outdoor recreation locations (removed OSM dependency)
+- **Language**: 100% Norwegian Bokmål interface and content
+- **Coverage**: Complete Norway from Lindesnes to Nordkapp with Arctic regions
+- **Build Status**: All TypeScript and linting issues resolved

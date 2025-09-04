@@ -23,24 +23,6 @@ export function CategoryPanel({
 }: CategoryPanelProps) {
   return (
     <div>
-      <div style={{ marginBottom: '16px' }}>
-        <h3 style={{
-          margin: '0 0 8px 0',
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#374151'
-        }}>
-          POI Kategorier
-        </h3>
-        <p style={{
-          margin: '0',
-          fontSize: '12px',
-          color: '#6b7280'
-        }}>
-          Velg kategorier for å vise POIs på kartet
-        </p>
-      </div>
-
       {loading && (
         <div style={{
           padding: '8px',
@@ -67,13 +49,6 @@ export function CategoryPanel({
         </div>
       )}
 
-      <div style={{
-        marginBottom: '12px',
-        fontSize: '12px',
-        color: '#6b7280'
-      }}>
-        {pois.length} POIs lastet
-      </div>
 
       <HierarchicalCategoryFilter
         categoryTree={categoryTree}

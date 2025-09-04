@@ -18,7 +18,7 @@ const searchService = new SearchService()
 export function SearchBox({ 
   onLocationSelect, 
   pois, 
-  placeholder = "Søk etter sted, koordinater eller utgangspunkt...",
+  placeholder = "Søk etter sted, koordinater",
   className = ""
 }: SearchBoxProps) {
   const [query, setQuery] = useState('')

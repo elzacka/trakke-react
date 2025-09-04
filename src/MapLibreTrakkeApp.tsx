@@ -3,29 +3,29 @@ import { MapLibreMap } from './components/MapLibreMap'
 import { CategoryPanel } from './components/CategoryPanel'
 import { SearchBox } from './components/SearchBox'
 import { categoryTree, CategoryState, POI } from './data/pois'
-import { useViewportPOIData } from './hooks/useViewportPOIData'
+import { KartverketPOIService, KartverketPOI } from './services/kartverketPOIService'
+import { OverpassService, OverpassPOI } from './services/overpassService'
 import { SearchResult } from './services/searchService'
 
 export function MapLibreTrakkeApp() {
-  // Category state - starts with nothing selected (clean map on load)
+  // Category state - starts with all categories unchecked as requested
   const [categoryState, setCategoryState] = useState<CategoryState>({
-    checked: {}, // No categories checked initially
+    checked: {
+      // All POIs unchecked and not visible by default on app load
+    },
     expanded: {
-      // Expand main categories for better UX
-      outdoor_activities: true,
-      water_activities: true,
-      accommodation: true,
-      cultural_heritage: true,
-      services_infrastructure: true
+      // Start collapsed, user can expand as needed
     }
   })
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true) // Hidden by default
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
   const [currentViewport, setCurrentViewport] = useState<{ north: number; south: number; east: number; west: number; zoom: number } | null>(null)
 
-  // POI data hook
-  const { pois, loading, error, loadPOIsForViewport, clearPOIs } = useViewportPOIData()
+  // POI data state (Norwegian outdoor recreation)
+  const [pois, setPois] = useState<POI[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   console.log(`🎯 MapLibre App: ${pois.length} POIs loaded`)
 
@@ -93,21 +93,50 @@ export function MapLibreTrakkeApp() {
         checked: newChecked
       }
 
-      // Load/clear POIs based on category selection
-      setTimeout(() => {
-        const activeTypes = getActivePOITypes(newState)
-        if (activeTypes.length === 0) {
-          clearPOIs()
-        } else if (currentViewport) {
-          // Load POIs for the currently selected categories
-          loadPOIsForViewport(currentViewport, activeTypes as any[])
+      // Handle category selection changes with Kartverket API
+      setTimeout(async () => {
+        const activeCategories = getActiveCategories(newState)
+        console.log(`🏷️ Categories changed. Active categories: ${activeCategories.join(', ')}`)
+        
+        // Load POI data from multiple sources for selected categories if we have viewport
+        if (currentViewport && activeCategories.length > 0) {
+          setLoading(true)
+          setError(null)
+          
+          try {
+            // Load POIs from Kartverket (general outdoor recreation POIs)
+            const kartverketPOIs = await KartverketPOIService.fetchPOIs(currentViewport, activeCategories)
+            const transformedKartverketPOIs = transformKartverketPOIs(kartverketPOIs)
+            
+            let allPOIs = [...transformedKartverketPOIs]
+            
+            // Also load Kriegsminner from OpenStreetMap if war_memorials category is active
+            if (activeCategories.includes('war_memorials')) {
+              console.log('🏰 Loading Kriegsminner from OpenStreetMap...')
+              const overpassPOIs = await OverpassService.fetchKrigsminnerPOIs(currentViewport)
+              const transformedOverpassPOIs = transformOverpassPOIs(overpassPOIs)
+              allPOIs = [...allPOIs, ...transformedOverpassPOIs]
+              console.log(`🏰 Added ${transformedOverpassPOIs.length} Kriegsminner POIs from OpenStreetMap`)
+            }
+            
+            setPois(allPOIs)
+            console.log(`🏷️ Loaded ${allPOIs.length} total POIs for categories: ${activeCategories.join(', ')}`)
+          } catch (err) {
+            console.error('❌ Error loading POIs:', err)
+            setError('Kunne ikke laste POI-data')
+            setPois([])
+          } finally {
+            setLoading(false)
+          }
+        } else if (activeCategories.length === 0) {
+          setPois([])
+          console.log(`🏷️ No categories selected, cleared POIs`)
         }
-        console.log(`🏷️ Categories changed. Active types: ${activeTypes.join(', ')}`)
       }, 100)
 
       return newState
     })
-  }, [clearPOIs, currentViewport, loadPOIsForViewport])
+  }, [currentViewport, setPois])
 
   const handleExpandToggle = useCallback((nodeId: string) => {
     setCategoryState(prev => ({
@@ -121,28 +150,61 @@ export function MapLibreTrakkeApp() {
 
   const handleLocationSelect = useCallback((result: SearchResult) => {
     setSearchResult(result)
-    // TODO: Center map on search result
-    console.log('🔍 Search result:', result)
+    console.log('🔍 Search result selected:', result)
+    // The MapLibre component will handle centering when searchResult changes
   }, [])
 
-  const handleViewportChange = useCallback((viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
+  const handleViewportChange = useCallback(async (viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
     setCurrentViewport(viewport)
     console.log('🗺️ Viewport changed:', viewport)
     
-    // Load POIs for current active categories if any are selected
-    const activeTypes = getActivePOITypes(categoryState)
-    if (activeTypes.length > 0) {
-      loadPOIsForViewport(viewport, activeTypes as any[])
+    // Load POI data from Kartverket for active categories
+    const activeCategories = getActiveCategories(categoryState)
+    if (activeCategories.length > 0) {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        // Load POIs from Kartverket (general outdoor recreation POIs)
+        const kartverketPOIs = await KartverketPOIService.fetchPOIs(viewport, activeCategories)
+        const transformedKartverketPOIs = transformKartverketPOIs(kartverketPOIs)
+        
+        let allPOIs = [...transformedKartverketPOIs]
+        
+        // Also load Kriegsminner from OpenStreetMap if war_memorials category is active
+        if (activeCategories.includes('war_memorials')) {
+          console.log('🏰 Loading Kriegsminner from OpenStreetMap for viewport...')
+          const overpassPOIs = await OverpassService.fetchKrigsminnerPOIs(viewport)
+          const transformedOverpassPOIs = transformOverpassPOIs(overpassPOIs)
+          allPOIs = [...allPOIs, ...transformedOverpassPOIs]
+          console.log(`🏰 Added ${transformedOverpassPOIs.length} Kriegsminner POIs from OpenStreetMap`)
+        }
+        
+        setPois(allPOIs)
+        console.log(`🏷️ Loaded ${allPOIs.length} total POIs for viewport`)
+      } catch (err) {
+        console.error('❌ Error loading POIs:', err)
+        setError('Kunne ikke laste POI-data')
+        setPois([])
+      } finally {
+        setLoading(false)
+      }
+    } else {
+      setPois([])
     }
-  }, [categoryState, loadPOIsForViewport])
+  }, [categoryState])
 
-  // Helper function to get active POI types from category state
-  const getActivePOITypes = (state: CategoryState): string[] => {
-    const activeTypes: string[] = []
+  // Helper function to get active category IDs from category state
+  const getActiveCategories = (state: CategoryState): string[] => {
+    const activeCategories: string[] = []
     
     function checkNode(node: typeof categoryTree[0]) {
-      if (state.checked[node.id] && node.poiTypes) {
-        node.poiTypes.forEach(type => activeTypes.push(type))
+      if (state.checked[node.id]) {
+        // Map UI category IDs to Kartverket categories
+        const kartverketCategory = mapUItoKartverketCategory(node.id)
+        if (kartverketCategory && !activeCategories.includes(kartverketCategory)) {
+          activeCategories.push(kartverketCategory)
+        }
       }
       if (node.children) {
         node.children.forEach(checkNode)
@@ -150,14 +212,79 @@ export function MapLibreTrakkeApp() {
     }
     
     categoryTree.forEach(checkNode)
-    return activeTypes
+    // Only return actual categories, not 'all' - POIs should only show when explicitly checked
+    return activeCategories
+  }
+
+  // Map UI category IDs to Kartverket categories
+  const mapUItoKartverketCategory = (uiCategoryId: string): string | null => {
+    const mapping: Record<string, string> = {
+      // Main categories
+      'outdoor_activities': 'turløyper',
+      'water_activities': 'bade', 
+      'accommodation': 'sove',
+      'nature_experiences': 'naturperler',
+      'services_infrastructure': 'service',
+      // Sub-categories
+      'turløyper': 'turløyper',
+      'hiking': 'turløyper', 
+      'mountain_peaks': 'turløyper',
+      'ski_trails': 'turløyper',
+      'sove': 'sove',
+      'staffed_huts': 'sove',
+      'self_service_huts': 'sove',
+      'camping_site': 'sove',
+      'tent_area': 'sove',
+      'wilderness_shelter': 'sove',
+      'wild_camping': 'sove',
+      'hammock_spots': 'sove',
+      'bade': 'bade',
+      'swimming': 'bade',
+      'beach': 'bade',
+      'naturperler': 'naturperler',
+      'viewpoints': 'naturperler',
+      'nature_gems': 'naturperler',
+      'service': 'service',
+      'parking': 'service',
+      'rest_areas': 'service',
+      'toilets': 'service',
+      'drinking_water': 'service',
+      'fire_places': 'service',
+      'information_boards': 'service'
+    }
+    console.log(`🗂️ Mapping UI category '${uiCategoryId}' to Kartverket category '${mapping[uiCategoryId] || 'null'}'`)
+    return mapping[uiCategoryId] || null
+  }
+
+  // Transform Kartverket POIs to our POI interface
+  const transformKartverketPOIs = (kartverketPOIs: KartverketPOI[]): POI[] => {
+    return kartverketPOIs.map(poi => ({
+      id: poi.id,
+      name: poi.name,
+      description: `${poi.type}${poi.maintenance ? ` - ${poi.maintenance}` : ''}`,
+      type: poi.category,
+      lat: poi.lat,
+      lng: poi.lng
+    }))
+  }
+
+  // Transform Overpass POIs to our POI interface
+  const transformOverpassPOIs = (overpassPOIs: OverpassPOI[]): POI[] => {
+    return overpassPOIs.map(poi => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.tags.description || `${poi.type} - Historisk eller militært anlegg`,
+      type: 'war_memorials', // All Overpass POIs are categorized as war memorials
+      lat: poi.lat,
+      lng: poi.lng
+    }))
   }
 
   return (
     <div className="app" style={{ 
       display: 'flex', 
       height: '100vh', 
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      fontFamily: 'Exo 2, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
       {/* Sidebar */}
       <div style={{
@@ -167,7 +294,8 @@ export function MapLibreTrakkeApp() {
         backgroundColor: '#f8fafc',
         borderRight: '1px solid #e2e8f0',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        position: 'relative'
       }}>
         {!sidebarCollapsed && (
           <>
@@ -181,8 +309,19 @@ export function MapLibreTrakkeApp() {
                 margin: '0 0 8px 0',
                 fontSize: '24px',
                 fontWeight: '700',
-                color: '#1f2937'
+                color: '#3e4533',
+                fontFamily: 'Exo 2, sans-serif',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}>
+                <span style={{ 
+                  fontFamily: 'Material Symbols Outlined', 
+                  fontSize: '28px',
+                  color: '#3e4533'
+                }}>
+                  forest
+                </span>
                 Tråkke
               </h1>
               <p style={{
@@ -190,7 +329,7 @@ export function MapLibreTrakkeApp() {
                 fontSize: '14px',
                 color: '#6b7280'
               }}>
-                Norsk friluftsliv med Kartverket
+                Oppdag Norge med turskoa på
               </p>
             </div>
 
@@ -217,35 +356,42 @@ export function MapLibreTrakkeApp() {
             </div>
           </>
         )}
+        
       </div>
+      
+      {/* Chevron toggle button - always visible, positioned at edge */}
+      <button
+        onClick={toggleSidebar}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: sidebarCollapsed ? '0px' : '320px',
+          transform: 'translateY(-50%)',
+          zIndex: 1000,
+          backgroundColor: '#ffffff',
+          border: '1px solid #d1d5db',
+          borderRadius: sidebarCollapsed ? '0 6px 6px 0' : '6px 0 0 6px',
+          width: '24px',
+          height: '48px',
+          cursor: 'pointer',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'left 0.3s ease'
+        }}
+      >
+        <span style={{ 
+          fontFamily: 'Material Symbols Outlined', 
+          fontSize: '16px',
+          color: '#374151'
+        }}>
+          {sidebarCollapsed ? 'chevron_right' : 'chevron_left'}
+        </span>
+      </button>
 
       {/* Main content */}
       <div style={{ flex: 1, position: 'relative' }}>
-        {/* Toggle button */}
-        <button
-          onClick={toggleSidebar}
-          style={{
-            position: 'absolute',
-            top: '16px',
-            left: sidebarCollapsed ? '16px' : '336px',
-            zIndex: 1000,
-            backgroundColor: '#ffffff',
-            border: '1px solid #d1d5db',
-            borderRadius: '6px',
-            padding: '8px',
-            cursor: 'pointer',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            transition: 'left 0.3s ease'
-          }}
-        >
-          <span style={{ 
-            fontFamily: 'Material Symbols Outlined', 
-            fontSize: '18px',
-            color: '#374151'
-          }}>
-            {sidebarCollapsed ? 'menu_open' : 'menu'}
-          </span>
-        </button>
 
         {/* MapLibre Map */}
         <MapLibreMap
@@ -255,6 +401,7 @@ export function MapLibreTrakkeApp() {
           onCategoryToggle={handleCategoryToggle}
           onExpandToggle={handleExpandToggle}
           onViewportChange={handleViewportChange}
+          searchResult={searchResult}
         />
       </div>
     </div>
