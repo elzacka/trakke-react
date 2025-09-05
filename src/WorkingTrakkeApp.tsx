@@ -127,6 +127,7 @@ export function WorkingTrakkeApp() {
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
   const updateMarkersVisibilityRef = useRef<(() => void) | null>(null)
+  const loadPOIsForCurrentViewportRef = useRef<(() => void) | null>(null)
 
   // Use viewport-based POI data (industry standard approach)
   const {
@@ -181,7 +182,7 @@ export function WorkingTrakkeApp() {
         // Add zoom event to update POI visibility and reload for new zoom level
         map.on('zoomend', () => {
           const newZoom = map.getZoom()
-          setCurrentZoom(newZoom)
+          _setCurrentZoom(newZoom)
           
           // Update marker scaling and visibility
           if (updateMarkersVisibilityRef.current) {
@@ -189,12 +190,16 @@ export function WorkingTrakkeApp() {
           }
           
           // Load POIs for new zoom level if categories are selected
-          loadPOIsForCurrentViewport()
+          if (loadPOIsForCurrentViewportRef.current) {
+            loadPOIsForCurrentViewportRef.current()
+          }
         })
 
         // Add map move event to load new POIs when viewport changes
         map.on('moveend', () => {
-          loadPOIsForCurrentViewport()
+          if (loadPOIsForCurrentViewportRef.current) {
+            loadPOIsForCurrentViewportRef.current()
+          }
         })
 
         // Add click event to display coordinates
@@ -429,7 +434,9 @@ export function WorkingTrakkeApp() {
       console.log(`✅ Created ${allMarkers.length} markers, applying visibility`)
       
       // Apply current filters and zoom visibility
-      updateMarkersVisibility()
+      if (updateMarkersVisibilityRef.current) {
+        updateMarkersVisibilityRef.current()
+      }
     })
   }, [pois]) // Only depend on POI data, not category state
 
@@ -476,8 +483,9 @@ export function WorkingTrakkeApp() {
     })
   }, [getActivePOITypes, shouldShowPOIAtZoom])
 
-  // Store function in ref to avoid dependency issues in useEffect
+  // Store functions in refs to avoid dependency issues in useEffect
   updateMarkersVisibilityRef.current = updateMarkersVisibility
+  loadPOIsForCurrentViewportRef.current = loadPOIsForCurrentViewport
 
   // Update visibility when categories change
   useEffect(() => {

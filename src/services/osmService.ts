@@ -1,8 +1,6 @@
 // src/services/osmService.ts - Norwegian boundary-constrained OSM API service
 import { POI, POIType } from '../data/pois'
 
-type _CampingMetadata = any
-
 export interface OSMElement {
   type: 'node' | 'way' | 'relation'
   id: number

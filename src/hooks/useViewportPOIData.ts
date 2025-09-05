@@ -1,7 +1,7 @@
 // src/hooks/useViewportPOIData.ts - Viewport-based POI loading (industry standard)
 import { useState, useCallback, useRef } from 'react'
 import { POI, POIType } from '../data/pois'
-import { OSMService, ViewportBounds } from '../services/osmService'
+import { OSMService, OSMElement, ViewportBounds } from '../services/osmService'
 
 export interface ViewportPOIDataState {
   pois: POI[]
@@ -85,7 +85,7 @@ export function useViewportPOIData() {
       // Load only requested POI types for current viewport
       for (const poiType of poiTypes) {
         try {
-          let elements: any[] = []
+          let elements: OSMElement[] = []
           
           switch (poiType) {
             // Accommodation

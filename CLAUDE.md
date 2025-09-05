@@ -33,7 +33,7 @@ npm run deploy       # Deploy to GitHub Pages
 
 ### ✅ **Complete Feature Set**
 - **Geographic Coverage**: Full Norway (57.5-71.5°N, 4.0-31.5°E) using Kartverket official maps
-- **POI Categories**: Norwegian outdoor recreation categories with famous landmarks
+- **POI Categories**: Currently only Krigsminner (war memorials) from OpenStreetMap are active
 - **Language**: 100% Norwegian (Bokmål) throughout
 - **Map Technology**: MapLibre GL JS with Kartverket WMS topographic tiles
 - **Search**: Norwegian place name search with coordinate display
@@ -124,14 +124,17 @@ src/
 - **Place Name Translation**: fjell→mountain, elv→river, etc.
 - **Rate Limiting**: 1 request/second with 5-minute caching
 
-## POI Categories (Norwegian Outdoor Recreation)
+## POI Categories (Currently Only Active: Krigsminner)
 
-**Hierarchical Structure:**
+**Currently Available:**
+- **Historiske steder > Krigsminner** (Cultural Heritage > War Memorials): ACTIVE - loaded from OpenStreetMap
+
+**Future Categories (currently inactive/greyed out):**
 - **Turløyper** (Outdoor Activities): hiking, mountain_peaks, ski_trails
 - **Bade** (Water Activities): swimming, beach  
 - **Sove** (Accommodation): staffed_huts, self_service_huts, camping_site, tent_area
 - **Naturperler** (Nature Experiences): viewpoints, nature_gems (waterfalls)
-- **Historiske steder** (Cultural Heritage): churches, war_memorials, archaeological
+- **Historiske steder** (Other): churches, archaeological (inactive)
 - **Service** (Infrastructure): parking, toilets, information_boards, cable_cars
 
 ## User Experience & Norwegian Standards

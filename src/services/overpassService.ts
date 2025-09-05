@@ -21,6 +21,21 @@ export interface POIBounds {
   west: number
 }
 
+interface OverpassElement {
+  type: 'node' | 'way' | 'relation'
+  id: number
+  lat?: number
+  lon?: number
+  tags: Record<string, string>
+  center?: { lat: number; lon: number }
+}
+
+interface OverpassResponse {
+  version: number
+  generator: string
+  elements: OverpassElement[]
+}
+
 export class OverpassService {
   private static readonly BASE_URL = 'https://overpass-api.de/api/interpreter'
   private static readonly CACHE_DURATION = 10 * 60 * 1000 // 10 minutes
@@ -114,19 +129,22 @@ export class OverpassService {
   /**
    * Transform Overpass API response to our POI format
    */
-  private static transformOverpassDataToPOIs(overpassData: any): OverpassPOI[] {
+  private static transformOverpassDataToPOIs(overpassData: OverpassResponse): OverpassPOI[] {
     if (!overpassData.elements) {
       return []
     }
 
     const pois: OverpassPOI[] = []
     
-    overpassData.elements.forEach((element: any) => {
+    overpassData.elements.forEach((element: OverpassElement) => {
       try {
         let lat: number, lng: number
 
         // Handle different OSM element types
         if (element.type === 'node') {
+          if (element.lat === undefined || element.lon === undefined) {
+            return
+          }
           lat = element.lat
           lng = element.lon
         } else if (element.type === 'way' || element.type === 'relation') {

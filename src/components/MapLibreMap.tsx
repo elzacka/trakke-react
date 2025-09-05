@@ -77,35 +77,6 @@ export function MapLibreMap({
       return map
     }
 
-    // Try geolocation first, fallback to Oslo
-    if (navigator.geolocation) {
-      console.log('🌍 Attempting to get user location...')
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
-          console.log(`📍 Using user location: [${userCenter[1]}, ${userCenter[0]}]`)
-          const map = initializeWithLocation(userCenter)
-          setupMapEventHandlers(map)
-        },
-        (error) => {
-          console.log(`❌ Geolocation failed: ${error.message}, using Oslo fallback`)
-          const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
-          const map = initializeWithLocation(osloCenter)
-          setupMapEventHandlers(map)
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 300000 // 5 minutes
-        }
-      )
-    } else {
-      console.log('🏛️ Geolocation not available, using Oslo as center')
-      const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
-      const map = initializeWithLocation(osloCenter)
-      setupMapEventHandlers(map)
-    }
-
     // Setup map event handlers (extracted to avoid duplication)
     const setupMapEventHandlers = (map: maplibregl.Map) => {
       // Add navigation controls with compass enabled
@@ -187,6 +158,35 @@ export function MapLibreMap({
       mapRef.current = map
     }
 
+    // Try geolocation first, fallback to Oslo
+    if (navigator.geolocation) {
+      console.log('🌍 Attempting to get user location...')
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
+          console.log(`📍 Using user location: [${userCenter[1]}, ${userCenter[0]}]`)
+          const map = initializeWithLocation(userCenter)
+          setupMapEventHandlers(map)
+        },
+        (error) => {
+          console.log(`❌ Geolocation failed: ${error.message}, using Oslo fallback`)
+          const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
+          const map = initializeWithLocation(osloCenter)
+          setupMapEventHandlers(map)
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 300000 // 5 minutes
+        }
+      )
+    } else {
+      console.log('🏛️ Geolocation not available, using Oslo as center')
+      const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
+      const map = initializeWithLocation(osloCenter)
+      setupMapEventHandlers(map)
+    }
+
     // Cleanup function
     return () => {
       if (mapRef.current) {
@@ -194,7 +194,7 @@ export function MapLibreMap({
         mapRef.current = null
       }
     }
-  }, [])
+  }, [onViewportChange])
 
   // Update POI layers when map is loaded and POIs change
   useEffect(() => {
@@ -313,8 +313,9 @@ export function MapLibreMap({
 
       // Add click handlers for POIs (both circle and symbol layers)
       const handlePOIClick = (e: maplibregl.MapMouseEvent) => {
-        if (e.features && e.features[0]) {
-          const feature = e.features[0]
+        const features = map.queryRenderedFeatures(e.point, { layers: ['pois-layer', 'poi-labels'] })
+        if (features && features[0]) {
+          const feature = features[0]
           const { name, description } = feature.properties || {}
           
           new maplibregl.Popup()
