@@ -1,6 +1,6 @@
 // src/services/osmService.ts - Norwegian boundary-constrained OSM API service
 import { POI, POIType } from '../data/pois'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 type _CampingMetadata = any
 
 export interface OSMElement {

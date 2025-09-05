@@ -647,7 +647,7 @@ export function isCampingMetadata(metadata: unknown): metadata is CampingMetadat
 export const manualPoisData: POI[] = []
 
 // Original manual POIs kept here for reference but not used
-const removedManualPoisData: POI[] = [
+const _removedManualPoisData: POI[] = [
   // Hiking trails
   {
     id: 'sample_preikestolen',
@@ -1057,7 +1057,7 @@ export async function loadKrigsminnerPOIs(): Promise<POI[]> { return [] }
 export async function loadUtsiktspunkterPOIs(): Promise<POI[]> { return [] }
 
 // Original functions kept for reference but not used
-async function removedLoadKrigsminnerPOIs(): Promise<POI[]> {
+async function _removedLoadKrigsminnerPOIs(): Promise<POI[]> {
   try {
     const response = await fetch('./krigsminner1.geojson')
     if (!response.ok) {
@@ -1072,7 +1072,7 @@ async function removedLoadKrigsminnerPOIs(): Promise<POI[]> {
 }
 
 // Utsiktspunkter loading function removed - using pure OSM API
-async function removedLoadUtsiktspunkterPOIs(): Promise<POI[]> {
+async function _removedLoadUtsiktspunkterPOIs(): Promise<POI[]> {
   try {
     const response = await fetch('./utsiktspunkter.geojson')
     if (!response.ok) {

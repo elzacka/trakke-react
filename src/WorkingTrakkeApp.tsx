@@ -110,7 +110,7 @@ function createCustomPOIMarker(poiType: POIType, zoom: number = 10): L.DivIcon {
 export function WorkingTrakkeApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [_searchResult, setSearchResult] = useState<SearchResult | null>(null)
-  const [currentZoom, setCurrentZoom] = useState(6)
+  const [_currentZoom, _setCurrentZoom] = useState(6)
   
   // Initialize category state - auto-expand sections with available data
   const [categoryState, setCategoryState] = useState<CategoryState>({
