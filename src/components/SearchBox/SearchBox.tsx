@@ -18,7 +18,7 @@ const searchService = new SearchService()
 export function SearchBox({ 
   onLocationSelect, 
   pois, 
-  placeholder = "Søk etter sted, koordinater",
+  placeholder = "Hvor går turen?",
   className = ""
 }: SearchBoxProps) {
   const [query, setQuery] = useState('')
@@ -148,9 +148,20 @@ export function SearchBox({
       }
     }
 
+    // Handle Ctrl+K / Command+K keyboard shortcut
+    const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault()
+        inputRef.current?.focus()
+      }
+    }
+
     document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyboardShortcut)
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyboardShortcut)
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
       }
@@ -239,6 +250,34 @@ export function SearchBox({
           >
             <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
+        )}
+        
+        {!query && !isLoading && (
+          <div style={{
+            position: 'absolute',
+            right: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            color: '#9ca3af',
+            fontSize: '12px',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            pointerEvents: 'none'
+          }}>
+            <kbd style={{
+              padding: '3px 6px',
+              borderRadius: '4px',
+              border: '1px solid #d1d5db',
+              backgroundColor: '#f9fafb',
+              color: '#6b7280',
+              fontSize: '11px',
+              fontFamily: 'system-ui',
+              whiteSpace: 'nowrap'
+            }}>
+              Ctrl+K/⌘+K
+            </kbd>
+          </div>
         )}
       </div>
 

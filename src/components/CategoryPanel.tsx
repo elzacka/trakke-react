@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { CategoryNode, CategoryState, POI } from '../data/pois'
 import { HierarchicalCategoryFilter } from './HierarchicalCategoryFilter'
+import { ShortcutsPanel } from './ShortcutsPanel'
 
 interface CategoryPanelProps {
   categoryTree: CategoryNode[]
@@ -21,6 +22,8 @@ export function CategoryPanel({
   loading,
   error
 }: CategoryPanelProps) {
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false) // Start collapsed
+
   return (
     <div>
       {loading && (
@@ -49,14 +52,85 @@ export function CategoryPanel({
         </div>
       )}
 
+      {/* Categories panel */}
+      <div className="categories-panel" style={{ marginBottom: '16px' }}>
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsCategoriesExpanded(!isCategoriesExpanded)}
+          style={{
+            width: '100%',
+            padding: '8px 12px',
+            backgroundColor: isCategoriesExpanded ? '#f1f5f9' : '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: '500',
+            color: '#64748b',
+            transition: 'all 0.2s ease',
+            marginBottom: isCategoriesExpanded ? '8px' : '0'
+          }}
+          onMouseEnter={(e) => {
+            if (!isCategoriesExpanded) {
+              e.currentTarget.style.backgroundColor = '#f8fafc'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isCategoriesExpanded) {
+              e.currentTarget.style.backgroundColor = '#ffffff'
+            }
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ 
+              fontSize: '12px', 
+              fontWeight: '600', 
+              color: '#475569', 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.5px' 
+            }}>
+              Kategorier
+            </span>
+          </div>
+          <span 
+            style={{ 
+              fontFamily: 'Material Symbols Outlined',
+              fontSize: '16px',
+              transform: isCategoriesExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease'
+            }}
+          >
+            keyboard_arrow_down
+          </span>
+        </button>
 
-      <HierarchicalCategoryFilter
-        categoryTree={categoryTree}
-        categoryState={categoryState}
-        onCategoryToggle={onCategoryToggle}
-        onExpandToggle={onExpandToggle}
-        pois={pois}
-      />
+        {/* Expanded Content */}
+        {isCategoriesExpanded && (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '6px',
+            overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ padding: '12px' }}>
+              <HierarchicalCategoryFilter
+                categoryTree={categoryTree}
+                categoryState={categoryState}
+                onCategoryToggle={onCategoryToggle}
+                onExpandToggle={onExpandToggle}
+                pois={pois}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Shortcuts panel at the bottom */}
+      <ShortcutsPanel />
     </div>
   )
 }
