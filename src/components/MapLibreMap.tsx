@@ -34,87 +34,133 @@ export function MapLibreMap({
 
     console.log('🗺️ Initializing MapLibre with Kartverket WMS tiles...')
 
-    const map = new maplibregl.Map({
-      container: mapContainer.current,
-      // Kartverket WMS as raster source (reliable and official)
-      style: {
-        version: 8,
-        sources: {
-          'kartverket-topo': {
-            type: 'raster',
-            tiles: [
-              'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
-            ],
-            tileSize: 256,
-            attribution: '© Kartverket'
-          }
+    // Try to get user location for initial center, fallback to Oslo
+    const initializeWithLocation = (center: [number, number]) => {
+      const map = new maplibregl.Map({
+        container: mapContainer.current!,
+        // Kartverket WMS as raster source (reliable and official)
+        style: {
+          version: 8,
+          sources: {
+            'kartverket-topo': {
+              type: 'raster',
+              tiles: [
+                'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
+              ],
+              tileSize: 256,
+              attribution: '© Kartverket'
+            }
+          },
+          layers: [
+            {
+              id: 'kartverket-topo',
+              type: 'raster',
+              source: 'kartverket-topo'
+            }
+          ]
         },
-        layers: [
-          {
-            id: 'kartverket-topo',
-            type: 'raster',
-            source: 'kartverket-topo'
-          }
-        ]
-      },
-      // Start with center and zoom, then fit bounds after load
-      center: [17.5, 64.5], // Center of Norway
-      zoom: 4,
-      bearing: 0, // Start north-up
-      pitch: 0,
-      // No maxBounds constraint to allow proper fitBounds behavior
-      // Enable all interactions with centered zoom
-      interactive: true,
-      dragPan: true,
-      dragRotate: true,
-      scrollZoom: { around: 'center' }, // Always zoom to center
-      boxZoom: true,
-      doubleClickZoom: true,
-      keyboard: true,
-      touchZoomRotate: true
-    })
-
-    // Add navigation controls with compass enabled
-    map.addControl(new maplibregl.NavigationControl({
-      visualizePitch: true,
-      showCompass: true,
-      showZoom: true
-    }), 'bottom-right')
-    
-    // Add geolocation control
-    map.addControl(
-      new maplibregl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true
-      }),
-      'bottom-right'
-    )
-    
-    // Add native MapLibre scale control (accurate) with custom styling
-    const scaleControl = new maplibregl.ScaleControl({
-      maxWidth: 100,
-      unit: 'metric'
-    })
-    map.addControl(scaleControl, 'bottom-left')
-
-    map.on('load', () => {
-      console.log('✅ MapLibre loaded with Kartverket WMS topographic tiles')
-      
-      // Fit bounds to show all of Norway after map is loaded
-      map.fitBounds([
-        [4.0, 57.8],   // Southwest corner (covers Lindesnes area)
-        [31.5, 71.8]   // Northeast corner (covers all of Nordkapp/Finnmark)
-      ], {
-        padding: { top: 20, bottom: 40, left: 20, right: 20 }, // Minimal padding for maximum coverage
-        duration: 1000
+        // Start with 500m scale level (zoom ~13) at user location or Oslo
+        center: center,
+        zoom: 13, // Approximately 500m scale level
+        bearing: 0, // Start north-up
+        pitch: 0,
+        // Enable all interactions with centered zoom
+        interactive: true,
+        dragPan: true,
+        dragRotate: true,
+        scrollZoom: { around: 'center' }, // Always zoom to center
+        boxZoom: true,
+        doubleClickZoom: true,
+        keyboard: true,
+        touchZoomRotate: true
       })
+      return map
+    }
+
+    // Try geolocation first, fallback to Oslo
+    if (navigator.geolocation) {
+      console.log('🌍 Attempting to get user location...')
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
+          console.log(`📍 Using user location: [${userCenter[1]}, ${userCenter[0]}]`)
+          const map = initializeWithLocation(userCenter)
+          setupMapEventHandlers(map)
+        },
+        (error) => {
+          console.log(`❌ Geolocation failed: ${error.message}, using Oslo fallback`)
+          const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
+          const map = initializeWithLocation(osloCenter)
+          setupMapEventHandlers(map)
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 300000 // 5 minutes
+        }
+      )
+    } else {
+      console.log('🏛️ Geolocation not available, using Oslo as center')
+      const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
+      const map = initializeWithLocation(osloCenter)
+      setupMapEventHandlers(map)
+    }
+
+    // Setup map event handlers (extracted to avoid duplication)
+    const setupMapEventHandlers = (map: maplibregl.Map) => {
+      // Add navigation controls with compass enabled
+      map.addControl(new maplibregl.NavigationControl({
+        visualizePitch: true,
+        showCompass: true,
+        showZoom: true
+      }), 'bottom-right')
       
-      setMapLoaded(true)
+      // Add geolocation control
+      map.addControl(
+        new maplibregl.GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true
+          },
+          trackUserLocation: true
+        }),
+        'bottom-right'
+      )
       
-      // Emit initial viewport bounds after fitting
-      setTimeout(() => {
+      // Add native MapLibre scale control (accurate) with custom styling
+      const scaleControl = new maplibregl.ScaleControl({
+        maxWidth: 100,
+        unit: 'metric'
+      })
+      map.addControl(scaleControl, 'bottom-left')
+
+      map.on('load', () => {
+        console.log('✅ MapLibre loaded with Kartverket WMS topographic tiles at 500m scale')
+        
+        // Using simple circle + text approach for reliable rendering
+        
+        setMapLoaded(true)
+        
+        // Emit initial viewport bounds at 500m scale level
+        setTimeout(() => {
+          if (onViewportChange) {
+            const bounds = map.getBounds()
+            onViewportChange({
+              north: bounds.getNorth(),
+              south: bounds.getSouth(),
+              east: bounds.getEast(),
+              west: bounds.getWest(),
+              zoom: map.getZoom()
+            })
+          }
+        }, 100)
+      })
+
+      map.on('error', (e) => {
+        console.error('❌ MapLibre error:', e)
+      })
+
+      // Viewport change handlers
+      const handleViewportChange = () => {
         if (onViewportChange) {
           const bounds = map.getBounds()
           onViewportChange({
@@ -125,56 +171,39 @@ export function MapLibreMap({
             zoom: map.getZoom()
           })
         }
-      }, 1100)
-    })
-
-    map.on('error', (e) => {
-      console.error('❌ MapLibre error:', e)
-    })
-
-    // Viewport change handlers
-    const handleViewportChange = () => {
-      if (onViewportChange) {
-        const bounds = map.getBounds()
-        onViewportChange({
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest(),
-          zoom: map.getZoom()
-        })
       }
+
+      map.on('moveend', handleViewportChange)
+      map.on('zoomend', handleViewportChange)
+
+      // Track mouse coordinates and zoom for display
+      map.on('mousemove', (e) => {
+        setCoordinates({
+          lat: e.lngLat.lat,
+          lng: e.lngLat.lng
+        })
+      })
+
+      mapRef.current = map
     }
 
-    map.on('moveend', handleViewportChange)
-    map.on('zoomend', handleViewportChange)
-
-    // Track mouse coordinates and zoom for display
-    map.on('mousemove', (e) => {
-      setCoordinates({
-        lat: e.lngLat.lat,
-        lng: e.lngLat.lng
-      })
-    })
-
-    // No custom zoom tracking needed - using native scale control
-
-    mapRef.current = map
-
+    // Cleanup function
     return () => {
-      map.remove()
-      mapRef.current = null
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
     }
   }, [])
 
-  // Add POI layers when map is loaded and POIs are available
+  // Update POI layers when map is loaded and POIs change
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || pois.length === 0) return
+    if (!mapRef.current || !mapLoaded) return
 
     const map = mapRef.current
-    console.log(`🎯 Adding ${pois.length} POIs to map`)
+    console.log(`🎯 Updating map with ${pois.length} POIs`)
 
-    // Create GeoJSON source from POIs
+    // Create GeoJSON source from POIs (empty collection if no POIs)
     const geojsonData = {
       type: 'FeatureCollection' as const,
       features: pois.map(poi => ({
@@ -192,7 +221,7 @@ export function MapLibreMap({
       }))
     }
 
-    // Add POI source
+    // Update or add POI source
     if (map.getSource('pois')) {
       (map.getSource('pois') as maplibregl.GeoJSONSource).setData(geojsonData)
     } else {
@@ -201,7 +230,7 @@ export function MapLibreMap({
         data: geojsonData
       })
 
-      // Add POI layer
+      // Add POI layer using reliable circle markers with custom styling
       map.addLayer({
         id: 'poi-points',
         type: 'circle',
@@ -211,13 +240,49 @@ export function MapLibreMap({
             'interpolate',
             ['linear'],
             ['zoom'],
-            6, 4,    // Small at country level
-            10, 8,   // Medium at regional level
-            14, 12   // Large at local level
+            6, 6,     // Small at country level
+            10, 8,    // Medium at regional level  
+            14, 12,   // Large at city level
+            18, 16    // Extra large when very zoomed in
           ],
-          'circle-color': '#2563eb',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
+          'circle-color': '#8B4B8B',
+          'circle-stroke-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            6, 1,
+            14, 2,
+            18, 3
+          ],
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.9,
+          'circle-stroke-opacity': 1
+        }
+      })
+      
+      // Add inner symbol layer for the military icon
+      map.addLayer({
+        id: 'poi-symbols', 
+        type: 'symbol',
+        source: 'pois',
+        layout: {
+          'text-field': '⚔',  // Military crossed swords symbol
+          'text-font': ['Open Sans Bold'],
+          'text-size': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            6, 8,
+            10, 10,
+            14, 14,
+            18, 18
+          ],
+          'text-allow-overlap': true,
+          'text-ignore-placement': true
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-opacity': 1
         }
       })
 
@@ -246,8 +311,8 @@ export function MapLibreMap({
         }
       })
 
-      // Add click handlers for POIs
-      map.on('click', 'poi-points', (e) => {
+      // Add click handlers for POIs (both circle and symbol layers)
+      const handlePOIClick = (e: any) => {
         if (e.features && e.features[0]) {
           const feature = e.features[0]
           const { name, description, type } = feature.properties || {}
@@ -259,26 +324,27 @@ export function MapLibreMap({
                 <h3 style="margin: 0 0 6px 0; color: #2c5530; font-size: 15px;">
                   ${name || 'Ukjent sted'}
                 </h3>
-                <p style="margin: 0 0 6px 0; color: #555; font-size: 13px;">
+                <p style="margin: 0; color: #555; font-size: 13px;">
                   ${description || 'Ingen beskrivelse tilgjengelig'}
                 </p>
-                <div style="color: #777; font-size: 11px;">
-                  Type: ${type}
-                </div>
               </div>
             `)
             .addTo(map)
         }
-      })
+      }
+      
+      // Apply click handler to both layers
+      map.on('click', 'poi-points', handlePOIClick)
+      map.on('click', 'poi-symbols', handlePOIClick)
 
-      // Change cursor on hover
-      map.on('mouseenter', 'poi-points', () => {
-        map.getCanvas().style.cursor = 'pointer'
-      })
-
-      map.on('mouseleave', 'poi-points', () => {
-        map.getCanvas().style.cursor = ''
-      })
+      // Change cursor on hover for both layers
+      const handleMouseEnter = () => { map.getCanvas().style.cursor = 'pointer' }
+      const handleMouseLeave = () => { map.getCanvas().style.cursor = '' }
+      
+      map.on('mouseenter', 'poi-points', handleMouseEnter)
+      map.on('mouseleave', 'poi-points', handleMouseLeave)
+      map.on('mouseenter', 'poi-symbols', handleMouseEnter)
+      map.on('mouseleave', 'poi-symbols', handleMouseLeave)
     }
   }, [mapLoaded, pois])
 
