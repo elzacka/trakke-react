@@ -16,10 +16,10 @@ interface MapLibreMapProps {
 
 export function MapLibreMap({
   pois,
-  categoryState,
-  categoryTree,
-  onCategoryToggle,
-  onExpandToggle,
+  categoryState: _categoryState,
+  categoryTree: _categoryTree,
+  onCategoryToggle: _onCategoryToggle,
+  onExpandToggle: _onExpandToggle,
   onViewportChange,
   searchResult
 }: MapLibreMapProps) {
@@ -312,10 +312,10 @@ export function MapLibreMap({
       })
 
       // Add click handlers for POIs (both circle and symbol layers)
-      const handlePOIClick = (e: any) => {
+      const handlePOIClick = (e: maplibregl.MapMouseEvent) => {
         if (e.features && e.features[0]) {
           const feature = e.features[0]
-          const { name, description, type } = feature.properties || {}
+          const { name, description } = feature.properties || {}
           
           new maplibregl.Popup()
             .setLngLat(e.lngLat)

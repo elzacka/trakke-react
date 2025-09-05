@@ -439,7 +439,7 @@ async function searchNominatim(query: string): Promise<SearchResult[]> {
         const type: SearchResult['type'] = item.address?.house_number ? 'address' : 'place'
 
         // Translate place type to Norwegian
-        const norwegianType = item.type ? norwegianPlaceTypes[item.type] || item.type : undefined
+        const _norwegianType = item.type ? norwegianPlaceTypes[item.type] || item.type : undefined
         
         return {
           id: `nominatim_${item.place_id}`,
@@ -449,9 +449,7 @@ async function searchNominatim(query: string): Promise<SearchResult[]> {
           lng,
           type,
           source: 'nominatim',
-          description: norwegianType ? 
-            `${norwegianType} i ${item.address?.municipality || item.address?.county || 'Norge'}` : 
-            undefined,
+          description: undefined, // Remove type descriptions from search results
           bbox
         }
       })

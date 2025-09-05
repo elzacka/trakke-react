@@ -1,5 +1,7 @@
 // src/services/osmService.ts - Norwegian boundary-constrained OSM API service
-import { POI, POIType, CampingMetadata } from '../data/pois'
+import { POI, POIType } from '../data/pois'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _CampingMetadata = any
 
 export interface OSMElement {
   type: 'node' | 'way' | 'relation'
@@ -282,8 +284,8 @@ export class OSMService {
    */
   convertElementToPOI(element: OSMElement, poiType: POIType): POI | null {
     // Get coordinates - prefer center for ways/relations, lat/lon for nodes
-    let lat = element.lat || element.center?.lat
-    let lng = element.lon || element.center?.lon
+    const lat = element.lat || element.center?.lat
+    const lng = element.lon || element.center?.lon
     
     if (!lat || !lng) {
       console.log(`🚫 No coordinates for element ${element.id}: lat=${lat}, lng=${lng}, center=${JSON.stringify(element.center)}`)

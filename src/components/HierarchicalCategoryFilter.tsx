@@ -14,13 +14,69 @@ export function HierarchicalCategoryFilter({
   categoryState,
   onCategoryToggle,
   onExpandToggle,
-  pois
+  pois: _pois
 }: HierarchicalCategoryFilterProps) {
   
-  // All categories are always available with viewport-based loading
-  // POI data loads on-demand when user selects categories
-  const categoryHasData = (_node: CategoryNode): boolean => {
-    return true // All categories are available - data loads when selected
+  // Check if category has available data sources
+  const categoryHasData = (node: CategoryNode): boolean => {
+    // Categories with active data sources - ONLY Krigsminner POIs are actually available
+    const activeCategoryMapping: Record<string, boolean> = {
+      // Only parent category with actual data
+      'cultural_heritage': true,  // Contains Krigsminner which has real POIs
+      
+      // Only active subcategory with real POI data from Overpass API
+      'war_memorials': true,      // Krigsminner - the ONLY category with actual POIs
+      
+      // All other categories currently inactive (no real POI data available)
+      'outdoor_activities': false,
+      'water_activities': false, 
+      'accommodation': false,
+      'nature_experiences': false,
+      'services_infrastructure': false,
+      'transport': false,
+      'water_activities_extended': false,
+      
+      // All subcategories inactive (no POI sources)
+      'hiking': false,
+      'mountain_peaks': false,
+      'ski_trails': false,
+      'swimming': false,
+      'beach': false,
+      'staffed_huts': false,
+      'self_service_huts': false,
+      'wilderness_shelter': false,
+      'camping_site': false,
+      'tent_area': false,
+      'wild_camping': false,
+      'hammock_spots': false,
+      'nature_gems': false,
+      'viewpoints': false,
+      'parking': false,
+      'rest_areas': false,
+      'toilets': false,
+      'drinking_water': false,
+      'fire_places': false,
+      'information_boards': false,
+      'cable_cars': false,
+      'public_transport': false,
+      'train_stations': false,
+      'fishing_spots': false,
+      'canoeing': false,
+      'churches': false,      // No actual church POI data
+      'archaeological': false // No actual archaeological POI data
+    }
+    
+    // Check if this category or any of its children have data
+    const hasDirectData = activeCategoryMapping[node.id] || false
+    
+    if (hasDirectData) return true
+    
+    // Check if any children have data
+    if (node.children) {
+      return node.children.some(child => categoryHasData(child))
+    }
+    
+    return false
   }
   
   const renderCategoryNode = (node: CategoryNode, level: number = 0) => {
@@ -28,8 +84,8 @@ export function HierarchicalCategoryFilter({
     const isExpanded = categoryState.expanded[node.id] || false
     const isChecked = categoryState.checked[node.id] || false
     const indentLevel = level * 20
-    const hasData = categoryHasData(node)
-    const isDisabled = false // All categories are always enabled with viewport-based loading
+    const _hasData = categoryHasData(node)
+    const isDisabled = !_hasData // Disable categories without available data
 
     return (
       <div key={node.id} style={{ marginLeft: `${indentLevel}px` }}>

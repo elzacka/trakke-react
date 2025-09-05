@@ -80,7 +80,7 @@ export function useViewportPOIData() {
       console.log(`🗺️ Loading POIs for viewport:`, bounds)
       console.log(`📋 Requested types:`, poiTypes)
 
-      let allPOIs: POI[] = []
+      const allPOIs: POI[] = []
 
       // Load only requested POI types for current viewport
       for (const poiType of poiTypes) {

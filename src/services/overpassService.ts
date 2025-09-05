@@ -31,48 +31,54 @@ export class OverpassService {
    * Queries for historic=fort, historic=castle, and military tags
    */
   static async fetchKrigsminnerPOIs(bounds: POIBounds): Promise<OverpassPOI[]> {
-    const cacheKey = `krigsminner_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
+    const cacheKey = `krigsminner_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
     
-    // Check cache first
-    const cached = this.cache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log('🗄️ Using cached Krigsminner data')
-      return cached.data
-    }
+    // Check cache first (temporarily disabled for testing)
+    // const cached = this.cache.get(cacheKey)
+    // if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+    //   console.log('🗄️ Using cached Krigsminner data')
+    //   return cached.data
+    // }
 
     try {
       console.log('🔄 Fetching Krigsminner from OpenStreetMap...', bounds)
       
-      // Build Overpass QL query for historic forts, castles, and military sites
+      // Constrain bounds to Norway's geographic limits
+      const norwayBounds = {
+        north: Math.min(bounds.north, 72.0),  // Norway's northernmost point
+        south: Math.max(bounds.south, 57.5),  // Norway's southernmost point  
+        east: Math.min(bounds.east, 32.0),    // Norway's easternmost point
+        west: Math.max(bounds.west, 4.0)      // Norway's westernmost point
+      }
+
+      // Build Overpass QL query for historic forts, castles, and military sites in Norway  
       const overpassQuery = `
         [out:json][timeout:25];
         (
-          // Historic forts
-          node["historic"="fort"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          way["historic"="fort"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          relation["historic"="fort"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
+          // Historic forts in Norway with country filter
+          node["historic"="fort"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          node["historic"="fort"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["historic"="fort"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["historic"="fort"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
           
-          // Historic castles
-          node["historic"="castle"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          way["historic"="castle"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          relation["historic"="castle"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
+          // Historic castles in Norway with country filter
+          node["historic"="castle"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          node["historic"="castle"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["historic"="castle"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["historic"="castle"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
           
-          // Military sites
-          node["military"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          way["military"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          relation["military"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
+          // Military bunkers and sites in Norway
+          node["military"="bunker"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          node["military"="naval_base"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
           
-          // Historic battlefields
-          node["historic"="battlefield"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          way["historic"="battlefield"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
+          // Historic battlefields in Norway
+          node["historic"="battlefield"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
           
-          // War memorials
-          node["historic"="memorial"]["memorial"~"war"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-          node["tourism"="attraction"]["memorial"="war_memorial"](${bounds.south},${bounds.west},${bounds.north},${bounds.east});
+          // War memorials in Norway
+          node["historic"="memorial"]["memorial"~"war"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          node["tourism"="attraction"]["memorial"="war_memorial"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
         );
-        out body;
-        >;
-        out skel qt;
+        out body 150;
       `.trim()
 
       const response = await fetch(this.BASE_URL, {
@@ -91,16 +97,16 @@ export class OverpassService {
       console.log('📊 Raw Overpass response:', data)
       
       const pois = this.transformOverpassDataToPOIs(data)
-      console.log(`🔄 Transformed ${pois.length} Kriegsminner POIs from Overpass API`)
+      console.log(`🔄 Transformed ${pois.length} Krigsminner POIs from Overpass API`)
 
       // Cache the results
       this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${pois.length} Kriegsminner POIs from OpenStreetMap`)
+      console.log(`✅ Fetched ${pois.length} Krigsminner POIs from OpenStreetMap`)
       return pois
 
     } catch (error) {
-      console.error('❌ Error fetching Kriegsminner from Overpass API:', error)
+      console.error('❌ Error fetching Krigsminner from Overpass API:', error)
       return []
     }
   }
@@ -136,8 +142,13 @@ export class OverpassService {
           return
         }
 
-        // Validate coordinates
+        // Validate coordinates and ensure they're within Norway's boundaries
         if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+          return
+        }
+        
+        // Additional Norway boundary check to exclude neighboring countries
+        if (lat < 57.5 || lat > 72.0 || lng < 4.0 || lng > 32.0) {
           return
         }
 
@@ -147,7 +158,7 @@ export class OverpassService {
         const name = this.extractName(tags)
         
         // Generate description
-        const description = this.generateDescription(tags)
+        const _description = this.generateDescription(tags)
         
         // Determine type
         const type = this.determineType(tags)
@@ -169,7 +180,7 @@ export class OverpassService {
       }
     })
 
-    console.log(`✅ Converted ${pois.length} Kriegsminner POIs from Overpass data`)
+    console.log(`✅ Converted ${pois.length} Krigsminner POIs from Overpass data`)
     return pois
   }
 
