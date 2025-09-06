@@ -346,13 +346,13 @@ export function MapLibreMap({
       console.log('🔍 All map layers:', allLayers)
       
       // Get feature from the event (MapLibre provides this directly for layer clicks)
-      const features = (e as any).features || []
+      const features = (e as maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }).features || []
       console.log('📊 POI Features from event:', features.length, features)
       
       if (features && features.length > 0) {
         const feature = features[0]
         console.log('🔍 Feature properties:', feature.properties)
-        const { name, description, id, type } = feature.properties || {}
+        const { name, description, id } = feature.properties || {}
         
         console.log(`✅ Creating popup for: ${name} (${id})`)
         
