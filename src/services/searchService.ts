@@ -422,19 +422,80 @@ async function searchNominatim(query: string): Promise<SearchResult[]> {
         }
 
         const name = item.name || item.display_name.split(',')[0]
-        const parts: string[] = []
         
-        if (item.name) parts.push(item.name)
-        if (item.address?.municipality && item.address.municipality !== item.name) {
-          parts.push(item.address.municipality)
-        }
-        if (item.address?.county && !parts.includes(item.address.county)) {
-          parts.push(item.address.county)
+        // Enhanced Norwegian place name differentiation
+        const createDisplayName = (item: NominatimItem): string => {
+          const baseName = item.name || item.display_name.split(',')[0]
+          
+          // Determine the appropriate Norwegian type label
+          const getTypeLabel = (type: string | undefined, address: NominatimAddress | undefined): string => {
+            if (!type) return ''
+            
+            // Priority mapping for Norwegian place types
+            switch (type) {
+              case 'city':
+              case 'town':
+                return 'by'
+              case 'municipality':
+              case 'administrative':
+                // Check if it's specifically a municipality vs other administrative
+                if (address?.municipality === baseName) {
+                  return 'kommune'
+                }
+                return 'administrativ'
+              case 'village':
+                return 'tettsted'
+              case 'hamlet':
+                return 'grend'
+              case 'suburb':
+                return 'bydel'
+              case 'neighbourhood':
+                return 'nabolag'
+              case 'county':
+                return 'fylke'
+              default:
+                return ''
+            }
+          }
+          
+          const typeLabel = getTypeLabel(item.type, item.address)
+          
+          // Build display name based on type and context
+          if (typeLabel === 'kommune') {
+            // For municipalities: "Oslo kommune"
+            return `${baseName} kommune`
+          } else if (typeLabel === 'by') {
+            // For cities: "Oslo by" or "Oslo, Viken fylke" if in different municipality
+            if (item.address?.municipality && item.address.municipality !== baseName) {
+              return `${baseName} by, ${item.address.municipality} kommune`
+            } else if (item.address?.county) {
+              return `${baseName} by, ${item.address.county} fylke`
+            }
+            return `${baseName} by`
+          } else if (typeLabel && typeLabel !== 'administrativ') {
+            // For other types: "Place (type)" + context
+            const parts = [`${baseName} (${typeLabel})`]
+            if (item.address?.municipality && item.address.municipality !== baseName) {
+              parts.push(item.address.municipality)
+            }
+            if (item.address?.county && !parts.some(p => p.includes(item.address!.county!))) {
+              parts.push(item.address.county + ' fylke')
+            }
+            return parts.join(', ')
+          } else {
+            // Fallback: use context clues
+            const parts = [baseName]
+            if (item.address?.municipality && item.address.municipality !== baseName) {
+              parts.push(item.address.municipality)
+            }
+            if (item.address?.county && !parts.includes(item.address.county)) {
+              parts.push(item.address.county + ' fylke')
+            }
+            return parts.join(', ')
+          }
         }
         
-        const displayName = parts.length > 0 
-          ? parts.join(', ') 
-          : item.display_name.split(',').slice(0, 2).join(', ')
+        const displayName = createDisplayName(item)
         
         const type: SearchResult['type'] = item.address?.house_number ? 'address' : 'place'
 

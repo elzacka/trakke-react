@@ -92,7 +92,7 @@ export function CategoryPanel({
               textTransform: 'uppercase', 
               letterSpacing: '0.5px' 
             }}>
-              Kategorier
+              Kategorier å se på kartet
             </span>
           </div>
           <span 

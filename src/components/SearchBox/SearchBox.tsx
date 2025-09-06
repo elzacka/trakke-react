@@ -1,6 +1,6 @@
 // src/components/SearchBox/SearchBox.tsx - Fullstendig fikset versjon
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { SearchService, SearchResult } from '../../services/searchService'
 import { POI } from '../../data/pois'
 import './SearchBox.css'
@@ -15,12 +15,16 @@ interface SearchBoxProps {
 // Opprett service-instans utenfor komponenten
 const searchService = new SearchService()
 
-export function SearchBox({ 
+export interface SearchBoxRef {
+  focusInput: () => void
+}
+
+export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({ 
   onLocationSelect, 
   pois, 
   placeholder = "Hvor går turen?",
   className = ""
-}: SearchBoxProps) {
+}, ref) => {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
@@ -32,6 +36,19 @@ export function SearchBox({
   const resultsRef = useRef<HTMLDivElement>(null)
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
   const listboxId = `searchbox-listbox-${Math.random().toString(36).substring(2, 9)}`
+
+  // Expose focusInput method to parent components
+  useImperativeHandle(ref, () => ({
+    focusInput: () => {
+      console.log('SearchBox focusInput called, inputRef.current:', inputRef.current)
+      if (inputRef.current) {
+        inputRef.current.focus()
+        console.log('Input focused successfully')
+      } else {
+        console.warn('Input ref is null, cannot focus')
+      }
+    }
+  }))
 
   // Error handling
   const handleSearchError = useCallback((searchError: Error) => {
@@ -148,20 +165,10 @@ export function SearchBox({
       }
     }
 
-    // Handle Ctrl+K / Command+K keyboard shortcut
-    const handleKeyboardShortcut = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-        event.preventDefault()
-        inputRef.current?.focus()
-      }
-    }
-
     document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleKeyboardShortcut)
     
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyboardShortcut)
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
       }
@@ -204,7 +211,7 @@ export function SearchBox({
   const getResultId = (index: number) => `${listboxId}-option-${index}`
 
   return (
-    <div className={`search-box ${className}`}>
+    <div className={`search-box ${className}`} data-search-box>
       <div className="search-input-container">
         <span className="search-icon material-symbols-outlined" aria-hidden="true">
           search
@@ -353,4 +360,6 @@ export function SearchBox({
       )}
     </div>
   )
-}
+})
+
+SearchBox.displayName = 'SearchBox'

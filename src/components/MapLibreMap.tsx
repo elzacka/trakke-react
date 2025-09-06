@@ -27,10 +27,16 @@ export function MapLibreMap({
   const mapRef = useRef<maplibregl.Map | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null)
+  const onViewportChangeRef = useRef(onViewportChange)
+
+  // Update the ref when onViewportChange changes
+  useEffect(() => {
+    onViewportChangeRef.current = onViewportChange
+  }, [onViewportChange])
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current) return
+    if (!mapContainer.current || mapRef.current) return
 
     console.log('🗺️ Initializing MapLibre with Kartverket WMS tiles...')
 
@@ -113,9 +119,9 @@ export function MapLibreMap({
         
         // Emit initial viewport bounds at 500m scale level
         setTimeout(() => {
-          if (onViewportChange) {
+          if (onViewportChangeRef.current) {
             const bounds = map.getBounds()
-            onViewportChange({
+            onViewportChangeRef.current({
               north: bounds.getNorth(),
               south: bounds.getSouth(),
               east: bounds.getEast(),
@@ -132,9 +138,9 @@ export function MapLibreMap({
 
       // Viewport change handlers
       const handleViewportChange = () => {
-        if (onViewportChange) {
+        if (onViewportChangeRef.current) {
           const bounds = map.getBounds()
-          onViewportChange({
+          onViewportChangeRef.current({
             north: bounds.getNorth(),
             south: bounds.getSouth(),
             east: bounds.getEast(),
@@ -194,14 +200,29 @@ export function MapLibreMap({
         mapRef.current = null
       }
     }
-  }, [onViewportChange])
+  }, []) // Empty dependency array - initialize map only once
 
   // Update POI layers when map is loaded and POIs change
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
 
     const map = mapRef.current
-    console.log(`🎯 Updating map with ${pois.length} POIs`)
+    console.log(`🎯 Updating map with ${pois.length} POIs:`, pois.map(p => `${p.name} (${p.lat}, ${p.lng})`).join(', '))
+
+    // Clean up existing POI layers first to ensure clean state
+    const existingLayers = ['poi-labels', 'poi-symbols', 'poi-points'] // Remove in reverse order
+    existingLayers.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        console.log(`🗑️ Removing existing layer: ${layerId}`)
+        map.removeLayer(layerId)
+      }
+    })
+
+    // Remove existing POI source if it exists
+    if (map.getSource('pois')) {
+      console.log(`🗑️ Removing existing POI source`)
+      map.removeSource('pois')
+    }
 
     // Create GeoJSON source from POIs (empty collection if no POIs)
     const geojsonData = {
@@ -220,132 +241,170 @@ export function MapLibreMap({
         }
       }))
     }
+    
+    // Debug: Log the GeoJSON structure that will be sent to MapLibre
+    console.log('📊 GeoJSON structure:', JSON.stringify(geojsonData, null, 2))
 
-    // Update or add POI source
-    if (map.getSource('pois')) {
-      (map.getSource('pois') as maplibregl.GeoJSONSource).setData(geojsonData)
-    } else {
-      map.addSource('pois', {
-        type: 'geojson',
-        data: geojsonData
-      })
+    // Add POI source
+    map.addSource('pois', {
+      type: 'geojson',
+      data: geojsonData
+    })
 
-      // Add POI layer using reliable circle markers with custom styling
-      map.addLayer({
-        id: 'poi-points',
-        type: 'circle',
-        source: 'pois',
-        paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            6, 6,     // Small at country level
-            10, 8,    // Medium at regional level  
-            14, 12,   // Large at city level
-            18, 16    // Extra large when very zoomed in
-          ],
-          'circle-color': '#8B4B8B',
-          'circle-stroke-width': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            6, 1,
-            14, 2,
-            18, 3
-          ],
-          'circle-stroke-color': '#ffffff',
-          'circle-opacity': 0.9,
-          'circle-stroke-opacity': 1
-        }
-      })
-      
-      // Add inner symbol layer for the military icon
-      map.addLayer({
-        id: 'poi-symbols', 
-        type: 'symbol',
-        source: 'pois',
-        layout: {
-          'text-field': '⚔',  // Military crossed swords symbol
-          'text-font': ['Open Sans Bold'],
-          'text-size': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            6, 8,
-            10, 10,
-            14, 14,
-            18, 18
-          ],
-          'text-allow-overlap': true,
-          'text-ignore-placement': true
-        },
-        paint: {
-          'text-color': '#ffffff',
-          'text-opacity': 1
-        }
-      })
-
-      // Add POI labels
-      map.addLayer({
-        id: 'poi-labels',
-        type: 'symbol',
-        source: 'pois',
-        layout: {
-          'text-field': ['get', 'name'],
-          'text-font': ['Open Sans Regular'],
-          'text-size': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, 10,
-            14, 14
-          ],
-          'text-offset': [0, 2],
-          'text-anchor': 'top'
-        },
-        paint: {
-          'text-color': '#374151',
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 1
-        }
-      })
-
-      // Add click handlers for POIs (both circle and symbol layers)
-      const handlePOIClick = (e: maplibregl.MapMouseEvent) => {
-        const features = map.queryRenderedFeatures(e.point, { layers: ['pois-layer', 'poi-labels'] })
-        if (features && features[0]) {
-          const feature = features[0]
-          const { name, description } = feature.properties || {}
-          
-          new maplibregl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div style="padding: 8px; min-width: 200px;">
-                <h3 style="margin: 0 0 6px 0; color: #2c5530; font-size: 15px;">
-                  ${name || 'Ukjent sted'}
-                </h3>
-                <p style="margin: 0; color: #555; font-size: 13px;">
-                  ${description || 'Ingen beskrivelse tilgjengelig'}
-                </p>
-              </div>
-            `)
-            .addTo(map)
-        }
+    // Add POI layers in order
+    // 1. Circle markers (background)
+    map.addLayer({
+      id: 'poi-points',
+      type: 'circle',
+      source: 'pois',
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          6, 8,     // Larger at country level - more visible
+          10, 12,   // Medium at regional level  
+          14, 16,   // Large at city level
+          18, 20    // Extra large when very zoomed in
+        ],
+        'circle-color': '#8B4B8B',
+        'circle-stroke-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          6, 2,     // Thicker stroke for better visibility
+          14, 3,
+          18, 4
+        ],
+        'circle-stroke-color': '#ffffff',
+        'circle-opacity': 1.0,    // Full opacity for better visibility
+        'circle-stroke-opacity': 1
       }
-      
-      // Apply click handler to both layers
-      map.on('click', 'poi-points', handlePOIClick)
-      map.on('click', 'poi-symbols', handlePOIClick)
+    })
 
-      // Change cursor on hover for both layers
-      const handleMouseEnter = () => { map.getCanvas().style.cursor = 'pointer' }
-      const handleMouseLeave = () => { map.getCanvas().style.cursor = '' }
+    // 2. Symbol markers (foreground icons)
+    map.addLayer({
+      id: 'poi-symbols', 
+      type: 'symbol',
+      source: 'pois',
+      layout: {
+        'text-field': 'military_tech',  // Material Symbol for war memorials
+        'text-font': ['Material Symbols Outlined'],
+        'text-size': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          6, 12,
+          10, 16,
+          14, 20,
+          18, 24
+        ],
+        'text-allow-overlap': true,
+        'text-ignore-placement': true
+      },
+      paint: {
+        'text-color': '#ffffff',  // White for high contrast against purple background
+        'text-halo-color': '#000000',  // Black outline for readability
+        'text-halo-width': 1,
+        'text-opacity': 1
+      }
+    })
+
+    // 3. Text labels (top layer)
+    map.addLayer({
+      id: 'poi-labels',
+      type: 'symbol',
+      source: 'pois',
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': ['Arial Regular', 'sans-serif'],
+        'text-size': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          8, 10,
+          14, 14
+        ],
+        'text-offset': [0, 2],
+        'text-anchor': 'top'
+      },
+      paint: {
+        'text-color': '#374151',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1
+      }
+    })
+
+    console.log('✅ All POI layers created')
+
+    // Define POI click handler
+    const handlePOIClick = (e: maplibregl.MapMouseEvent) => {
+      console.log('🎯 POI click detected at:', e.lngLat)
       
-      map.on('mouseenter', 'poi-points', handleMouseEnter)
-      map.on('mouseleave', 'poi-points', handleMouseLeave)
-      map.on('mouseenter', 'poi-symbols', handleMouseEnter)
-      map.on('mouseleave', 'poi-symbols', handleMouseLeave)
+      // Debug: Check what layers actually exist
+      const allLayers = map.getStyle().layers?.map(layer => layer.id) || []
+      console.log('🔍 All map layers:', allLayers)
+      
+      // Get feature from the event (MapLibre provides this directly for layer clicks)
+      const features = (e as any).features || []
+      console.log('📊 POI Features from event:', features.length, features)
+      
+      if (features && features.length > 0) {
+        const feature = features[0]
+        console.log('🔍 Feature properties:', feature.properties)
+        const { name, description, id, type } = feature.properties || {}
+        
+        console.log(`✅ Creating popup for: ${name} (${id})`)
+        
+        new maplibregl.Popup({
+          closeButton: true,
+          closeOnClick: true
+        })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="padding: 8px; min-width: 200px;">
+              <h3 style="margin: 0 0 6px 0; color: #2c5530; font-size: 15px;">
+                ${name || 'Ukjent sted'}
+              </h3>
+              <p style="margin: 0; color: #555; font-size: 13px;">
+                ${description || 'Ingen beskrivelse tilgjengelig'}
+              </p>
+            </div>
+          `)
+          .addTo(map)
+      } else {
+        console.log('❌ No POI features found in click event')
+      }
+    }
+    
+    // Add click handlers to each POI layer (MapLibre GL approach)
+    map.on('click', 'poi-points', handlePOIClick)
+    map.on('click', 'poi-symbols', handlePOIClick)
+    map.on('click', 'poi-labels', handlePOIClick)
+    console.log('🔧 POI layer-specific click handlers registered')
+
+    // Add hover effects
+    const handleMouseEnter = () => { map.getCanvas().style.cursor = 'pointer' }
+    const handleMouseLeave = () => { map.getCanvas().style.cursor = '' }
+    
+    // Add hover handlers for all POI layers
+    ['poi-points', 'poi-symbols', 'poi-labels'].forEach(layerId => {
+      map.on('mouseenter', layerId, handleMouseEnter)
+      map.on('mouseleave', layerId, handleMouseLeave)
+    })
+
+    // Cleanup function to remove event handlers when component unmounts or POIs change
+    return () => {
+      // Remove click handlers
+      map.off('click', 'poi-points', handlePOIClick)
+      map.off('click', 'poi-symbols', handlePOIClick) 
+      map.off('click', 'poi-labels', handlePOIClick)
+      
+      // Remove hover handlers
+      ;['poi-points', 'poi-symbols', 'poi-labels'].forEach(layerId => {
+        map.off('mouseenter', layerId, handleMouseEnter)
+        map.off('mouseleave', layerId, handleMouseLeave)
+      })
     }
   }, [mapLoaded, pois])
 

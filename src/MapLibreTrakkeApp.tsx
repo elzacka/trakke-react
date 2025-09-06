@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { MapLibreMap } from './components/MapLibreMap'
 import { CategoryPanel } from './components/CategoryPanel'
-import { SearchBox } from './components/SearchBox'
-import { categoryTree, CategoryState, POI } from './data/pois'
+import { SearchBox, SearchBoxRef } from './components/SearchBox/SearchBox'
+import { categoryTree, CategoryState, POI, POIType } from './data/pois'
 import { OverpassService, OverpassPOI } from './services/overpassService'
 import { SearchResult } from './services/searchService'
 
@@ -27,11 +27,64 @@ export function MapLibreTrakkeApp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Ref for SearchBox to enable keyboard shortcut focus
+  const searchBoxRef = useRef<SearchBoxRef>(null)
+
   console.log(`🎯 MapLibre App: ${pois.length} POIs loaded`)
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev)
   }, [])
+
+  // Enhanced keyboard shortcuts for navigation and search
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+K / ⌘+K: Open sidebar and focus search (or just focus if already open)
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        event.stopPropagation()
+        
+        if (sidebarCollapsed) {
+          // Sidebar is collapsed, open it first then focus search
+          setSidebarCollapsed(false)
+          setTimeout(() => {
+            searchBoxRef.current?.focusInput()
+          }, 300) // Wait for sidebar animation
+        } else {
+          // Sidebar is open, just focus search
+          searchBoxRef.current?.focusInput()
+        }
+      }
+      
+      // Escape: Collapse sidebar (if open) or blur search (if focused)
+      else if (event.key === 'Escape') {
+        const activeElement = document.activeElement as HTMLElement
+        const isSearchFocused = activeElement?.closest('[data-search-box]')
+        
+        if (isSearchFocused) {
+          // If search is focused, blur it first
+          activeElement?.blur()
+          event.preventDefault()
+        } else if (!sidebarCollapsed) {
+          // If sidebar is open and search not focused, collapse sidebar
+          setSidebarCollapsed(true)
+          event.preventDefault()
+        }
+      }
+      
+      // Ctrl+B / ⌘+B: Toggle sidebar
+      else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault()
+        event.stopPropagation()
+        toggleSidebar()
+      }
+    }
+    
+    document.addEventListener('keydown', handleGlobalKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown)
+    }
+  }, [sidebarCollapsed, toggleSidebar])
 
   const handleCategoryToggle = useCallback((nodeId: string) => {
     setCategoryState(prev => {
@@ -93,13 +146,20 @@ export function MapLibreTrakkeApp() {
         checked: newChecked
       }
 
-      // Handle category selection changes with Kartverket API
+      // Handle category selection changes
       setTimeout(async () => {
         const activeCategories = getActiveCategories(newState)
         console.log(`🏷️ Categories changed. Active categories: ${activeCategories.join(', ')}`)
         
-        // Load POI data from multiple sources for selected categories if we have viewport
-        if (currentViewport && activeCategories.length > 0) {
+        if (activeCategories.length === 0) {
+          setPois([])
+          console.log(`🏷️ No categories selected, cleared POIs`)
+          return
+        }
+        
+        // Load POI data only if we have viewport (prevents loading during initial render)
+        if (currentViewport) {
+          console.log('📍 Current viewport:', currentViewport)
           setLoading(true)
           setError(null)
           
@@ -108,13 +168,19 @@ export function MapLibreTrakkeApp() {
             
             // Load Krigsminner from OpenStreetMap if war_memorials category is active
             if (activeCategories.includes('war_memorials')) {
-              console.log('🏰 Loading Krigsminner from OpenStreetMap...')
+              console.log('🏰 Loading Krigsminner from OpenStreetMap with viewport:', currentViewport)
               const overpassPOIs = await OverpassService.fetchKrigsminnerPOIs(currentViewport)
+              console.log('📊 Raw Overpass POIs received:', overpassPOIs.length, overpassPOIs)
+              
               const transformedOverpassPOIs = transformOverpassPOIs(overpassPOIs)
               allPOIs = transformedOverpassPOIs
+              
               console.log(`🏰 Loaded ${transformedOverpassPOIs.length} Krigsminner POIs from OpenStreetMap`)
+            } else {
+              console.log('⚠️ war_memorials not in active categories:', activeCategories)
             }
             
+            console.log('🎯 Setting POIs on map:', allPOIs)
             setPois(allPOIs)
             console.log(`🏷️ Loaded ${allPOIs.length} total POIs for active categories: ${activeCategories.join(', ')}`)
           } catch (err) {
@@ -124,9 +190,8 @@ export function MapLibreTrakkeApp() {
           } finally {
             setLoading(false)
           }
-        } else if (activeCategories.length === 0) {
-          setPois([])
-          console.log(`🏷️ No categories selected, cleared POIs`)
+        } else {
+          console.log('⚠️ No viewport available, skipping POI loading')
         }
       }, 100)
 
@@ -150,41 +215,14 @@ export function MapLibreTrakkeApp() {
     // The MapLibre component will handle centering when searchResult changes
   }, [])
 
-  const handleViewportChange = useCallback(async (viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
+  const handleViewportChange = useCallback((viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
     setCurrentViewport(viewport)
     console.log('🗺️ Viewport changed:', viewport)
     
-    // Load POI data from Kartverket for active categories
-    const activeCategories = getActiveCategories(categoryState)
-    if (activeCategories.length > 0) {
-      setLoading(true)
-      setError(null)
-      
-      try {
-        let allPOIs: POI[] = []
-        
-        // Load Krigsminner from OpenStreetMap if war_memorials category is active
-        if (activeCategories.includes('war_memorials')) {
-          console.log('🏰 Loading Krigsminner from OpenStreetMap for viewport...')
-          const overpassPOIs = await OverpassService.fetchKrigsminnerPOIs(viewport)
-          const transformedOverpassPOIs = transformOverpassPOIs(overpassPOIs)
-          allPOIs = transformedOverpassPOIs
-          console.log(`🏰 Loaded ${transformedOverpassPOIs.length} Krigsminner POIs from OpenStreetMap`)
-        }
-        
-        setPois(allPOIs)
-        console.log(`🏷️ Loaded ${allPOIs.length} total POIs for viewport`)
-      } catch (err) {
-        console.error('❌ Error loading POIs:', err)
-        setError('Kunne ikke laste POI-data')
-        setPois([])
-      } finally {
-        setLoading(false)
-      }
-    } else {
-      setPois([])
-    }
-  }, [categoryState])
+    // Only reload POIs for significant viewport changes (not during zoom animations)
+    // The category toggle handler will load POIs when categories change
+    // This prevents the flickering during zoom by avoiding redundant POI loading
+  }, [])
 
   // Helper function to get active category IDs from category state
   const getActiveCategories = (state: CategoryState): string[] => {
@@ -209,14 +247,17 @@ export function MapLibreTrakkeApp() {
 
   // Transform Overpass POIs to our POI interface
   const transformOverpassPOIs = (overpassPOIs: OverpassPOI[]): POI[] => {
-    return overpassPOIs.map(poi => ({
+    const transformedPOIs = overpassPOIs.map(poi => ({
       id: poi.id,
       name: poi.name,
       description: poi.tags.description || `${poi.type} - Historisk eller militært anlegg`,
-      type: 'war_memorials', // All Overpass POIs are categorized as war memorials
+      type: 'war_memorials' as POIType, // All Overpass POIs are categorized as war memorials
       lat: poi.lat,
       lng: poi.lng
     }))
+    
+    console.log('🔄 Transformed POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
   }
 
   return (
@@ -276,7 +317,7 @@ export function MapLibreTrakkeApp() {
 
             {/* Search */}
             <div style={{ padding: '16px' }}>
-              <SearchBox onLocationSelect={handleLocationSelect} pois={pois} />
+              <SearchBox ref={searchBoxRef} onLocationSelect={handleLocationSelect} pois={pois} />
             </div>
 
             {/* Categories */}
@@ -312,7 +353,7 @@ export function MapLibreTrakkeApp() {
                   color: '#94a3b8',
                   fontStyle: 'italic'
                 }}>
-                  Sist oppdatert: 5. september 2025
+                  Sist oppdatert: 6. september 2025
                 </p>
               </div>
             </div>

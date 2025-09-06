@@ -16,9 +16,9 @@ export function ShortcutsPanel({ className = '' }: ShortcutsPanelProps) {
       { action: 'Tilt', method: 'Ctrl + dra' }
     ],
     app: [
-      { action: 'Søk', method: 'Ctrl+K / ⌘+K' },
-      { action: 'Vis/skjul sidepanel', method: 'Klikk på pil' },
-      { action: 'Skjul søkeresultater', method: 'Escape' }
+      { action: 'Gå til søkefelt', method: 'Ctrl+K / ⌘+K' },
+      { action: 'Vis/skjul sidemeny', method: 'Ctrl+B / ⌘+B' },
+      { action: 'Lukk søkeresultater', method: 'Escape' }
     ]
   }
 
@@ -62,7 +62,7 @@ export function ShortcutsPanel({ className = '' }: ShortcutsPanelProps) {
             textTransform: 'uppercase', 
             letterSpacing: '0.5px' 
           }}>
-            App- og kartnavigasjon
+            Hurtigtaster og bevegelser
           </span>
         </div>
         <span 

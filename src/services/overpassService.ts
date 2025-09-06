@@ -66,35 +66,27 @@ export class OverpassService {
         west: Math.max(bounds.west, 4.0)      // Norway's westernmost point
       }
 
-      // Build Overpass QL query for historic forts, castles, and military sites in Norway  
+      // Debug the Overpass query by logging the bounds and query
+      console.log('🗺️ Query bounds:', norwayBounds)
+      
+      // Specific query for war memorials/Krigsminner only
       const overpassQuery = `
         [out:json][timeout:25];
         (
-          // Historic forts in Norway with country filter
-          node["historic"="fort"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          node["historic"="fort"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          way["historic"="fort"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          way["historic"="fort"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          // War memorials specifically
+          node["historic"="memorial"]["memorial"="war_memorial"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["historic"="memorial"]["memorial"="war_memorial"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
           
-          // Historic castles in Norway with country filter
-          node["historic"="castle"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          node["historic"="castle"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          way["historic"="castle"]["addr:country"="NO"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          way["historic"="castle"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          // WWII bunkers (actual war sites)
+          node["military"="bunker"]["bunker_type"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
           
-          // Military bunkers and sites in Norway
-          node["military"="bunker"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          node["military"="naval_base"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          
-          // Historic battlefields in Norway
+          // Historic battlefields
           node["historic"="battlefield"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          
-          // War memorials in Norway
-          node["historic"="memorial"]["memorial"~"war"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
-          node["tourism"="attraction"]["memorial"="war_memorial"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
         );
-        out body 150;
+        out center body 100;
       `.trim()
+      
+      console.log('🔍 Overpass query:', overpassQuery)
 
       const response = await fetch(this.BASE_URL, {
         method: 'POST',
@@ -216,12 +208,17 @@ export class OverpassService {
     // Try English name as fallback
     if (tags['name:en']) return tags['name:en']
 
-    // Generate name based on type
+    // Generate Norwegian name based on type
     if (tags.historic === 'fort') return 'Fort'
     if (tags.historic === 'castle') return 'Slott'
     if (tags.historic === 'battlefield') return 'Slagmark'
-    if (tags.military) return `Militært anlegg (${tags.military})`
+    if (tags.historic === 'memorial') return 'Minnesmerke'
     if (tags.memorial === 'war_memorial') return 'Krigsminne'
+    if (tags.memorial === 'stolperstein') return 'Snublestein'
+    if (tags.military === 'bunker') return 'Bunker'
+    if (tags.military === 'naval_mine') return 'Sjømine'
+    if (tags.military === 'trench') return 'Skyttergraver'
+    if (tags.military) return `Militært anlegg`
 
     return 'Historisk sted'
   }
@@ -252,18 +249,29 @@ export class OverpassService {
         'naval_base': 'marineanlegg',
         'range': 'skyte- og øvingsområde',
         'training_area': 'militært treningsområde',
-        'danger_area': 'militært fareområde'
+        'danger_area': 'militært fareområde',
+        'naval_mine': 'sjømine',
+        'checkpoint': 'kontrollpost',
+        'trench': 'skyttergraver',
+        'office': 'militærkontor',
+        'depot': 'militærdepot'
       }
       parts.push(militaryTypes[tags.military] || `militært anlegg (${tags.military})`)
     }
 
     // Add memorial details
     if (tags.memorial) {
-      if (tags.memorial === 'war_memorial') {
-        parts.push('krigsminne')
-      } else {
-        parts.push(`minnesmerke (${tags.memorial})`)
+      const memorialTypes: Record<string, string> = {
+        'war_memorial': 'krigsminne',
+        'stolperstein': 'snublestein',
+        'statue': 'minnesmerke-statue',
+        'plaque': 'minneplakett',
+        'stone': 'minnestein',
+        'cross': 'minnekors',
+        'obelisk': 'minnesmerke-obelisk',
+        'monument': 'monument'
       }
+      parts.push(memorialTypes[tags.memorial] || `minnesmerke (${tags.memorial})`)
     }
 
     // Add time period if available
@@ -287,16 +295,20 @@ export class OverpassService {
   }
 
   /**
-   * Determine POI type based on OSM tags
+   * Determine POI type based on OSM tags (Norwegian terms)
    */
   private static determineType(tags: Record<string, string>): string {
     if (tags.historic === 'fort') return 'Fort'
     if (tags.historic === 'castle') return 'Slott'
     if (tags.historic === 'battlefield') return 'Slagmark'
     if (tags.historic === 'memorial') return 'Minnesmerke'
-    if (tags.military === 'bunker') return 'Bunker'
-    if (tags.military) return 'Militæranlegg'
     if (tags.memorial === 'war_memorial') return 'Krigsminne'
+    if (tags.memorial === 'stolperstein') return 'Snublestein'
+    if (tags.military === 'bunker') return 'Bunker'
+    if (tags.military === 'naval_mine') return 'Sjømine'
+    if (tags.military === 'trench') return 'Skyttergraver'
+    if (tags.military === 'naval_base') return 'Marineanlegg'
+    if (tags.military) return 'Militæranlegg'
     
     return 'Historisk sted'
   }

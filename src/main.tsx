@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+// import { StrictMode } from 'react' // Disabled to prevent double map rendering
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { MapLibreTrakkeApp } from './MapLibreTrakkeApp'
@@ -12,9 +12,7 @@ try {
   } else {
     console.log('✅ Found root element, creating React root...')
     createRoot(root).render(
-      <StrictMode>
-        <MapLibreTrakkeApp />
-      </StrictMode>,
+      <MapLibreTrakkeApp />
     )
     console.log('✅ MapLibre TrakkeApp with Kartverket should be rendered')
   }

@@ -1,24 +1,28 @@
 # 🏔️ Tråkke
 
-React-versjon av Tråkke - frilufts-app for å oppdage vandreturer, badesteder, severdigheter og mer i Norge.
+Norsk frilufts-app for å oppdage vandreturer, badesteder, severdigheter og mer i hele Norge. Bygget med moderne React-teknologi og offisielle norske kartdata.
 
 ## 🚀 Se appen live
 - **[Gammel test-versjon (original)](https://elzacka.github.io/trakke/src/)** 
-- **React-versjon**: Under utvikling 🚧
+- **React-versjon**: ✅ **Ferdig og fungerer!**
 
 ## ✨ Funksjoner
 - ⚡ **React + TypeScript + Vite** - Moderne utviklingsstack
-- 🗺️ **Interaktivt kart** med Leaflet
-- 🎯 **Filtrerbare POI-kategorier** (vandring, bading, camping, fosser, utsiktspunkter, historie)
+- 🗺️ **MapLibre GL JS** med offisielle Kartverket-kart
+- 🎯 **API-baserte POI-data** fra OpenStreetMap
+- 🔍 **Norsk stedssøk** via Nominatim API
+- ⌨️ **Hurtigtaster** for effektiv navigasjon
 - 📱 **Responsive design** for mobil og desktop
 - 🎨 **Material Symbols** for konsistente ikoner
+- 🇳🇴 **100% norsk grensesnitt** og terminologi
 
 ## 🛠️ Teknologi
 - **Frontend**: React 19 + TypeScript + Vite
-- **Kart**: Leaflet + React-Leaflet  
+- **Kart**: MapLibre GL JS + Kartverket WMS
+- **POI-data**: OpenStreetMap Overpass API
+- **Søk**: Nominatim API med norske stedsnavn
 - **Ikoner**: Material Symbols Outlined
-- **Styling**: CSS Modules
-- **Deployment**: Vercel (planlagt)
+- **Deployment**: GitHub Pages
 
 
 ## 🎯 Migrering fra HTML-versjon
@@ -30,14 +34,13 @@ Denne React-versjonen migrerer fra den [originale HTML-versjonen](https://github
 - 🔧 TypeScript for type-sikkerhet
 - 🚀 Optimalisert for deployment
 
-## 📋 Planlagte funksjoner  
+## 📋 Fremtidige funksjoner  
+- [ ] **Flere POI-kategorier**: Utvidelse til alle friluftskategorier
 - [ ] **Turdata/turplanlegging**: UT.no (DNT) API
-- [ ] **Kartlag**: Kartverket 
-- [ ] **Værdata**: Met Norway
+- [ ] **Værdata**: Met Norway API
 - [ ] **Bilder**: Flickr API med geografisk søk
-- [ ] **Utvide**: Oslo → Norge
-- [ ] **App Store**: iPhone app
-- [ ] **Offline modus**: Nedlastbare kart
+- [ ] **App Store**: PWA og iPhone app
+- [ ] **Offline modus**: Nedlastbare kartdata
 
 ## 📄 Lisens
 (Ikke aktivert lisens ennå) MIT License - se [LICENSE](LICENSE) fil for detaljer.
