@@ -7,14 +7,14 @@ import { OverpassService, OverpassPOI } from './services/overpassService'
 import { SearchResult } from './services/searchService'
 
 export function MapLibreTrakkeApp() {
-  // Category state - starts with all categories unchecked as requested
+  // Category state - "På eventyr" expanded, no categories checked by default
   const [categoryState, setCategoryState] = useState<CategoryState>({
     checked: {
-      // All POIs unchecked and not visible by default on app load
+      // No categories checked by default - user must actively select them
     },
     expanded: {
-      // Expand 'Historiske steder' by default to show Krigsminner is available
-      'cultural_heritage': true
+      // Expand "På eventyr" by default to show Krigsminne is available
+      'på_eventyr': true
     }
   })
 
@@ -166,8 +166,8 @@ export function MapLibreTrakkeApp() {
           try {
             let allPOIs: POI[] = []
             
-            // Load Krigsminner from OpenStreetMap if war_memorials category is active
-            if (activeCategories.includes('war_memorials')) {
+            // Load Krigsminner from OpenStreetMap if krigsminne category is active
+            if (activeCategories.includes('krigsminne')) {
               console.log('🏰 Loading Krigsminner from OpenStreetMap with viewport:', currentViewport)
               const overpassPOIs = await OverpassService.fetchKrigsminnerPOIs(currentViewport)
               console.log('📊 Raw Overpass POIs received:', overpassPOIs.length, overpassPOIs)
@@ -177,7 +177,7 @@ export function MapLibreTrakkeApp() {
               
               console.log(`🏰 Loaded ${transformedOverpassPOIs.length} Krigsminner POIs from OpenStreetMap`)
             } else {
-              console.log('⚠️ war_memorials not in active categories:', activeCategories)
+              console.log('⚠️ krigsminne not in active categories:', activeCategories)
             }
             
             console.log('🎯 Setting POIs on map:', allPOIs)
@@ -230,9 +230,9 @@ export function MapLibreTrakkeApp() {
     
     function checkNode(node: typeof categoryTree[0]) {
       if (state.checked[node.id]) {
-        // Only war_memorials category has actual POI data
-        if (node.id === 'war_memorials') {
-          activeCategories.push('war_memorials')
+        // Only krigsminne category has actual POI data
+        if (node.id === 'krigsminne') {
+          activeCategories.push('krigsminne')
         }
       }
       if (node.children) {

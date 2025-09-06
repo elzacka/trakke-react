@@ -22,48 +22,52 @@ export function HierarchicalCategoryFilter({
     // Categories with active data sources - ONLY Krigsminner POIs are actually available
     const activeCategoryMapping: Record<string, boolean> = {
       // Only parent category with actual data
-      'cultural_heritage': true,  // Contains Krigsminner which has real POIs
+      'på_eventyr': true,         // Contains Krigsminne which has real POIs
       
       // Only active subcategory with real POI data from Overpass API
-      'war_memorials': true,      // Krigsminner - the ONLY category with actual POIs
+      'krigsminne': true,         // Krigsminner - the ONLY category with actual POIs
       
       // All other categories currently inactive (no real POI data available)
-      'outdoor_activities': false,
-      'water_activities': false, 
-      'accommodation': false,
-      'nature_experiences': false,
-      'services_infrastructure': false,
+      'aktivitet': false,
+      'naturperle': false,
+      'overnatte': false,
+      'service': false,
       'transport': false,
-      'water_activities_extended': false,
+      'turløype': false,
       
       // All subcategories inactive (no POI sources)
-      'hiking': false,
-      'mountain_peaks': false,
-      'ski_trails': false,
-      'swimming': false,
-      'beach': false,
-      'staffed_huts': false,
-      'self_service_huts': false,
-      'wilderness_shelter': false,
-      'camping_site': false,
-      'tent_area': false,
-      'wild_camping': false,
-      'hammock_spots': false,
-      'nature_gems': false,
-      'viewpoints': false,
-      'parking': false,
-      'rest_areas': false,
-      'toilets': false,
-      'drinking_water': false,
-      'fire_places': false,
-      'information_boards': false,
-      'cable_cars': false,
-      'public_transport': false,
-      'train_stations': false,
-      'fishing_spots': false,
-      'canoeing': false,
-      'churches': false,      // No actual church POI data
-      'archaeological': false // No actual archaeological POI data
+      'badeplass': false,
+      'badeplass_med_strand': false,
+      'bålplass': false,
+      'fiskeplass': false,
+      'kanopadling': false,
+      'foss': false,
+      'utsiktspunkt': false,
+      'campingplass': false,
+      'gapahuk_vindskjul': false,
+      'fri_camping': false,
+      'hengekøyeplass': false,
+      'hytte_dagstur': false,
+      'hytte_turisthytte_betjent': false,
+      'hytte_turisthytte_selvbetjent': false,
+      'hytte_turisthytte_ubetjent': false,
+      'hytte_utleie': false,
+      'teltplass': false,
+      'vandrerhjem': false,
+      'hule': false,
+      'kulturminne': false,
+      'observasjonstårn': false,
+      'informasjon': false,
+      'drikkevann': false,
+      'spise_rasteplass': false,
+      'toalett': false,
+      'utfartparkering': false,
+      'bussholdeplass': false,
+      'taubane': false,
+      'togstasjon': false,
+      'tursti': false,
+      'fjelltopp': false,
+      'skiløype': false
     }
     
     // Check if this category or any of its children have data

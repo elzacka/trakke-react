@@ -210,7 +210,7 @@ export function MapLibreMap({
     console.log(`🎯 Updating map with ${pois.length} POIs:`, pois.map(p => `${p.name} (${p.lat}, ${p.lng})`).join(', '))
 
     // Clean up existing POI layers first to ensure clean state
-    const existingLayers = ['poi-labels', 'poi-symbols', 'poi-points'] // Remove in reverse order
+    const existingLayers = ['poi-labels', 'poi-points'] // Remove in reverse order
     existingLayers.forEach(layerId => {
       if (map.getLayer(layerId)) {
         console.log(`🗑️ Removing existing layer: ${layerId}`)
@@ -251,8 +251,7 @@ export function MapLibreMap({
       data: geojsonData
     })
 
-    // Add POI layers in order
-    // 1. Circle markers (background)
+    // Simple circle markers (solid purple background, no border)
     map.addLayer({
       id: 'poi-points',
       type: 'circle',
@@ -267,46 +266,9 @@ export function MapLibreMap({
           14, 16,   // Large at city level
           18, 20    // Extra large when very zoomed in
         ],
-        'circle-color': '#8B4B8B',
-        'circle-stroke-width': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          6, 2,     // Thicker stroke for better visibility
-          14, 3,
-          18, 4
-        ],
-        'circle-stroke-color': '#ffffff',
-        'circle-opacity': 1.0,    // Full opacity for better visibility
-        'circle-stroke-opacity': 1
-      }
-    })
-
-    // 2. Symbol markers (foreground icons)
-    map.addLayer({
-      id: 'poi-symbols', 
-      type: 'symbol',
-      source: 'pois',
-      layout: {
-        'text-field': 'military_tech',  // Material Symbol for war memorials
-        'text-font': ['Material Symbols Outlined'],
-        'text-size': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          6, 12,
-          10, 16,
-          14, 20,
-          18, 24
-        ],
-        'text-allow-overlap': true,
-        'text-ignore-placement': true
-      },
-      paint: {
-        'text-color': '#ffffff',  // White for high contrast against purple background
-        'text-halo-color': '#000000',  // Black outline for readability
-        'text-halo-width': 1,
-        'text-opacity': 1
+        'circle-color': '#8B4B8B',  // Solid purple background
+        'circle-stroke-width': 0,   // No border
+        'circle-opacity': 1.0
       }
     })
 
@@ -336,6 +298,11 @@ export function MapLibreMap({
     })
 
     console.log('✅ All POI layers created')
+    
+    // Debug: Check that all layers exist and in correct order
+    const allLayers = map.getStyle().layers?.map(layer => layer.id) || []
+    console.log('🔍 All map layers after POI creation:', allLayers)
+    console.log('🔍 POI-specific layers:', allLayers.filter(id => id.includes('poi')))
 
     // Define POI click handler
     const handlePOIClick = (e: maplibregl.MapMouseEvent) => {
@@ -379,7 +346,6 @@ export function MapLibreMap({
     
     // Add click handlers to each POI layer (MapLibre GL approach)
     map.on('click', 'poi-points', handlePOIClick)
-    map.on('click', 'poi-symbols', handlePOIClick)
     map.on('click', 'poi-labels', handlePOIClick)
     console.log('🔧 POI layer-specific click handlers registered')
 
@@ -388,20 +354,25 @@ export function MapLibreMap({
     const handleMouseLeave = () => { map.getCanvas().style.cursor = '' }
     
     // Add hover handlers for all POI layers
-    ['poi-points', 'poi-symbols', 'poi-labels'].forEach(layerId => {
+    ['poi-points', 'poi-labels'].forEach(layerId => {
       map.on('mouseenter', layerId, handleMouseEnter)
       map.on('mouseleave', layerId, handleMouseLeave)
     })
+
+    // Close any existing popups when POIs change
+    if (mapRef.current) {
+      const existingPopups = document.querySelectorAll('.maplibregl-popup')
+      existingPopups.forEach(popup => popup.remove())
+    }
 
     // Cleanup function to remove event handlers when component unmounts or POIs change
     return () => {
       // Remove click handlers
       map.off('click', 'poi-points', handlePOIClick)
-      map.off('click', 'poi-symbols', handlePOIClick) 
       map.off('click', 'poi-labels', handlePOIClick)
       
       // Remove hover handlers
-      ;['poi-points', 'poi-symbols', 'poi-labels'].forEach(layerId => {
+      ;['poi-points', 'poi-labels'].forEach(layerId => {
         map.off('mouseenter', layerId, handleMouseEnter)
         map.off('mouseleave', layerId, handleMouseLeave)
       })
