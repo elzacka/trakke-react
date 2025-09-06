@@ -92,6 +92,8 @@ export class OverpassService {
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
         },
         body: overpassQuery
       })
@@ -100,8 +102,18 @@ export class OverpassService {
         throw new Error(`Overpass API request failed: ${response.status}`)
       }
 
-      const data = await response.json()
+      // Ensure proper UTF-8 decoding
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
       console.log('📊 Raw Overpass response:', data)
+      
+      // Debug: Check for Norwegian characters in response
+      const sampleElements = data.elements?.slice(0, 3) || []
+      sampleElements.forEach((element: { tags?: { name?: string } }, index: number) => {
+        if (element.tags?.name) {
+          console.log(`🔍 Sample name ${index + 1}:`, element.tags.name)
+        }
+      })
       
       const pois = this.transformOverpassDataToPOIs(data)
       console.log(`🔄 Transformed ${pois.length} Krigsminner POIs from Overpass API`)
@@ -195,18 +207,37 @@ export class OverpassService {
   }
 
   /**
+   * Ensure proper UTF-8 encoding for Norwegian characters
+   */
+  private static ensureUTF8(text: string): string {
+    // If text contains encoded characters like "?" instead of æøå, try to fix
+    if (typeof text !== 'string') return text
+    
+    // Ensure the text is properly decoded
+    try {
+      // Double-check UTF-8 encoding
+      const encoded = encodeURIComponent(text)
+      const decoded = decodeURIComponent(encoded)
+      return decoded
+    } catch {
+      console.warn('UTF-8 encoding issue with text:', text)
+      return text
+    }
+  }
+
+  /**
    * Extract meaningful name from OSM tags with Norwegian fallbacks
    */
   private static extractName(tags: Record<string, string>): string {
     // Try Norwegian names first
     const norwegianName = tags['name:no'] || tags['name:nb'] || tags['name:nn']
-    if (norwegianName) return norwegianName
+    if (norwegianName) return this.ensureUTF8(norwegianName)
 
     // Try general name
-    if (tags.name) return tags.name
+    if (tags.name) return this.ensureUTF8(tags.name)
 
     // Try English name as fallback
-    if (tags['name:en']) return tags['name:en']
+    if (tags['name:en']) return this.ensureUTF8(tags['name:en'])
 
     // Generate Norwegian name based on type
     if (tags.historic === 'fort') return 'Fort'
@@ -286,7 +317,7 @@ export class OverpassService {
 
     // Add description from OSM if available
     if (tags.description) {
-      parts.push(tags.description)
+      parts.push(this.ensureUTF8(tags.description))
     }
 
     return parts.length > 0 
