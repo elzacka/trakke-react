@@ -80,10 +80,9 @@ export type POIType =
   | 'viewpoints'          // Utsiktspunkt
   | 'cultural_landscapes' // Kulturlandskap
   // Kulturarv - følger Riksantikvaren kategorier
-  | 'archaeological'      // Fornminner
+  | 'archaeological'      // Kulturminne
   | 'protected_buildings' // Vernede bygninger
   | 'industrial_heritage' // Tekniske kulturminner
-  | 'churches'            // Kirker og religiøse steder
   | 'war_memorials'       // Krigsminnesmerker
   | 'peace_monuments'     // Fredsmonumenter
   | 'underwater_heritage' // Undervannskulturarv
@@ -263,7 +262,7 @@ export const categoryConfig: CategoryConfigMap = {
   archaeological: {
     color: '#8B4513',
     icon: 'archaeology',
-    name: 'Fornminner',
+    name: 'Kulturminne',
     description: 'Gravhauger, steinalderboplasser, ruiner'
   },
   protected_buildings: {
@@ -277,12 +276,6 @@ export const categoryConfig: CategoryConfigMap = {
     icon: 'factory',
     name: 'Tekniske kulturminner',
     description: 'Industrianlegg og tekniske installasjoner'
-  },
-  churches: {
-    color: '#9370DB',
-    icon: 'church',
-    name: 'Kirker',
-    description: 'Stavkirker, steinkirker og hellige steder'
   },
   war_memorials: { 
     color: '#8B4B8B', 
@@ -521,12 +514,6 @@ export const categoryTree: CategoryNode[] = [
     color: '#8B4B8B',
     children: [
       {
-        id: 'churches',
-        name: 'Kirker',
-        parent: 'cultural_heritage',
-        poiTypes: ['churches']
-      },
-      {
         id: 'war_memorials',
         name: 'Krigsminner',
         parent: 'cultural_heritage',
@@ -534,7 +521,7 @@ export const categoryTree: CategoryNode[] = [
       },
       {
         id: 'archaeological',
-        name: 'Fornminner',
+        name: 'Kulturminne',
         parent: 'cultural_heritage',
         poiTypes: ['archaeological']
       }
@@ -714,25 +701,6 @@ const _removedManualPoisData: POI[] = [
     lng: 7.2881,
     description: 'Norges mest kjente foss',
     type: 'nature_gems',
-    api_source: 'manual'
-  },
-  // Churches
-  {
-    id: 'sample_nidarosdomen',
-    name: 'Nidarosdomen',
-    lat: 63.4280,
-    lng: 10.3958,
-    description: 'Norges nasjonalhelligdom',
-    type: 'churches',
-    api_source: 'manual'
-  },
-  {
-    id: 'sample_borgund_stavkirke',
-    name: 'Borgund stavkirke',
-    lat: 61.0459,
-    lng: 7.8944,
-    description: 'Middelaldersk stavkirke fra 1180',
-    type: 'churches',
     api_source: 'manual'
   },
   // War memorials
