@@ -190,6 +190,18 @@ export function MapLibreTrakkeApp() {
               console.log(`🕳️ Loaded ${transformedCavePOIs.length} cave entrance POIs from OpenStreetMap`)
             }
             
+            // Load observation towers from OpenStreetMap if observasjonstårn category is active
+            if (activeCategories.includes('observasjonstårn')) {
+              console.log('🗼 Loading observation towers from OpenStreetMap with viewport:', currentViewport)
+              const towerPOIs = await OverpassService.fetchObservationTowerPOIs(currentViewport)
+              console.log('📊 Raw Tower POIs received:', towerPOIs.length, towerPOIs)
+              
+              const transformedTowerPOIs = transformTowerPOIs(towerPOIs)
+              allPOIs = [...allPOIs, ...transformedTowerPOIs]
+              
+              console.log(`🗼 Loaded ${transformedTowerPOIs.length} observation tower POIs from OpenStreetMap`)
+            }
+            
             if (allPOIs.length === 0) {
               console.log('⚠️ No active categories with POI data:', activeCategories)
             }
@@ -249,6 +261,8 @@ export function MapLibreTrakkeApp() {
           activeCategories.push('krigsminne')
         } else if (node.id === 'hule') {
           activeCategories.push('hule')
+        } else if (node.id === 'observasjonstårn') {
+          activeCategories.push('observasjonstårn')
         }
       }
       if (node.children) {
@@ -288,6 +302,21 @@ export function MapLibreTrakkeApp() {
     }))
     
     console.log('🔄 Transformed Cave POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform observation tower POIs to our POI interface
+  const transformTowerPOIs = (towerPOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = towerPOIs.map(poi => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.tags.description || `${poi.type} - Observasjonstårn eller vakttårn`,
+      type: 'viewpoints' as POIType, // All tower POIs are categorized as viewpoints
+      lat: poi.lat,
+      lng: poi.lng
+    }))
+    
+    console.log('🔄 Transformed Tower POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -384,7 +413,7 @@ export function MapLibreTrakkeApp() {
                   color: '#94a3b8',
                   fontStyle: 'italic'
                 }}>
-                  Sist oppdatert: 6. september 2025
+                  Under utvikling. Sist oppdatert: 7. september 2025.
                 </p>
               </div>
             </div>

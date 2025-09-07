@@ -201,6 +201,79 @@ export class OverpassService {
   }
 
   /**
+   * Fetch observation towers and watchtowers from OpenStreetMap
+   * Queries for man_made=tower with tower:type=observation or tower:type=watchtower
+   */
+  static async fetchObservationTowerPOIs(bounds: POIBounds): Promise<OverpassPOI[]> {
+    const cacheKey = `towers_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
+    
+    try {
+      console.log('🗼 Fetching observation towers from OpenStreetMap...', bounds)
+      
+      // Constrain bounds to Norway's geographic limits
+      const norwayBounds = {
+        north: Math.min(bounds.north, 72.0),  // Norway's northernmost point
+        south: Math.max(bounds.south, 57.5),  // Norway's southernmost point  
+        east: Math.min(bounds.east, 32.0),    // Norway's easternmost point
+        west: Math.max(bounds.west, 4.0)      // Norway's westernmost point
+      }
+
+      console.log('🗺️ Query bounds:', norwayBounds)
+      
+      // Specific query for observation towers and watchtowers
+      const overpassQuery = `
+        [out:json][timeout:25];
+        (
+          // Observation towers
+          node["man_made"="tower"]["tower:type"="observation"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["man_made"="tower"]["tower:type"="observation"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          
+          // Watchtowers (for fire observation, military observation, etc.)
+          node["man_made"="tower"]["tower:type"="watchtower"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["man_made"="tower"]["tower:type"="watchtower"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          
+          // General observation towers (some may not have tower:type tag)
+          node["man_made"="tower"]["tourism"="viewpoint"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+        );
+        out center body 100;
+      `.trim()
+      
+      console.log('🔍 Observation tower Overpass query:', overpassQuery)
+
+      const response = await fetch(this.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+        },
+        body: overpassQuery
+      })
+
+      if (!response.ok) {
+        throw new Error(`Overpass API request failed: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
+      console.log('📊 Raw observation tower Overpass response:', data)
+      
+      const pois = this.transformObservationTowerDataToPOIs(data)
+      console.log(`🗼 Transformed ${pois.length} observation tower POIs from Overpass API`)
+
+      // Cache the results
+      this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
+      
+      console.log(`✅ Fetched ${pois.length} observation tower POIs from OpenStreetMap`)
+      return pois
+
+    } catch (error) {
+      console.error('❌ Error fetching observation towers from Overpass API:', error)
+      return []
+    }
+  }
+
+  /**
    * Transform Overpass API response to our POI format
    */
   private static transformOverpassDataToPOIs(overpassData: OverpassResponse): OverpassPOI[] {
@@ -349,6 +422,82 @@ export class OverpassService {
     })
 
     console.log(`✅ Converted ${pois.length} cave entrance POIs from Overpass data`)
+    return pois
+  }
+
+  /**
+   * Transform observation tower Overpass API response to our POI format
+   */
+  private static transformObservationTowerDataToPOIs(overpassData: OverpassResponse): OverpassPOI[] {
+    if (!overpassData.elements) {
+      return []
+    }
+
+    const pois: OverpassPOI[] = []
+    
+    overpassData.elements.forEach((element: OverpassElement) => {
+      try {
+        let lat: number, lng: number
+
+        // Handle different OSM element types
+        if (element.type === 'node') {
+          if (element.lat === undefined || element.lon === undefined) {
+            return
+          }
+          lat = element.lat
+          lng = element.lon
+        } else if (element.type === 'way' || element.type === 'relation') {
+          // For ways and relations, we need to use center coordinates
+          if (element.center) {
+            lat = element.center.lat
+            lng = element.center.lon
+          } else {
+            // Skip if no coordinates available
+            return
+          }
+        } else {
+          return
+        }
+
+        // Validate coordinates and ensure they're within Norway's boundaries
+        if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+          return
+        }
+        
+        // Additional Norway boundary check to exclude neighboring countries
+        if (lat < 57.5 || lat > 72.0 || lng < 4.0 || lng > 32.0) {
+          return
+        }
+
+        const tags = element.tags || {}
+        
+        // Generate Norwegian name for tower
+        const name = this.extractTowerName(tags)
+        
+        // Generate tower description
+        const _description = this.generateTowerDescription(tags)
+        
+        // Determine tower type
+        const type = this.determineTowerType(tags)
+
+        const poi: OverpassPOI = {
+          id: `osm_${element.type}_${element.id}`,
+          name,
+          type,
+          lat,
+          lng,
+          category: 'towers', // All are categorized as towers
+          tags,
+          lastUpdated: new Date().toISOString()
+        }
+
+        pois.push(poi)
+      } catch (error) {
+        console.error(`❌ Failed to process observation tower element:`, error)
+      }
+    })
+
+    console.log(`✅ Converted ${pois.length} observation tower POIs from Overpass data`)
     return pois
   }
 
@@ -706,6 +855,163 @@ export class OverpassService {
     if (tags.natural === 'cave_entrance') return 'Huleinngang'
     
     return 'Hule'
+  }
+
+  /**
+   * Extract meaningful name from OSM tags for towers with Norwegian fallbacks
+   */
+  private static extractTowerName(tags: Record<string, string>): string {
+    // Try Norwegian names first
+    const norwegianName = tags['name:no'] || tags['name:nb'] || tags['name:nn']
+    if (norwegianName) return this.ensureUTF8(norwegianName)
+
+    // Try general name
+    if (tags.name) return this.ensureUTF8(tags.name)
+
+    // Try English name as fallback
+    if (tags['name:en']) return this.ensureUTF8(tags['name:en'])
+
+    // Generate Norwegian name based on tower type
+    if (tags['tower:type'] === 'observation') return 'Observasjonstårn'
+    if (tags['tower:type'] === 'watchtower') return 'Vakttårn'
+    if (tags['tower:type'] === 'fire_observation') return 'Brannvakttårn'
+    if (tags.tourism === 'viewpoint') return 'Utsiktstårn'
+    if (tags.man_made === 'tower') return 'Tårn'
+    
+    return 'Observasjonstårn'
+  }
+
+  /**
+   * Generate Norwegian description for towers based on OSM tags
+   */
+  private static generateTowerDescription(tags: Record<string, string>): string {
+    const parts: string[] = []
+
+    // Add tower type
+    if (tags['tower:type']) {
+      const towerTypes: Record<string, string> = {
+        'observation': 'observasjonstårn for utsikt',
+        'watchtower': 'vakttårn for overvåking',
+        'fire_observation': 'brannvakttårn',
+        'communication': 'kommunikasjonstårn',
+        'water': 'vanntårn',
+        'bell_tower': 'klokketårn'
+      }
+      parts.push(towerTypes[tags['tower:type']] || `tårn av type ${tags['tower:type']}`)
+    } else if (tags.man_made === 'tower') {
+      parts.push('byggetårn')
+    }
+
+    // Add height information
+    if (tags.height) {
+      const height = parseFloat(tags.height)
+      if (!isNaN(height)) {
+        parts.push(`høyde: ${height} meter`)
+      }
+    } else if (tags.ele) {
+      const elevation = parseFloat(tags.ele)
+      if (!isNaN(elevation)) {
+        parts.push(`høyde over havet: ${elevation} meter`)
+      }
+    }
+
+    // Add construction information
+    if (tags.start_date) {
+      const year = tags.start_date.substring(0, 4)
+      if (year && !isNaN(Number(year))) {
+        parts.push(`bygget ${year}`)
+      }
+    }
+
+    // Add material information
+    if (tags.material) {
+      const materials: Record<string, string> = {
+        'wood': 'bygget av tre',
+        'concrete': 'bygget av betong',
+        'steel': 'bygget av stål',
+        'stone': 'bygget av stein',
+        'brick': 'bygget av murstein'
+      }
+      parts.push(materials[tags.material] || `bygget av ${tags.material}`)
+    }
+
+    // Add viewpoint information
+    if (tags.tourism === 'viewpoint') {
+      parts.push('utsiktspunkt for besøkende')
+    }
+
+    // Add operator information
+    if (tags.operator) {
+      parts.push(`drift: ${this.ensureUTF8(tags.operator)}`)
+    }
+
+    // Add access information
+    if (tags.access === 'private') {
+      parts.push('⚠️ Privat eiendom')
+    } else if (tags.access === 'no') {
+      parts.push('❌ Stengt for allmennheten')
+    } else if (tags.access === 'customers') {
+      parts.push('🎫 Kun for besøkende/kunder')
+    } else if (tags.access === 'yes') {
+      parts.push('🆓 Offentlig tilgjengelig')
+    }
+
+    // Add opening hours if available
+    if (tags.opening_hours) {
+      parts.push(`🕒 Åpningstider: ${tags.opening_hours}`)
+    }
+
+    // Add fee information
+    if (tags.fee === 'yes') {
+      parts.push('💰 Inngang/avgift påkrevd')
+    } else if (tags.fee === 'no') {
+      parts.push('🆓 Gratis adgang')
+    }
+
+    // Add climbing information
+    if (tags.climbing === 'yes') {
+      parts.push('🧗 Klatring tillatt')
+    } else if (tags.climbing === 'no') {
+      parts.push('⛔ Klatring forbudt')
+    }
+
+    // Add safety warnings
+    if (tags.hazard) {
+      parts.push(`⚠️ Fare: ${tags.hazard}`)
+    }
+
+    // Add Wikipedia link for more information
+    if (tags.wikipedia) {
+      const wikiUrl = tags.wikipedia.includes('http') 
+        ? tags.wikipedia 
+        : `https://no.wikipedia.org/wiki/${encodeURIComponent(tags.wikipedia.replace('no:', ''))}`
+      parts.push(`📖 Les mer: ${wikiUrl}`)
+    } else if (tags.wikidata) {
+      parts.push(`📖 Wikidata: https://www.wikidata.org/wiki/${tags.wikidata}`)
+    }
+
+    // Add description from OSM if available
+    if (tags.description) {
+      parts.push(this.ensureUTF8(tags.description))
+    }
+
+    return parts.length > 0 
+      ? parts.join('. ').charAt(0).toUpperCase() + parts.join('. ').slice(1) + '.'
+      : 'Observasjonstårn eller vakttårn i Norge.'
+  }
+
+  /**
+   * Determine tower POI type based on OSM tags (Norwegian terms)
+   */
+  private static determineTowerType(tags: Record<string, string>): string {
+    if (tags['tower:type'] === 'observation') return 'Observasjonstårn'
+    if (tags['tower:type'] === 'watchtower') return 'Vakttårn'
+    if (tags['tower:type'] === 'fire_observation') return 'Brannvakttårn'
+    if (tags.tourism === 'viewpoint') return 'Utsiktstårn'
+    if (tags['tower:type'] === 'communication') return 'Kommunikasjonstårn'
+    if (tags.man_made === 'tower') return 'Tårn'
+    
+    return 'Observasjonstårn'
   }
 
   /**

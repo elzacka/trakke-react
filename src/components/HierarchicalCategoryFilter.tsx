@@ -19,13 +19,15 @@ export function HierarchicalCategoryFilter({
   
   // Check if category has available data sources
   const categoryHasData = (node: CategoryNode): boolean => {
-    // Categories with active data sources - ONLY Krigsminne POIs are actually available
+    // Categories with active data sources - Multiple POI types now available
     const activeCategoryMapping: Record<string, boolean> = {
       // Only parent category with actual data
-      'på_eventyr': true,         // Contains Krigsminne which has real POIs
+      'på_eventyr': true,         // Contains multiple subcategories with real POIs
       
-      // Only active subcategory with real POI data from Overpass API
-      'krigsminne': true,         // Krigsminne - the ONLY category with actual POIs
+      // Active subcategories with real POI data from Overpass API
+      'krigsminne': true,         // War memorials and historic forts
+      'hule': true,               // Cave entrances from natural=cave_entrance
+      'observasjonstårn': true,   // Observation towers and watchtowers
       
       // All other categories currently inactive (no real POI data available)
       'aktivitet': false,
@@ -54,9 +56,7 @@ export function HierarchicalCategoryFilter({
       'hytte_utleie': false,
       'teltplass': false,
       'vandrerhjem': false,
-      'hule': true,                   // Cave entrances - active with real POI data from OSM
       'kulturminne': false,
-      'observasjonstårn': false,
       'informasjon': false,
       'drikkevann': false,
       'spise_rasteplass': false,
