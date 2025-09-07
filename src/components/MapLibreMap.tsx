@@ -323,19 +323,26 @@ export function MapLibreMap({
         
         console.log(`✅ Creating popup for: ${name} (${id})`)
         
+        // Enhanced popup with better formatting for rich information
+        const formattedDescription = description 
+          ? description.replace(/📖 Les mer: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Les mer på Wikipedia →</a>')
+                      .replace(/📖 Wikidata: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Se på Wikidata →</a>')
+          : 'Ingen beskrivelse tilgjengelig'
+
         new maplibregl.Popup({
           closeButton: true,
-          closeOnClick: true
+          closeOnClick: true,
+          maxWidth: '350px'
         })
           .setLngLat(e.lngLat)
           .setHTML(`
-            <div style="padding: 8px; min-width: 200px;">
-              <h3 style="margin: 0 0 6px 0; color: #2c5530; font-size: 15px;">
+            <div style="padding: 12px; min-width: 250px; max-width: 350px; font-family: 'Segoe UI', sans-serif;">
+              <h3 style="margin: 0 0 8px 0; color: #2c5530; font-size: 16px; font-weight: 600; border-bottom: 2px solid #8B4B8B; padding-bottom: 4px;">
                 ${name || 'Ukjent sted'}
               </h3>
-              <p style="margin: 0; color: #555; font-size: 13px;">
-                ${description || 'Ingen beskrivelse tilgjengelig'}
-              </p>
+              <div style="margin: 0; color: #444; font-size: 13px; line-height: 1.4;">
+                ${formattedDescription}
+              </div>
             </div>
           `)
           .addTo(map)

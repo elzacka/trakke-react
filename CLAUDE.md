@@ -33,7 +33,7 @@ npm run deploy       # Deploy to GitHub Pages
 
 ### ✅ **Complete Feature Set**
 - **Geographic Coverage**: Full Norway (57.5-71.5°N, 4.0-31.5°E) using Kartverket official maps
-- **POI Categories**: Currently only Krigsminner (war memorials) from OpenStreetMap are active
+- **POI Categories**: Currently only Krigsminne (war memorials) from OpenStreetMap are active
 - **Language**: 100% Norwegian (Bokmål) throughout
 - **Map Technology**: MapLibre GL JS with Kartverket WMS topographic tiles
 - **Search**: Norwegian place name search with coordinate display
@@ -124,10 +124,10 @@ src/
 - **Place Name Translation**: fjell→mountain, elv→river, etc.
 - **Rate Limiting**: 1 request/second with 5-minute caching
 
-## POI Categories (Currently Only Active: Krigsminner)
+## POI Categories (Currently Only Active: Krigsminne)
 
 **Currently Available:**
-- **Historiske steder > Krigsminner** (Cultural Heritage > War Memorials): ACTIVE - loaded from OpenStreetMap
+- **Historiske steder > Krigsminne** (Cultural Heritage > War Memorials): ACTIVE - loaded from OpenStreetMap
 
 **Future Categories (currently inactive/greyed out):**
 - **Turløyper** (Outdoor Activities): hiking, mountain_peaks, ski_trails
@@ -174,7 +174,7 @@ src/
 
 - **Primary Component**: MapLibreTrakkeApp.tsx
 - **Map Technology**: MapLibre GL JS with Kartverket tiles (replaced Leaflet)
-- **Data Source**: OpenStreetMap via Overpass API for Krigsminner (war memorials)
+- **Data Source**: OpenStreetMap via Overpass API for Krigsminne (war memorials)
 - **Language**: 100% Norwegian Bokmål interface and content
 - **Coverage**: Complete Norway from Lindesnes to Nordkapp with Arctic regions
 - **Build Status**: All TypeScript and linting issues resolved

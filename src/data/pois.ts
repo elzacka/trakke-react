@@ -16,7 +16,7 @@ interface GeoJSONFeatureCollection {
   features: GeoJSONFeature[]
 }
 
-interface KrigsminnerProps {
+interface KrigsminneProps {
   [key: string]: string | number | undefined
   name?: string
   'name:no'?: string
@@ -280,7 +280,7 @@ export const categoryConfig: CategoryConfigMap = {
   war_memorials: { 
     color: '#8B4B8B', 
     icon: 'military_tech',
-    name: 'Krigsminner',
+    name: 'Krigsminne',
     description: 'Monumenter fra 2. verdenskrig og andre konflikter'
   },
   peace_monuments: {
@@ -761,10 +761,10 @@ export function updatePoisData(newPois: POI[]) {
   poisData = [...newPois]
 }
 
-// GeoJSON conversion function for Krigsminner data
-function convertKrigsminnerGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI[] {
+// GeoJSON conversion function for Krigsminne data
+function convertKrigsminneGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI[] {
   if (!geojson || !geojson.features) {
-    console.warn('⚠️ Invalid GeoJSON data for Krigsminner')
+    console.warn('⚠️ Invalid GeoJSON data for Krigsminne')
     return []
   }
 
@@ -805,18 +805,18 @@ function convertKrigsminnerGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI
         return
       }
 
-      const props = (feature.properties || {}) as KrigsminnerProps
+      const props = (feature.properties || {}) as KrigsminneProps
       
       // Generate Norwegian name and description
       const name = props.name || 
                    props['name:no'] || 
                    props['name:nb'] || 
-                   generateKrigsminnerName(props)
+                   generateKrigsminnesName(props)
       
       const description = props.description || 
                          props['description:no'] || 
                          props['description:nb'] || 
-                         generateKrigsminnerDescription(props)
+                         generateKrigsminneDescription(props)
 
       const poi: POI = {
         id: `krigsminner_${props['@id']?.replace(/[^\w]/g, '_') || index}`,
@@ -843,16 +843,16 @@ function convertKrigsminnerGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI
 
       pois.push(poi)
     } catch (error) {
-      console.error(`❌ Failed to convert Krigsminner feature ${index}:`, error)
+      console.error(`❌ Failed to convert Krigsminne feature ${index}:`, error)
     }
   })
 
-  console.log(`✅ Converted ${pois.length} Krigsminner POIs from GeoJSON`)
+  console.log(`✅ Converted ${pois.length} Krigsminne POIs from GeoJSON`)
   return pois
 }
 
-// Helper function to generate Norwegian names for Krigsminner
-function generateKrigsminnerName(props: KrigsminnerProps): string {
+// Helper function to generate Norwegian names for Krigsminne
+function generateKrigsminnesName(props: KrigsminneProps): string {
   if (props.military === 'bunker') {
     if (props.bunker_type === 'gun_emplacement') return 'Kanoninnretning'
     if (props.bunker_type === 'shelter') return 'Skjulsrom'
@@ -867,8 +867,8 @@ function generateKrigsminnerName(props: KrigsminnerProps): string {
   return 'Krigsminne'
 }
 
-// Helper function to generate Norwegian descriptions for Krigsminner  
-function generateKrigsminnerDescription(props: KrigsminnerProps): string {
+// Helper function to generate Norwegian descriptions for Krigsminne  
+function generateKrigsminneDescription(props: KrigsminneProps): string {
   const parts: string[] = []
   
   if (props.military === 'bunker') {
@@ -1049,20 +1049,20 @@ function generateUtsiktspunkterDescription(props: UtsiktspunkterProps): string {
 
 // GeoJSON loading functions removed - using pure OSM API
 // Empty exports for backward compatibility
-export async function loadKrigsminnerPOIs(): Promise<POI[]> { return [] }
+export async function loadKrigsminnePOIs(): Promise<POI[]> { return [] }
 export async function loadUtsiktspunkterPOIs(): Promise<POI[]> { return [] }
 
 // Original functions kept for reference but not used
-async function _removedLoadKrigsminnerPOIs(): Promise<POI[]> {
+async function _removedLoadKrigsminnePOIs(): Promise<POI[]> {
   try {
     const response = await fetch('./krigsminner1.geojson')
     if (!response.ok) {
-      throw new Error(`Failed to fetch Krigsminner data: ${response.status}`)
+      throw new Error(`Failed to fetch Krigsminne data: ${response.status}`)
     }
     const geojson = await response.json()
-    return convertKrigsminnerGeoJSONToPOIs(geojson)
+    return convertKrigsminneGeoJSONToPOIs(geojson)
   } catch (error) {
-    console.error('❌ Failed to load Krigsminner data:', error)
+    console.error('❌ Failed to load Krigsminne data:', error)
     return []
   }
 }

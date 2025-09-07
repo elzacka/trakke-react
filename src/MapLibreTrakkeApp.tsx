@@ -22,7 +22,7 @@ export function MapLibreTrakkeApp() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
   const [currentViewport, setCurrentViewport] = useState<{ north: number; south: number; east: number; west: number; zoom: number } | null>(null)
 
-  // POI data state (currently only Krigsminner from OpenStreetMap)
+  // POI data state (currently only Krigsminne from OpenStreetMap)
   const [pois, setPois] = useState<POI[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -166,18 +166,32 @@ export function MapLibreTrakkeApp() {
           try {
             let allPOIs: POI[] = []
             
-            // Load Krigsminner from OpenStreetMap if krigsminne category is active
+            // Load Krigsminne from OpenStreetMap if krigsminne category is active
             if (activeCategories.includes('krigsminne')) {
-              console.log('🏰 Loading Krigsminner from OpenStreetMap with viewport:', currentViewport)
-              const overpassPOIs = await OverpassService.fetchKrigsminnerPOIs(currentViewport)
+              console.log('🏰 Loading Krigsminne from OpenStreetMap with viewport:', currentViewport)
+              const overpassPOIs = await OverpassService.fetchKrigsminnePOIs(currentViewport)
               console.log('📊 Raw Overpass POIs received:', overpassPOIs.length, overpassPOIs)
               
               const transformedOverpassPOIs = transformOverpassPOIs(overpassPOIs)
-              allPOIs = transformedOverpassPOIs
+              allPOIs = [...allPOIs, ...transformedOverpassPOIs]
               
-              console.log(`🏰 Loaded ${transformedOverpassPOIs.length} Krigsminner POIs from OpenStreetMap`)
-            } else {
-              console.log('⚠️ krigsminne not in active categories:', activeCategories)
+              console.log(`🏰 Loaded ${transformedOverpassPOIs.length} Krigsminne POIs from OpenStreetMap`)
+            }
+            
+            // Load cave entrances from OpenStreetMap if hule category is active
+            if (activeCategories.includes('hule')) {
+              console.log('🕳️ Loading cave entrances from OpenStreetMap with viewport:', currentViewport)
+              const cavePOIs = await OverpassService.fetchCaveEntrancePOIs(currentViewport)
+              console.log('📊 Raw Cave POIs received:', cavePOIs.length, cavePOIs)
+              
+              const transformedCavePOIs = transformCavePOIs(cavePOIs)
+              allPOIs = [...allPOIs, ...transformedCavePOIs]
+              
+              console.log(`🕳️ Loaded ${transformedCavePOIs.length} cave entrance POIs from OpenStreetMap`)
+            }
+            
+            if (allPOIs.length === 0) {
+              console.log('⚠️ No active categories with POI data:', activeCategories)
             }
             
             console.log('🎯 Setting POIs on map:', allPOIs)
@@ -230,9 +244,11 @@ export function MapLibreTrakkeApp() {
     
     function checkNode(node: typeof categoryTree[0]) {
       if (state.checked[node.id]) {
-        // Only krigsminne category has actual POI data
+        // Categories with actual POI data
         if (node.id === 'krigsminne') {
           activeCategories.push('krigsminne')
+        } else if (node.id === 'hule') {
+          activeCategories.push('hule')
         }
       }
       if (node.children) {
@@ -257,6 +273,21 @@ export function MapLibreTrakkeApp() {
     }))
     
     console.log('🔄 Transformed POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform Cave entrance POIs to our POI interface
+  const transformCavePOIs = (cavePOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = cavePOIs.map(poi => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.tags.description || `${poi.type} - Naturlig huleinngang`,
+      type: 'nature_gems' as POIType, // All cave POIs are categorized as nature gems
+      lat: poi.lat,
+      lng: poi.lng
+    }))
+    
+    console.log('🔄 Transformed Cave POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
