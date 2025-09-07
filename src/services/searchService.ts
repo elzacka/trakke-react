@@ -1,4 +1,5 @@
-// src/services/searchService.ts - Fullstendig fikset versjon
+// Norwegian search service using Kartverket's official place name API
+// Replaces Nominatim for better Norwegian coverage and accuracy
 
 export interface SearchResult {
   id: string
@@ -7,8 +8,10 @@ export interface SearchResult {
   lat: number
   lng: number
   type: 'poi' | 'place' | 'address' | 'coordinates'
-  source: 'internal' | 'nominatim' | 'koordinater' | 'kartverket'
+  source: 'internal' | 'kartverket' | 'koordinater'
   description?: string
+  municipality?: string
+  county?: string
   bbox?: [number, number, number, number]
 }
 
@@ -27,49 +30,78 @@ interface POILike {
   type: string
 }
 
-interface NominatimAddress {
-  municipality?: string
-  county?: string
-  house_number?: string
-}
-
-interface NominatimItem {
-  place_id: number
-  name?: string
-  display_name: string
-  lat: string
-  lon: string
-  type?: string
-  address?: NominatimAddress
-  boundingbox?: string[]
-}
-
-// Rate limiter
-let lastRequest = 0
-const minInterval = 1000
-
-async function waitIfNeeded(): Promise<void> {
-  const now = Date.now()
-  const timeSinceLastRequest = now - lastRequest
-  
-  if (timeSinceLastRequest < minInterval) {
-    const waitTime = minInterval - timeSinceLastRequest
-    await new Promise<void>(resolve => setTimeout(resolve, waitTime))
+interface KartverketPlace {
+  stedsnummer: number
+  skrivemåte: string
+  navneobjekttype: string
+  navnestatus: string
+  skrivemåtestatus: string
+  språk: string
+  stedstatus: string
+  kommuner?: Array<{
+    kommunenavn: string
+    kommunenummer: string
+  }>
+  fylker?: Array<{
+    fylkesnavn: string
+    fylkesnummer: string
+  }>
+  representasjonspunkt?: {
+    øst: number
+    nord: number
   }
-  
-  lastRequest = Date.now()
+}
+
+interface KartverketResponse {
+  metadata: {
+    totaltAntallTreff: number
+    treffPerSide: number
+    side: number
+    viserFra: number
+    viserTil: number
+    sokeStreng: string
+  }
+  navn: KartverketPlace[]
+}
+
+interface KartverketAddress {
+  adressenavn: string
+  nummer: string
+  adressetekst: string
+  kommunenavn: string
+  postnummer: string
+  gardsnummer?: string
+  bruksnummer?: string
+  bruksenhetsnummer?: string[]
+  representasjonspunkt: {
+    epsg: number
+    lat: number
+    lon: number
+  }
+}
+
+interface KartverketAddressResponse {
+  metadata: {
+    totaltAntallTreff: number
+    treffPerSide: number
+    side: number
+    viserFra: number
+    viserTil: number
+    sokeStreng: string
+  }
+  adresser: KartverketAddress[]
 }
 
 // Cache
 const searchCache = new Map<string, { results: SearchResult[], timestamp: number }>()
-const cacheTimeout = 5 * 60 * 1000
+const cacheTimeout = 5 * 60 * 1000 // 5 minutes
 
-// Constants
+// Norwegian territory bounds
 const norwegianBounds = {
   south: 57.5,
   west: 4.0,
-  north: 71.5,
-  east: 31.5
+  north: 72.0,
+  east: 32.0
 } as const
 
 // Validation functions
@@ -84,7 +116,7 @@ function isValidNumber(value: number): boolean {
   return typeof value === 'number' && !isNaN(value) && isFinite(value)
 }
 
-// Coordinate parsing
+// Coordinate parsing (kept from original implementation)
 function parseCoordinates(input: string): CoordinateParseResult | null {
   const cleaned = input.replace(/[°'"′″\s]/g, ' ').trim()
 
@@ -127,7 +159,7 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
   return null
 }
 
-// Local POI search
+// Local POI search (kept from original implementation)
 function searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
   const normalizedQuery = query.toLowerCase()
   
@@ -150,387 +182,236 @@ function searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
     .slice(0, 5)
 }
 
-// Norwegian translations for Nominatim place types
+
+// Norwegian place type translations
 const norwegianPlaceTypes: Record<string, string> = {
-  // Administrative
-  'administrative': 'administrativt område',
-  'city': 'by',
-  'town': 'by',
-  'village': 'tettsted',
-  'hamlet': 'grend',
-  'municipality': 'kommune',
-  'county': 'fylke',
-  'state': 'fylke',
-  'country': 'land',
-  
-  // Urban areas (fixing your reported issues)
-  'quarter': 'bydel',
-  'suburb': 'forstad',
-  'neighbourhood': 'nabolag',
-  'district': 'distrikt',
-  'residential': 'boligområde',
-  'commercial': 'næringsområde',
-  'industrial': 'industriområde',
-  
-  // Geographic features
-  'peak': 'fjelltopp',
-  'mountain': 'fjell',
-  'hill': 'ås',
-  'valley': 'dal',
-  'lake': 'innsjø',
-  'river': 'elv',
-  'island': 'øy',
-  'fjord': 'fjord',
-  'bay': 'bukt',
-  'beach': 'strand',
-  'forest': 'skog',
-  'wood': 'skog',
-  'plain': 'slette',
-  'plateau': 'platå',
-  
-  // Infrastructure
-  'railway': 'jernbane',
-  'station': 'stasjon',
-  'railway_station': 'jernbanestasjon',
-  'bus_station': 'busstasjon',
-  'airport': 'flyplass',
-  'harbour': 'havn',
-  'port': 'havn',
-  'bridge': 'bru',
-  'tunnel': 'tunnel',
-  'motorway': 'motorvei',
-  'highway': 'hovedvei',
-  
-  // Places
-  'farm': 'gård',
-  'house': 'hus',
-  'building': 'bygning',
-  'church': 'kirke',
-  'school': 'skole',
-  'hospital': 'sykehus',
-  'university': 'universitet',
-  'park': 'park',
-  'square': 'torg',
-  'street': 'gate',
-  'road': 'vei',
-  'path': 'sti',
-  'track': 'spor',
-  
-  // Natural features
-  'water': 'vann',
-  'waterway': 'vassdrag',
-  'stream': 'bekk',
-  'pond': 'dam',
-  'wetland': 'våtmark',
-  'marsh': 'myr',
-  
-  // Other common types
-  'locality': 'lokalitet',
-  'place': 'sted',
-  'area': 'område',
-  'region': 'region',
-  'zone': 'sone',
-  
-  // Additional common English terms that appear in Norwegian search results
-  'office': 'kontor',
-  'shop': 'butikk',
-  'store': 'butikk',
-  'market': 'marked',
-  'restaurant': 'restaurant',
-  'cafe': 'kafé',
-  'hotel': 'hotell',
-  'hostel': 'herberge',
-  'guest_house': 'gjestehus',
-  'camping': 'camping',
-  'attraction': 'attraksjon',
-  'memorial': 'minnesmerke',
-  'monument': 'monument',
-  'museum': 'museum',
-  'gallery': 'galleri',
-  'library': 'bibliotek',
-  'theatre': 'teater',
-  'cinema': 'kino',
-  'stadium': 'stadion',
-  'sports_centre': 'idrettssenter',
-  'swimming_pool': 'svømmehall',
-  'golf_course': 'golfbane',
-  'playground': 'lekeplass',
-  'garden': 'hage',
-  'cemetery': 'kirkegård',
-  'clinic': 'klinikk',
-  'pharmacy': 'apotek',
-  'bank': 'bank',
-  'post_office': 'postkontor',
-  'police': 'politi',
-  'fire_station': 'brannstasjon',
-  'townhall': 'rådhus',
-  'courthouse': 'tinghus',
-  'prison': 'fengsel',
-  'kindergarten': 'barnehage',
-  'college': 'høgskole',
-  'research': 'forskning',
-  'factory': 'fabrikk',
-  'warehouse': 'lager',
-  'office_building': 'kontorbygg',
-  'residential_building': 'boligbygg',
-  'apartment': 'leilighet',
-  'detached': 'enebolig',
-  'terrace': 'rekkehus',
-  'bungalow': 'bungalow',
-  'cabin': 'hytte',
-  'hut': 'hytte',
-  'shelter': 'skjul',
-  'garage': 'garasje',
-  'parking_space': 'parkeringsplass',
-  'fuel': 'bensin',
-  'petrol': 'bensin',
-  'gas_station': 'bensinstasjon',
-  'charging_station': 'ladestasjon',
-  'service_area': 'serviceområde',
-  'toll_booth': 'bomstasjon',
-  'customs': 'toll',
-  'border_control': 'grensekontroll',
-  'viewpoint': 'utsiktspunkt',
-  'picnic_site': 'rasteplass',
-  'picnic_table': 'rastebord',
-  'bench': 'benk',
-  'waste_basket': 'søppelkurv',
-  'recycling': 'resirkulering',
-  'telephone': 'telefon',
-  'post_box': 'postboks',
-  'vending_machine': 'automat',
-  'atm': 'minibank',
-  'clock': 'klokke',
-  'fountain': 'fontene',
-  'artwork': 'kunstverk',
-  'statue': 'statue',
-  'cross': 'kors',
-  'wayside_cross': 'vegkors',
-  'shrine': 'helligdom',
-  'grave_yard': 'gravplass',
-  'ruins': 'ruiner',
-  'archaeological_site': 'arkeologisk område',
-  'battlefield': 'slagmark',
-  'castle': 'slott',
-  'fort': 'fort',
-  'city_gate': 'byport',
-  'city_wall': 'bymur',
-  'tower': 'tårn',
-  'lighthouse': 'fyr',
-  'windmill': 'vindmølle',
-  'watermill': 'vannmølle',
-  'mine': 'gruve',
-  'quarry': 'steinbrudd',
-  'well': 'brønn',
-  'spring': 'kilde',
-  'geyser': 'geysir',
-  'hot_spring': 'varm kilde',
-  'cave': 'hule',
-  'sinkhole': 'jordfallshull',
-  'cliff': 'klippe',
-  'ridge': 'rygg',
-  'saddle': 'sal',
-  'glacier': 'bre',
-  'rapids': 'stryk',
-  'reef': 'rev',
-  'shoal': 'skjær',
-  'sand': 'sand',
-  'mud': 'leire',
-  'rock': 'stein',
-  'stone': 'stein',
-  'scree': 'ur',
-  'fell': 'fjell',
-  'moor': 'myr',
-  'heath': 'hei',
-  'scrubland': 'krattskog',
-  'grassland': 'grasmark',
-  'meadow': 'eng',
-  'orchard': 'frukthage',
-  'vineyard': 'vingård',
-  'farmyard': 'gårdsplass',
-  'allotments': 'kolonihage',
-  'recreation_ground': 'rekreasjonsområde',
-  'sports_pitch': 'idrettsplass',
-  'running_track': 'løpebane',
-  'pitch': 'bane',
-  'court': 'bane'
+  'By': 'by',
+  'Tettsted': 'tettsted',
+  'Grend': 'grend',
+  'Gård': 'gård',
+  'Kommune': 'kommune',
+  'Fylke': 'fylke',
+  'Fjell': 'fjell',
+  'Ås': 'ås',
+  'Dal': 'dal',
+  'Innsjø': 'innsjø',
+  'Elv': 'elv',
+  'Øy': 'øy',
+  'Fjord': 'fjord',
+  'Bukt': 'bukt',
+  'Strand': 'strand',
+  'Skog': 'skog',
+  'Myr': 'myr',
+  'Bre': 'bre',
+  'Foss': 'foss',
+  'Kilde': 'kilde',
+  'Hule': 'hule',
+  'Hytte': 'hytte',
+  'Kirke': 'kirke',
+  'Skole': 'skole',
+  'Sykehus': 'sykehus',
+  'Stasjon': 'stasjon',
+  'Havn': 'havn',
+  'Flyplass': 'flyplass',
+  'Bru': 'bru',
+  'Tårn': 'tårn',
+  'Fort': 'fort',
+  'Minnesmærke': 'minnesmerke'
 }
 
-// Nominatim search
-async function searchNominatim(query: string): Promise<SearchResult[]> {
+// Kartverket address search implementation
+async function searchKartverketAddresses(query: string): Promise<SearchResult[]> {
   try {
-    await waitIfNeeded()
-
-    const params = new URLSearchParams({
-      q: query,
-      format: 'json',
-      addressdetails: '1',
-      limit: '6',
-      countrycodes: 'no',
-      bounded: '1',
-      viewbox: `${norwegianBounds.west},${norwegianBounds.north},${norwegianBounds.east},${norwegianBounds.south}`
-    })
-
+    const encodedQuery = encodeURIComponent(query.trim())
+    const url = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodedQuery}&treffPerSide=5&side=1`
+    
+    console.log('🏠 Kartverket adresse søk:', url)
+    
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+    const timeoutId = setTimeout(() => controller.abort(), 8000)
+    
+    const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Trakke-App/1.0 (https://github.com/elzacka/trakke-react)'
+        'Accept': 'application/json',
+        'User-Agent': 'Trakke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
       },
       signal: controller.signal
     })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      throw new Error(`Nominatim feil: ${response.status}`)
-    }
-
-    const data = await response.json()
     
-    // Type guard for Nominatim response
-    if (!Array.isArray(data)) {
-      console.warn('Uventet Nominatim respons format')
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      throw new Error(`Kartverket Address API feil: ${response.status}`)
+    }
+    
+    const data: KartverketAddressResponse = await response.json()
+    
+    console.log(`🏠 Kartverket adresse resultater: ${data.metadata.totaltAntallTreff} treff, returnerer ${data.adresser?.length || 0}`)
+    
+    if (!data.adresser || !Array.isArray(data.adresser)) {
       return []
     }
-
-    return data
-      .filter((item: unknown): item is NominatimItem => {
-        return typeof item === 'object' && 
-               item !== null && 
-               'place_id' in item && 
-               'display_name' in item && 
-               'lat' in item && 
-               'lon' in item
-      })
-      .map((item: NominatimItem): SearchResult => {
-        const lat = parseFloat(item.lat)
-        const lng = parseFloat(item.lon)
-        
-        // Validate coordinates
-        if (!isValidNumber(lat) || !isValidNumber(lng)) {
-          throw new Error(`Ugyldige koordinater fra Nominatim: ${item.lat}, ${item.lon}`)
-        }
-
-        let bbox: [number, number, number, number] | undefined = undefined
-        if (item.boundingbox && Array.isArray(item.boundingbox) && item.boundingbox.length === 4) {
-          const bboxNumbers = item.boundingbox.map(coord => parseFloat(coord))
-          if (bboxNumbers.every(isValidNumber)) {
-            bbox = [bboxNumbers[2], bboxNumbers[0], bboxNumbers[3], bboxNumbers[1]]
-          }
-        }
-
-        const name = item.name || item.display_name.split(',')[0]
-        
-        // Enhanced Norwegian place name differentiation
-        const createDisplayName = (item: NominatimItem): string => {
-          const baseName = item.name || item.display_name.split(',')[0]
-          
-          // Determine the appropriate Norwegian type label
-          const getTypeLabel = (type: string | undefined, address: NominatimAddress | undefined): string => {
-            if (!type) return ''
-            
-            // Priority mapping for Norwegian place types
-            switch (type) {
-              case 'city':
-              case 'town':
-                return 'by'
-              case 'municipality':
-              case 'administrative':
-                // Check if it's specifically a municipality vs other administrative
-                if (address?.municipality === baseName) {
-                  return 'kommune'
-                }
-                return 'administrativ'
-              case 'village':
-                return 'tettsted'
-              case 'hamlet':
-                return 'grend'
-              case 'suburb':
-                return 'bydel'
-              case 'neighbourhood':
-                return 'nabolag'
-              case 'county':
-                return 'fylke'
-              default:
-                return ''
-            }
-          }
-          
-          const typeLabel = getTypeLabel(item.type, item.address)
-          
-          // Build display name based on type and context
-          if (typeLabel === 'kommune') {
-            // For municipalities: "Oslo kommune"
-            return `${baseName} kommune`
-          } else if (typeLabel === 'by') {
-            // For cities: "Oslo by" or "Oslo, Viken fylke" if in different municipality
-            if (item.address?.municipality && item.address.municipality !== baseName) {
-              return `${baseName} by, ${item.address.municipality} kommune`
-            } else if (item.address?.county) {
-              return `${baseName} by, ${item.address.county} fylke`
-            }
-            return `${baseName} by`
-          } else if (typeLabel && typeLabel !== 'administrativ') {
-            // For other types: "Place (type)" + context
-            const parts = [`${baseName} (${typeLabel})`]
-            if (item.address?.municipality && item.address.municipality !== baseName) {
-              parts.push(item.address.municipality)
-            }
-            if (item.address?.county && !parts.some(p => p.includes(item.address!.county!))) {
-              parts.push(item.address.county + ' fylke')
-            }
-            return parts.join(', ')
-          } else {
-            // Fallback: use context clues
-            const parts = [baseName]
-            if (item.address?.municipality && item.address.municipality !== baseName) {
-              parts.push(item.address.municipality)
-            }
-            if (item.address?.county && !parts.includes(item.address.county)) {
-              parts.push(item.address.county + ' fylke')
-            }
-            return parts.join(', ')
-          }
+    
+    return data.adresser
+      .map((address: KartverketAddress): SearchResult | null => {
+        if (!address.representasjonspunkt) {
+          return null
         }
         
-        const displayName = createDisplayName(item)
+        const lat = address.representasjonspunkt.lat
+        const lng = address.representasjonspunkt.lon
         
-        const type: SearchResult['type'] = item.address?.house_number ? 'address' : 'place'
-
-        // Translate place type to Norwegian
-        const _norwegianType = item.type ? norwegianPlaceTypes[item.type] || item.type : undefined
+        if (!isValidNumber(lat) || !isValidNumber(lng) || !isValidNorwegianCoordinate(lat, lng)) {
+          console.warn(`❌ Invalid coordinates for address ${address.adressetekst}: lat=${lat}, lng=${lng}`)
+          return null
+        }
         
         return {
-          id: `nominatim_${item.place_id}`,
-          name,
-          displayName,
+          id: `kartverket_addr_${address.adressenavn}_${address.nummer}_${address.postnummer}`,
+          name: address.adressetekst,
+          displayName: `${address.adressetekst}, ${address.kommunenavn}`,
           lat,
           lng,
-          type,
-          source: 'nominatim',
-          description: undefined, // Remove type descriptions from search results
-          bbox
+          type: 'address' as const,
+          source: 'kartverket' as const,
+          municipality: address.kommunenavn,
+          description: `Adresse i ${address.kommunenavn} kommune (${address.postnummer})`
         }
       })
-      .filter(result => isValidNorwegianCoordinate(result.lat, result.lng))
-      
+      .filter((result): result is SearchResult => result !== null)
+      .slice(0, 5)
+    
   } catch (error) {
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        console.warn('Nominatim søk timed out')
+        console.warn('Kartverket adresse søk timed out')
       } else {
-        console.error('Nominatim søkefeil:', error.message)
+        console.error('Kartverket adresse søkefeil:', error.message)
       }
     } else {
-      console.error('Ukjent Nominatim feil:', error)
+      console.error('Ukjent Kartverket adresse feil:', error)
     }
     return []
   }
 }
 
-// Distance calculation
+// Kartverket place name search implementation
+async function searchKartverket(query: string): Promise<SearchResult[]> {
+  try {
+    const encodedQuery = encodeURIComponent(query.trim())
+    const url = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodedQuery}*&treffPerSide=8&side=1`
+    
+    console.log('🗺️ Kartverket søk:', url)
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000) // Longer timeout for government API
+    
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Trakke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+      },
+      signal: controller.signal
+    })
+    
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      throw new Error(`Kartverket API feil: ${response.status}`)
+    }
+    
+    const data: KartverketResponse = await response.json()
+    
+    console.log(`📍 Kartverket resultater: ${data.metadata.totaltAntallTreff} treff, returnerer ${data.navn?.length || 0}`)
+    
+    if (!data.navn || !Array.isArray(data.navn)) {
+      return []
+    }
+    
+    return data.navn
+      .map((place: KartverketPlace): SearchResult | null => {
+        // Convert coordinates
+        if (!place.representasjonspunkt) {
+          return null
+        }
+        
+        // Kartverket coordinates are already in WGS84 format
+        // Use Norwegian field names: øst (longitude), nord (latitude)
+        const lat = place.representasjonspunkt.nord
+        const lng = place.representasjonspunkt.øst
+        
+        if (!isValidNumber(lat) || !isValidNumber(lng) || !isValidNorwegianCoordinate(lat, lng)) {
+          console.warn(`❌ Invalid coordinates for ${place.skrivemåte}: lat=${lat}, lng=${lng}`)
+          return null
+        }
+        
+        // Extract municipality and county from arrays
+        const municipality = place.kommuner?.[0]?.kommunenavn || ''
+        const county = place.fylker?.[0]?.fylkesnavn || ''
+        
+        // Create display name with administrative context
+        const typeLabel = norwegianPlaceTypes[place.navneobjekttype] || place.navneobjekttype.toLowerCase()
+        const displayName = createDisplayName(place, typeLabel, municipality, county)
+        
+        return {
+          id: `kartverket_${place.stedsnummer}`,
+          name: place.skrivemåte,
+          displayName,
+          lat,
+          lng,
+          type: 'place' as const,
+          source: 'kartverket' as const,
+          municipality: municipality,
+          county: county,
+          description: `${typeLabel}${municipality ? ` i ${municipality} kommune` : ''}${county ? `, ${county} fylke` : ''}`
+        }
+      })
+      .filter((result): result is SearchResult => result !== null)
+      .slice(0, 6) // Limit results
+    
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.warn('Kartverket søk timed out')
+      } else {
+        console.error('Kartverket søkefeil:', error.message)
+      }
+    } else {
+      console.error('Ukjent Kartverket feil:', error)
+    }
+    return []
+  }
+}
+
+// Create display name with Norwegian administrative context
+function createDisplayName(place: KartverketPlace, typeLabel: string, municipality: string, county: string): string {
+  const baseName = place.skrivemåte
+  
+  // For major cities, just show name + type
+  const majorCities = ['Oslo', 'Bergen', 'Trondheim', 'Stavanger', 'Kristiansand', 'Tromsø', 'Drammen']
+  if (majorCities.includes(baseName) && typeLabel === 'by') {
+    return baseName
+  }
+  
+  // For municipalities and counties, show administrative level
+  if (place.navneobjekttype === 'Kommune') {
+    return `${baseName} kommune`
+  }
+  if (place.navneobjekttype === 'Fylke') {
+    return `${baseName} fylke`
+  }
+  
+  // For other places, include municipality context
+  if (municipality && municipality !== baseName) {
+    return `${baseName} (${typeLabel}), ${municipality}`
+  } else if (county) {
+    return `${baseName} (${typeLabel}), ${county} fylke`
+  }
+  
+  return `${baseName} (${typeLabel})`
+}
+
+// Distance calculation for deduplication
 function getDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371 // Earth's radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180
@@ -550,7 +431,7 @@ function deduplicateAndSort(results: SearchResult[], query: string): SearchResul
   // Remove duplicates based on proximity
   const filtered = results.filter((result, index) => {
     return !results.slice(0, index).some(prev => 
-      getDistance(result.lat, result.lng, prev.lat, prev.lng) < 0.1
+      getDistance(result.lat, result.lng, prev.lat, prev.lng) < 0.5 // 500m threshold
     )
   })
 
@@ -560,15 +441,25 @@ function deduplicateAndSort(results: SearchResult[], query: string): SearchResul
     if (a.type === 'coordinates') return -1
     if (b.type === 'coordinates') return 1
     
+    // POIs before addresses and places
+    if (a.type === 'poi' && b.type !== 'poi') return -1
+    if (b.type === 'poi' && a.type !== 'poi') return 1
+    
+    // Addresses before places (more specific)
+    if (a.type === 'address' && b.type === 'place') return -1
+    if (b.type === 'address' && a.type === 'place') return 1
+    
     // Exact matches
     const aExact = a.name.toLowerCase() === normalizedQuery
     const bExact = b.name.toLowerCase() === normalizedQuery
     if (aExact && !bExact) return -1
     if (bExact && !aExact) return 1
     
-    // POIs before other types
-    if (a.type === 'poi' && b.type !== 'poi') return -1
-    if (b.type === 'poi' && a.type !== 'poi') return 1
+    // Starts with query
+    const aStartsWith = a.name.toLowerCase().startsWith(normalizedQuery)
+    const bStartsWith = b.name.toLowerCase().startsWith(normalizedQuery)
+    if (aStartsWith && !bStartsWith) return -1
+    if (bStartsWith && !aStartsWith) return 1
     
     // Alphabetical fallback
     return a.displayName.localeCompare(b.displayName, 'no')
@@ -611,11 +502,13 @@ export class SearchService {
       const localResults = searchLocalPOIs(normalizedQuery, localPOIs)
       results.push(...localResults)
 
-      // 3. Search Nominatim if we need more results
-      if (results.length < 5) {
-        const nominatimResults = await searchNominatim(cleanQuery)
-        results.push(...nominatimResults)
-      }
+      // 3. Search Kartverket place names
+      const kartverketResults = await searchKartverket(cleanQuery)
+      results.push(...kartverketResults)
+
+      // 4. Search Kartverket addresses (parallel search for better performance)
+      const addressResults = await searchKartverketAddresses(cleanQuery)
+      results.push(...addressResults)
 
     } catch (error) {
       console.error('Søkefeil:', error)

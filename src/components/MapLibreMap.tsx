@@ -251,7 +251,7 @@ export function MapLibreMap({
       data: geojsonData
     })
 
-    // Simple circle markers (solid purple background, no border)
+    // POI markers with soft, zoom-responsive design following best practices
     map.addLayer({
       id: 'poi-points',
       type: 'circle',
@@ -259,16 +259,25 @@ export function MapLibreMap({
       paint: {
         'circle-radius': [
           'interpolate',
-          ['linear'],
+          ['exponential', 1.5], // Exponential scaling for natural zoom feel
           ['zoom'],
-          6, 8,     // Larger at country level - more visible
-          10, 12,   // Medium at regional level  
-          14, 16,   // Large at city level
-          18, 20    // Extra large when very zoomed in
+          8, 2,     // Very small at low zoom levels
+          10, 4,    // Small at regional level  
+          12, 6,    // Medium at city level
+          14, 9,    // Large at neighborhood level
+          16, 12,   // Extra large at street level
+          18, 16    // Maximum size at building level
         ],
-        'circle-color': '#8B4B8B',  // Solid purple background
-        'circle-stroke-width': 0,   // No border
-        'circle-opacity': 1.0
+        'circle-color': 'rgba(139, 75, 139, 0.85)', // POI purple with transparency
+        'circle-stroke-width': [
+          'interpolate',
+          ['exponential', 1.2],
+          ['zoom'],
+          8, 1,     // Thin border at low zoom
+          12, 2,    // Medium border
+          16, 3     // Thicker border at high zoom
+        ],
+        'circle-stroke-color': 'rgba(255, 255, 255, 0.9)' // Soft white border with transparency
       }
     })
 
@@ -386,12 +395,99 @@ export function MapLibreMap({
     }
   }, [mapLoaded, pois])
 
-  // Handle search result centering
+  // Handle search result centering and marker
   useEffect(() => {
     if (!mapRef.current || !searchResult) return
 
     const map = mapRef.current
     console.log(`🔍 Centering map on search result: ${searchResult.name} at [${searchResult.lng}, ${searchResult.lat}]`)
+    
+    // Remove existing search marker if it exists
+    if (map.getLayer('search-marker-pulse')) {
+      map.removeLayer('search-marker-pulse')
+    }
+    if (map.getLayer('search-marker')) {
+      map.removeLayer('search-marker')
+    }
+    if (map.getSource('search-marker')) {
+      map.removeSource('search-marker')
+    }
+    
+    // Add search result marker
+    map.addSource('search-marker', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [searchResult.lng, searchResult.lat]
+        },
+        properties: {
+          name: searchResult.name,
+          displayName: searchResult.displayName,
+          type: searchResult.type
+        }
+      }
+    })
+    
+    // Search marker with soft, prominent zoom-responsive design
+    map.addLayer({
+      id: 'search-marker',
+      type: 'circle',
+      source: 'search-marker',
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['exponential', 1.5], // Same exponential scaling as POIs
+          ['zoom'],
+          8, 3,     // Small but visible at low zoom
+          10, 5,    // Slightly larger than POIs at regional level  
+          12, 8,    // Medium prominence at city level
+          14, 12,   // Large at neighborhood level
+          16, 16,   // Extra large at street level
+          18, 20    // Maximum prominence at building level
+        ],
+        'circle-color': 'rgba(255, 107, 53, 0.85)', // Orange with transparency
+        'circle-stroke-width': [
+          'interpolate',
+          ['exponential', 1.2],
+          ['zoom'],
+          8, 1,     // Thin border at low zoom
+          12, 2,    // Medium border
+          16, 3     // Thicker border at high zoom
+        ],
+        'circle-stroke-color': 'rgba(255, 255, 255, 0.9)' // Soft white border with transparency
+      }
+    })
+    
+    // Soft pulsing animation effect with proportional sizing
+    map.addLayer({
+      id: 'search-marker-pulse',
+      type: 'circle',
+      source: 'search-marker',
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['exponential', 1.5], // Same exponential scaling for consistency
+          ['zoom'],
+          8, 6,     // Pulse extends ~2x beyond main marker
+          10, 10,   // Proportional pulse growth
+          12, 16,   // Medium pulse
+          14, 24,   // Large pulse
+          16, 32,   // Extra large pulse
+          18, 40    // Maximum pulse at building level
+        ],
+        'circle-color': [
+          'interpolate',
+          ['exponential', 0.8],
+          ['zoom'],
+          8, 'rgba(255, 107, 53, 0.20)',   // More visible at low zoom levels
+          12, 'rgba(255, 107, 53, 0.15)',  // Medium visibility at city level
+          16, 'rgba(255, 107, 53, 0.10)',  // Lower visibility at high zoom
+          18, 'rgba(255, 107, 53, 0.06)'   // Very subtle at maximum zoom
+        ]
+      }
+    })
     
     // Center map on search result with appropriate zoom
     map.easeTo({
@@ -399,6 +495,34 @@ export function MapLibreMap({
       zoom: 12, // Zoom in to show local details
       duration: 1000 // Smooth animation
     })
+    
+    // Add popup for search result
+    const popup = new maplibregl.Popup({
+      offset: 15,
+      closeButton: true,
+      closeOnClick: false
+    })
+      .setLngLat([searchResult.lng, searchResult.lat])
+      .setHTML(`
+        <div style="padding: 8px; min-width: 200px; font-family: 'Segoe UI', sans-serif;">
+          <h4 style="margin: 0 0 4px 0; color: #FF6B35; font-size: 14px; font-weight: 600;">
+            📍 ${searchResult.displayName}
+          </h4>
+          <div style="color: #666; font-size: 12px;">
+            ${searchResult.description || 'Søkeresultat'}
+          </div>
+          <div style="color: #888; font-size: 11px; margin-top: 4px;">
+            ${searchResult.lat.toFixed(5)}°N, ${searchResult.lng.toFixed(5)}°E
+          </div>
+        </div>
+      `)
+      .addTo(map)
+    
+    // Auto-close popup after 5 seconds
+    setTimeout(() => {
+      popup.remove()
+    }, 5000)
+    
   }, [searchResult])
 
   return (
