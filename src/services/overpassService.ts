@@ -1230,7 +1230,7 @@ export class OverpassService {
         type: element.type || 'node',
         lat: element.lat || element.center?.lat,
         lng: element.lon || element.center?.lon,
-        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Gapahuk/Vindskjul',
+        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Gapahuk/vindskjul',
         tags: element.tags || {}
       })) || []
       

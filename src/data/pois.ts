@@ -130,6 +130,7 @@ export interface POI {
   lng: number
   description: string
   type: POIType
+  color?: string // Parent category color for markers and popups
   metadata?: POIMetadata
   api_source?: 'ut_no' | 'osm' | 'kartverket' | 'manual' | 'riksantikvaren'
   last_updated?: string

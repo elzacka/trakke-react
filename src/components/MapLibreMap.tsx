@@ -268,7 +268,12 @@ export function MapLibreMap({
           16, 12,   // Extra large at street level
           18, 16    // Maximum size at building level
         ],
-        'circle-color': 'rgba(139, 75, 139, 0.85)', // POI purple with transparency
+        'circle-color': [
+          'case',
+          ['has', 'color'], // If POI has color property
+          ['get', 'color'], // Use the color property directly (assuming it's already rgba)
+          '#8B4B8B' // Fallback purple
+        ],
         'circle-stroke-width': [
           'interpolate',
           ['exponential', 1.2],
@@ -328,15 +333,31 @@ export function MapLibreMap({
       if (features && features.length > 0) {
         const feature = features[0]
         console.log('🔍 Feature properties:', feature.properties)
-        const { name, description, id } = feature.properties || {}
+        const { name, description, id, color } = feature.properties || {}
         
         console.log(`✅ Creating popup for: ${name} (${id})`)
         
+        // Use POI color or fallback
+        const poiColor = color || '#8B4B8B'
+        
+        // Split description to get category name and additional info
+        const parts = description ? description.split('. ') : []
+        const categoryName = parts[0] || name || 'Ukjent sted' // First part is category name
+        const additionalInfo = parts.slice(1).join('. ') // Rest is additional info
+        
+        // Determine what to show above and below the line
+        // Above line: Category name (e.g. "Bål-/grillplass") 
+        // Below line: Location name and additional details (e.g. "Bråten. Gratis")
+        const headerText = categoryName
+        const detailText = (name && name !== categoryName) 
+          ? `${name}${additionalInfo ? '. ' + additionalInfo : ''}` 
+          : (additionalInfo || '')
+
         // Enhanced popup with better formatting for rich information
-        const formattedDescription = description 
-          ? description.replace(/📖 Les mer: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Les mer på Wikipedia →</a>')
+        const formattedDetailText = detailText 
+          ? detailText.replace(/📖 Les mer: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Les mer på Wikipedia →</a>')
                       .replace(/📖 Wikidata: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Se på Wikidata →</a>')
-          : 'Ingen beskrivelse tilgjengelig'
+          : 'Ingen tilleggsinformasjon'
 
         new maplibregl.Popup({
           closeButton: true,
@@ -346,11 +367,11 @@ export function MapLibreMap({
           .setLngLat(e.lngLat)
           .setHTML(`
             <div style="padding: 12px; min-width: 250px; max-width: 350px; font-family: 'Segoe UI', sans-serif;">
-              <h3 style="margin: 0 0 8px 0; color: #2c5530; font-size: 16px; font-weight: 600; border-bottom: 2px solid #8B4B8B; padding-bottom: 4px;">
-                ${name || 'Ukjent sted'}
+              <h3 style="margin: 0 0 8px 0; color: #2c5530; font-size: 16px; font-weight: 600; border-bottom: 2px solid ${poiColor}; padding-bottom: 4px;">
+                ${headerText}
               </h3>
               <div style="margin: 0; color: #444; font-size: 13px; line-height: 1.4;">
-                ${formattedDescription}
+                ${formattedDetailText}
               </div>
             </div>
           `)

@@ -406,7 +406,8 @@ export function MapLibreTrakkeApp() {
         description: description,
         type: 'viewpoints' as POIType,
         lat: poi.lat,
-        lng: poi.lng
+        lng: poi.lng,
+        color: '#8B4B8B' // På eventyr purple  
       }
     })
     
@@ -444,7 +445,8 @@ export function MapLibreTrakkeApp() {
         description: description,
         type: 'fire_places' as POIType,
         lat: poi.lat,
-        lng: poi.lng
+        lng: poi.lng,
+        color: '#4169E1' // Aktivitet blue
       }
     })
     
@@ -457,9 +459,9 @@ export function MapLibreTrakkeApp() {
     const transformedPOIs = shelterPOIs.map(poi => {
       // Extract specific name or use location-based fallback
       let specificName = poi.name
-      if (!specificName || specificName === 'Gapahuk/Vindskjul') {
+      if (!specificName || specificName === 'Gapahuk/vindskjul') {
         specificName = poi.tags.place || poi.tags.addr_place || poi.tags.addr_city || 
-                      poi.tags['name:place'] || `Gapahuk/Vindskjul`
+                      poi.tags['name:place'] || `Gapahuk/vindskjul`
       }
       
       // Create category-specific description
@@ -486,7 +488,8 @@ export function MapLibreTrakkeApp() {
         description: description,
         type: 'wilderness_shelter' as POIType,
         lat: poi.lat,
-        lng: poi.lng
+        lng: poi.lng,
+        color: '#8B4513' // Overnatte brown
       }
     })
     
