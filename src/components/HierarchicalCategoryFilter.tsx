@@ -55,7 +55,6 @@ export function HierarchicalCategoryFilter({
       'foss': false,
       'utsiktspunkt': false,
       'campingplass': false,
-      'gapahuk_vindskjul': false,
       'fri_camping': false,
       'hengekøyeplass': false,
       'hytte_dagstur': false,

@@ -1120,6 +1120,14 @@ export class OverpassService {
           // Rock shelters - amenity=shelter with shelter_type=rock_shelter
           node["amenity"="shelter"]["shelter_type"="rock_shelter"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
           way["amenity"="shelter"]["shelter_type"="rock_shelter"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          
+          // Lavvu shelters - amenity=shelter with shelter_type=lavvu
+          node["amenity"="shelter"]["shelter_type"="lavvu"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["amenity"="shelter"]["shelter_type"="lavvu"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          
+          // Generic shelters without specific shelter_type - amenity=shelter
+          node["amenity"="shelter"][!"shelter_type"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["amenity"="shelter"][!"shelter_type"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
         );
         out center body 100;
       `.trim()
