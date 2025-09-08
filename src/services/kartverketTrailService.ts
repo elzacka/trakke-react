@@ -23,6 +23,7 @@ export interface TrailBounds {
 
 // Kartverket WMS base URL and trail layer configurations
 const KARTVERKET_WMS_BASE = 'https://wms.geonorge.no/wms'
+const KARTVERKET_TRAIL_WMS_URL = 'https://wms.geonorge.no/skwms1/wms.nib'
 const KARTVERKET_TRAIL_LAYERS = {
   hiking: 'kv_tur_og_friluftsruter_fotrute',     // Fotrute - hiking trails
   skiing: 'kv_tur_og_friluftsruter_skiloype',   // Skiløype - ski trails  

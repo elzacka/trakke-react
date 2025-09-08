@@ -1048,7 +1048,34 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      return await this.executeQuery(overpassQuery, cacheKey)
+      console.log('🔍 Hunting stand Overpass query:', overpassQuery)
+
+      const response = await fetch(this.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+        },
+        body: overpassQuery
+      })
+
+      if (!response.ok) {
+        throw new Error(`Overpass API request failed: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
+      console.log('📊 Raw hunting stand Overpass response:', data)
+      
+      const pois = this.transformOverpassDataToPOIs(data)
+      console.log(`🦌 Transformed ${pois.length} hunting stand POIs from Overpass API`)
+
+      // Cache the results
+      this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
+      
+      console.log(`✅ Fetched ${pois.length} hunting stand POIs from OpenStreetMap`)
+      return pois
     } catch (error) {
       console.error('❌ Error fetching hunting stands:', error)
       return []
@@ -1082,7 +1109,34 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      return await this.executeQuery(overpassQuery, cacheKey)
+      console.log('🔍 Fire pit Overpass query:', overpassQuery)
+
+      const response = await fetch(this.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+        },
+        body: overpassQuery
+      })
+
+      if (!response.ok) {
+        throw new Error(`Overpass API request failed: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
+      console.log('📊 Raw fire pit Overpass response:', data)
+      
+      const pois = this.transformOverpassDataToPOIs(data)
+      console.log(`🔥 Transformed ${pois.length} fire pit POIs from Overpass API`)
+
+      // Cache the results
+      this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
+      
+      console.log(`✅ Fetched ${pois.length} fire pit POIs from OpenStreetMap`)
+      return pois
     } catch (error) {
       console.error('❌ Error fetching fire pits:', error)
       return []
@@ -1132,7 +1186,34 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      return await this.executeQuery(overpassQuery, cacheKey)
+      console.log('🔍 Shelter Overpass query:', overpassQuery)
+
+      const response = await fetch(this.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+        },
+        body: overpassQuery
+      })
+
+      if (!response.ok) {
+        throw new Error(`Overpass API request failed: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
+      console.log('📊 Raw shelter Overpass response:', data)
+      
+      const pois = this.transformOverpassDataToPOIs(data)
+      console.log(`🏠 Transformed ${pois.length} shelter POIs from Overpass API`)
+
+      // Cache the results
+      this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
+      
+      console.log(`✅ Fetched ${pois.length} shelter POIs from OpenStreetMap`)
+      return pois
     } catch (error) {
       console.error('❌ Error fetching shelters:', error)
       return []

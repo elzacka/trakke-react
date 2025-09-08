@@ -103,6 +103,9 @@ export type POIType =
   | 'drinking_water'      // Drikkevann områder
   | 'fire_places'         // Bål- og grillplasser
   | 'hammock_spots'       // Dedikerte hengekøyeplasser
+  // Trail categories for Kartverket data
+  | 'cycling'             // Sykkelruter
+  | 'other_trails'        // Andre turruter
 
 export interface CampingMetadata {
   terrain: 'flat' | 'sloped' | 'rocky' | 'soft'
@@ -386,6 +389,18 @@ export const categoryConfig: CategoryConfigMap = {
     icon: 'weekend',
     name: 'Hengekøyeplasser',
     description: 'Egnede plasser for hengekøye'
+  },
+  cycling: {
+    color: '#228B22',
+    icon: 'directions_bike',
+    name: 'Sykkelruter',
+    description: 'Sykkelruter og sykkeltråkk'
+  },
+  other_trails: {
+    color: '#228B22',
+    icon: 'route',
+    name: 'Andre turruter',
+    description: 'Andre typer turruter og stier'
   }
 }
 
