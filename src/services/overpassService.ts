@@ -1021,4 +1021,113 @@ export class OverpassService {
     this.cache.clear()
     console.log('🗑️ Overpass cache cleared')
   }
+
+  /**
+   * Fetch hunting stands (observasjonstårn) from OpenStreetMap
+   */
+  static async fetchHuntingStandPOIs(bounds: POIBounds): Promise<OverpassPOI[]> {
+    const cacheKey = `hunting_stands_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
+    
+    try {
+      console.log('🦌 Fetching hunting stands from OpenStreetMap...', bounds)
+      
+      // Constrain bounds to Norway's geographic limits
+      const norwayBounds = {
+        north: Math.min(bounds.north, 72.0),
+        south: Math.max(bounds.south, 57.5),
+        east: Math.min(bounds.east, 32.0),
+        west: Math.max(bounds.west, 4.0)
+      }
+
+      const overpassQuery = `
+        [out:json][timeout:25];
+        (
+          // Hunting stands - amenity=hunting_stand
+          node["amenity"="hunting_stand"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+        );
+        out center body 100;
+      `.trim()
+      
+      return await this.executeQuery(overpassQuery, cacheKey)
+    } catch (error) {
+      console.error('❌ Error fetching hunting stands:', error)
+      return []
+    }
+  }
+
+  /**
+   * Fetch fire pits (bålplass) from OpenStreetMap
+   */
+  static async fetchFirepitPOIs(bounds: POIBounds): Promise<OverpassPOI[]> {
+    const cacheKey = `firepits_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
+    
+    try {
+      console.log('🔥 Fetching fire pits from OpenStreetMap...', bounds)
+      
+      // Constrain bounds to Norway's geographic limits
+      const norwayBounds = {
+        north: Math.min(bounds.north, 72.0),
+        south: Math.max(bounds.south, 57.5),
+        east: Math.min(bounds.east, 32.0),
+        west: Math.max(bounds.west, 4.0)
+      }
+
+      const overpassQuery = `
+        [out:json][timeout:25];
+        (
+          // Fire pits - leisure=firepit
+          node["leisure"="firepit"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["leisure"="firepit"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+        );
+        out center body 100;
+      `.trim()
+      
+      return await this.executeQuery(overpassQuery, cacheKey)
+    } catch (error) {
+      console.error('❌ Error fetching fire pits:', error)
+      return []
+    }
+  }
+
+  /**
+   * Fetch shelters (gapahuk/vindskjul) from OpenStreetMap
+   */
+  static async fetchShelterPOIs(bounds: POIBounds): Promise<OverpassPOI[]> {
+    const cacheKey = `shelters_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
+    
+    try {
+      console.log('🏠 Fetching shelters from OpenStreetMap...', bounds)
+      
+      // Constrain bounds to Norway's geographic limits
+      const norwayBounds = {
+        north: Math.min(bounds.north, 72.0),
+        south: Math.max(bounds.south, 57.5),
+        east: Math.min(bounds.east, 32.0),
+        west: Math.max(bounds.west, 4.0)
+      }
+
+      const overpassQuery = `
+        [out:json][timeout:25];
+        (
+          // Basic huts - amenity=shelter with shelter_type=basic_hut
+          node["amenity"="shelter"]["shelter_type"="basic_hut"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["amenity"="shelter"]["shelter_type"="basic_hut"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          
+          // Weather shelters - amenity=shelter with shelter_type=weather_shelter
+          node["amenity"="shelter"]["shelter_type"="weather_shelter"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["amenity"="shelter"]["shelter_type"="weather_shelter"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          
+          // Rock shelters - amenity=shelter with shelter_type=rock_shelter
+          node["amenity"="shelter"]["shelter_type"="rock_shelter"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+          way["amenity"="shelter"]["shelter_type"="rock_shelter"](${norwayBounds.south},${norwayBounds.west},${norwayBounds.north},${norwayBounds.east});
+        );
+        out center body 100;
+      `.trim()
+      
+      return await this.executeQuery(overpassQuery, cacheKey)
+    } catch (error) {
+      console.error('❌ Error fetching shelters:', error)
+      return []
+    }
+  }
 }

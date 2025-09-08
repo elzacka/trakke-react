@@ -27,20 +27,29 @@ export function HierarchicalCategoryFilter({
       // Active subcategories with real POI data from Overpass API
       'krigsminne': true,         // War memorials and historic forts
       'hule': true,               // Cave entrances from natural=cave_entrance
-      'observasjonstårn': true,   // Observation towers and watchtowers
+      'observasjonstårn': true,   // Observation towers and watchtowers + hunting stands
       
-      // All other categories currently inactive (no real POI data available)
-      'aktivitet': false,
+      // Newly active categories with real POI data
+      'aktivitet': true,          // Contains bålplass with firepit data
       'naturperle': false,
-      'overnatte': false,
+      'overnatte': true,          // Contains gapahuk_vindskjul with shelter data
       'service': false,
       'transport': false,
-      'turløype': false,
+      'turløype': true,               // Official Norwegian hiking trails from Kartverket
       
-      // All subcategories inactive (no POI sources)
+      // Active Kartverket trail subcategories  
+      'fotrute': true,                // Hiking trails - Kartverket fotrute
+      'skiloype_trail': true,         // Ski trails - Kartverket skiløype  
+      'sykkelrute': true,             // Bicycle routes - Kartverket sykkelrute
+      'andre_turruter': true,         // Other trails - Kartverket andre turruter
+      
+      // Newly active subcategories with real POI data
+      'bålplass': true,           // Fire pits from leisure=firepit
+      'gapahuk_vindskjul': true,  // Shelters from amenity=shelter
+      
+      // All other subcategories inactive (no POI sources)
       'badeplass': false,
       'badeplass_med_strand': false,
-      'bålplass': false,
       'fiskeplass': false,
       'kanopadling': false,
       'foss': false,
@@ -129,7 +138,7 @@ export function HierarchicalCategoryFilter({
             }}
           />
           
-          {node.icon && (
+          {node.icon && !node.parent && (
             <div 
               className="icon-preview" 
               style={{ 

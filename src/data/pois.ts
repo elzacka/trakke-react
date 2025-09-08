@@ -401,31 +401,41 @@ export const categoryTree: CategoryNode[] = [
         id: 'badeplass',
         name: 'Badeplass',
         parent: 'aktivitet',
-        poiTypes: ['swimming']
+        poiTypes: ['swimming'],
+        icon: 'pool',
+        color: '#4169E1'
       },
       {
         id: 'badeplass_med_strand',
         name: 'Badeplass med strand',
         parent: 'aktivitet',
-        poiTypes: ['beach']
+        poiTypes: ['beach'],
+        icon: 'beach_access',
+        color: '#4169E1'
       },
       {
         id: 'bålplass',
         name: 'Bålplass',
         parent: 'aktivitet',
-        poiTypes: ['fire_places']
+        poiTypes: ['fire_places'],
+        icon: 'local_fire_department',
+        color: '#4169E1'
       },
       {
         id: 'fiskeplass',
         name: 'Fiskeplass',
         parent: 'aktivitet',
-        poiTypes: ['fishing_spots']
+        poiTypes: ['fishing_spots'],
+        icon: 'phishing',
+        color: '#4169E1'
       },
       {
         id: 'kanopadling',
         name: 'Kanopadling',
         parent: 'aktivitet',
-        poiTypes: ['canoeing']
+        poiTypes: ['canoeing'],
+        icon: 'kayaking',
+        color: '#4169E1'
       }
     ]
   },
@@ -439,13 +449,17 @@ export const categoryTree: CategoryNode[] = [
         id: 'foss',
         name: 'Foss',
         parent: 'naturperle',
-        poiTypes: ['nature_gems']
+        poiTypes: ['nature_gems'],
+        icon: 'water_drop',
+        color: '#20B2AA'
       },
       {
         id: 'utsiktspunkt',
         name: 'Utsiktspunkt',
         parent: 'naturperle',
-        poiTypes: ['viewpoints']
+        poiTypes: ['viewpoints'],
+        icon: 'landscape',
+        color: '#20B2AA'
       }
     ]
   },
@@ -459,67 +473,89 @@ export const categoryTree: CategoryNode[] = [
         id: 'campingplass',
         name: 'Campingplass',
         parent: 'overnatte',
-        poiTypes: ['camping_site']
+        poiTypes: ['camping_site'],
+        icon: 'camping',
+        color: '#8B4513'
       },
       {
         id: 'gapahuk_vindskjul',
         name: 'Gapahuk/vindskjul',
         parent: 'overnatte',
-        poiTypes: ['wilderness_shelter']
+        poiTypes: ['wilderness_shelter'],
+        icon: 'cottage',
+        color: '#8B4513'
       },
       {
         id: 'fri_camping',
         name: 'Fri camping',
         parent: 'overnatte',
-        poiTypes: ['wild_camping']
+        poiTypes: ['wild_camping'],
+        icon: 'forest',
+        color: '#8B4513'
       },
       {
         id: 'hengekøyeplass',
         name: 'Hengekøyeplass',
         parent: 'overnatte',
-        poiTypes: ['hammock_spots']
+        poiTypes: ['hammock_spots'],
+        icon: 'weekend',
+        color: '#8B4513'
       },
       {
         id: 'hytte_dagstur',
-        name: 'Hytte: Dagsturhytte, skihytte',
+        name: 'Dagsturhytte, skihytte',
         parent: 'overnatte',
-        poiTypes: ['self_service_huts']
+        poiTypes: ['self_service_huts'],
+        icon: 'cabin',
+        color: '#8B4513'
       },
       {
         id: 'hytte_turisthytte_betjent',
-        name: 'Hytte: Turisthytte/fjellstue, betjent',
+        name: 'Turisthytte/fjellstue, betjent',
         parent: 'overnatte',
-        poiTypes: ['staffed_huts']
+        poiTypes: ['staffed_huts'],
+        icon: 'house',
+        color: '#8B4513'
       },
       {
         id: 'hytte_turisthytte_selvbetjent',
-        name: 'Hytte: Turisthytte, selvbetjent',
+        name: 'Turisthytte, selvbetjent',
         parent: 'overnatte',
-        poiTypes: ['self_service_huts']
+        poiTypes: ['self_service_huts'],
+        icon: 'cabin',
+        color: '#8B4513'
       },
       {
         id: 'hytte_turisthytte_ubetjent',
-        name: 'Hytte: Turisthytte, ubetjent',
+        name: 'Turisthytte, ubetjent',
         parent: 'overnatte',
-        poiTypes: ['self_service_huts']
+        poiTypes: ['self_service_huts'],
+        icon: 'cabin',
+        color: '#8B4513'
       },
       {
         id: 'hytte_utleie',
-        name: 'Hytte: Utleiehytte',
+        name: 'Utleiehytte',
         parent: 'overnatte',
-        poiTypes: ['staffed_huts']
+        poiTypes: ['staffed_huts'],
+        icon: 'house',
+        color: '#8B4513'
       },
       {
         id: 'teltplass',
         name: 'Teltplass',
         parent: 'overnatte',
-        poiTypes: ['tent_area']
+        poiTypes: ['tent_area'],
+        icon: 'holiday_village',
+        color: '#8B4513'
       },
       {
         id: 'vandrerhjem',
         name: 'Vandrerhjem',
         parent: 'overnatte',
-        poiTypes: ['staffed_huts']
+        poiTypes: ['staffed_huts'],
+        icon: 'house',
+        color: '#8B4513'
       }
     ]
   },
@@ -533,25 +569,33 @@ export const categoryTree: CategoryNode[] = [
         id: 'hule',
         name: 'Hule',
         parent: 'på_eventyr',
-        poiTypes: ['nature_gems']
+        poiTypes: ['nature_gems'],
+        icon: 'terrain',
+        color: '#8B4B8B'
       },
       {
         id: 'krigsminne',
         name: 'Krigsminne',
         parent: 'på_eventyr',
-        poiTypes: ['war_memorials']
+        poiTypes: ['war_memorials'],
+        icon: 'military_tech',
+        color: '#8B4B8B'
       },
       {
         id: 'kulturminne',
         name: 'Kulturminne',
         parent: 'på_eventyr',
-        poiTypes: ['archaeological']
+        poiTypes: ['archaeological'],
+        icon: 'archaeology',
+        color: '#8B4B8B'
       },
       {
         id: 'observasjonstårn',
         name: 'Observasjonstårn',
         parent: 'på_eventyr',
-        poiTypes: ['viewpoints']
+        poiTypes: ['viewpoints'],
+        icon: 'tower',
+        color: '#8B4B8B'
       }
     ]
   },
@@ -565,31 +609,41 @@ export const categoryTree: CategoryNode[] = [
         id: 'informasjon',
         name: 'Informasjon',
         parent: 'service',
-        poiTypes: ['information_boards']
+        poiTypes: ['information_boards'],
+        icon: 'info',
+        color: '#FF8C00'
       },
       {
         id: 'drikkevann',
         name: 'Drikkevann',
         parent: 'service',
-        poiTypes: ['drinking_water']
+        poiTypes: ['drinking_water'],
+        icon: 'water_drop',
+        color: '#FF8C00'
       },
       {
         id: 'spise_rasteplass',
         name: 'Spise- og rasteplass',
         parent: 'service',
-        poiTypes: ['rest_areas']
+        poiTypes: ['rest_areas'],
+        icon: 'deck',
+        color: '#FF8C00'
       },
       {
         id: 'toalett',
         name: 'Toalett',
         parent: 'service',
-        poiTypes: ['toilets']
+        poiTypes: ['toilets'],
+        icon: 'wc',
+        color: '#FF8C00'
       },
       {
         id: 'utfartparkering',
         name: 'Utfartparkering',
         parent: 'service',
-        poiTypes: ['parking']
+        poiTypes: ['parking'],
+        icon: 'local_parking',
+        color: '#FF8C00'
       }
     ]
   },
@@ -603,19 +657,25 @@ export const categoryTree: CategoryNode[] = [
         id: 'bussholdeplass',
         name: 'Bussholdeplass',
         parent: 'transport',
-        poiTypes: ['public_transport']
+        poiTypes: ['public_transport'],
+        icon: 'directions_bus',
+        color: '#4682B4'
       },
       {
         id: 'taubane',
         name: 'Taubane',
         parent: 'transport',
-        poiTypes: ['cable_cars']
+        poiTypes: ['cable_cars'],
+        icon: 'cable_car',
+        color: '#4682B4'
       },
       {
         id: 'togstasjon',
         name: 'Togstasjon',
         parent: 'transport',
-        poiTypes: ['train_stations']
+        poiTypes: ['train_stations'],
+        icon: 'train',
+        color: '#4682B4'
       }
     ]
   },
@@ -626,22 +686,36 @@ export const categoryTree: CategoryNode[] = [
     color: '#228B22',
     children: [
       {
-        id: 'tursti',
-        name: 'Tursti',
+        id: 'fotrute',
+        name: 'Fotrute',
         parent: 'turløype',
-        poiTypes: ['hiking']
+        poiTypes: ['hiking'],
+        icon: 'directions_walk',
+        color: '#228B22' // Use parent category color (green)
       },
       {
-        id: 'fjelltopp',
-        name: 'Fjelltopp',
-        parent: 'turløype',
-        poiTypes: ['mountain_peaks']
-      },
-      {
-        id: 'skiløype',
+        id: 'skiloype_trail',
         name: 'Skiløype',
         parent: 'turløype',
-        poiTypes: ['ski_trails']
+        poiTypes: ['ski_trails'],
+        icon: 'downhill_skiing',
+        color: '#228B22' // Use parent category color (green)
+      },
+      {
+        id: 'sykkelrute',
+        name: 'Sykkelrute',
+        parent: 'turløype',
+        poiTypes: ['cycling'],
+        icon: 'directions_bike',
+        color: '#228B22' // Use parent category color (green)
+      },
+      {
+        id: 'andre_turruter',
+        name: 'Andre turruter',
+        parent: 'turløype',
+        poiTypes: ['other_trails'],
+        icon: 'route',
+        color: '#228B22' // Use parent category color (green)
       }
     ]
   }

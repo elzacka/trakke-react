@@ -4,6 +4,7 @@ import { CategoryPanel } from './components/CategoryPanel'
 import { SearchBox, SearchBoxRef } from './components/SearchBox/SearchBox'
 import { categoryTree, CategoryState, POI, POIType } from './data/pois'
 import { OverpassService, OverpassPOI } from './services/overpassService'
+import { KartverketTrailService } from './services/kartverketTrailService'
 import { SearchResult } from './services/searchService'
 
 export function MapLibreTrakkeApp() {
@@ -13,8 +14,8 @@ export function MapLibreTrakkeApp() {
       // No categories checked by default - user must actively select them
     },
     expanded: {
-      // Expand "På eventyr" by default to show Krigsminne is available
-      'på_eventyr': true
+      // Keep "På eventyr" collapsed by default - user can expand if interested
+      // 'på_eventyr': false (default state)
     }
   })
 
@@ -145,6 +146,8 @@ export function MapLibreTrakkeApp() {
         ...prev,
         checked: newChecked
       }
+      
+      console.log(`🔄 Category toggle:`, { nodeId, isChecked, newChecked })
 
       // Handle category selection changes
       setTimeout(async () => {
@@ -200,6 +203,57 @@ export function MapLibreTrakkeApp() {
               allPOIs = [...allPOIs, ...transformedTowerPOIs]
               
               console.log(`🗼 Loaded ${transformedTowerPOIs.length} observation tower POIs from OpenStreetMap`)
+
+              // Also load hunting stands for observasjonstårn category
+              console.log('🦌 Loading hunting stands from OpenStreetMap with viewport:', currentViewport)
+              const huntingStandPOIs = await OverpassService.fetchHuntingStandPOIs(currentViewport)
+              console.log('📊 Raw Hunting Stand POIs received:', huntingStandPOIs.length, huntingStandPOIs)
+              
+              const transformedHuntingStandPOIs = transformHuntingStandPOIs(huntingStandPOIs)
+              allPOIs = [...allPOIs, ...transformedHuntingStandPOIs]
+              
+              console.log(`🦌 Loaded ${transformedHuntingStandPOIs.length} hunting stand POIs from OpenStreetMap`)
+            }
+
+            // Load fire pits from OpenStreetMap if bålplass category is active
+            if (activeCategories.includes('bålplass')) {
+              console.log('🔥 Loading fire pits from OpenStreetMap with viewport:', currentViewport)
+              const firepitPOIs = await OverpassService.fetchFirepitPOIs(currentViewport)
+              console.log('📊 Raw Firepit POIs received:', firepitPOIs.length, firepitPOIs)
+              
+              const transformedFirepitPOIs = transformFirepitPOIs(firepitPOIs)
+              allPOIs = [...allPOIs, ...transformedFirepitPOIs]
+              
+              console.log(`🔥 Loaded ${transformedFirepitPOIs.length} fire pit POIs from OpenStreetMap`)
+            }
+
+            // Load shelters from OpenStreetMap if gapahuk_vindskjul category is active
+            if (activeCategories.includes('gapahuk_vindskjul')) {
+              console.log('🏠 Loading shelters from OpenStreetMap with viewport:', currentViewport)
+              const shelterPOIs = await OverpassService.fetchShelterPOIs(currentViewport)
+              console.log('📊 Raw Shelter POIs received:', shelterPOIs.length, shelterPOIs)
+              
+              const transformedShelterPOIs = transformShelterPOIs(shelterPOIs)
+              allPOIs = [...allPOIs, ...transformedShelterPOIs]
+              
+              console.log(`🏠 Loaded ${transformedShelterPOIs.length} shelter POIs from OpenStreetMap`)
+            }
+
+            // Load hiking trails from Kartverket if turløype category is active
+            if (activeCategories.includes('turløype')) {
+              console.log('🥾 Loading Norwegian hiking trails from Kartverket with viewport:', currentViewport)
+              
+              // Check if Kartverket trail service is available
+              const serviceAvailable = await KartverketTrailService.checkServiceAvailability()
+              if (serviceAvailable) {
+                console.log('✅ Kartverket trail service is available')
+                // Note: Currently showing trails via WMS layer instead of individual POIs
+                // This provides comprehensive trail coverage across Norway
+                console.log('📍 Norwegian hiking trails will be displayed as map overlay')
+                console.log('🗺️ Trail data source:', KartverketTrailService.getDataSourceInfo().name)
+              } else {
+                console.warn('⚠️ Kartverket trail service unavailable - check network connection')
+              }
             }
             
             if (allPOIs.length === 0) {
@@ -317,6 +371,51 @@ export function MapLibreTrakkeApp() {
     }))
     
     console.log('🔄 Transformed Tower POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform hunting stand POIs to our POI interface
+  const transformHuntingStandPOIs = (huntingStandPOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = huntingStandPOIs.map(poi => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.tags.description || `${poi.type} - Jakttårn eller observasjonsplass`,
+      type: 'viewpoints' as POIType, // Hunting stands are categorized as viewpoints
+      lat: poi.lat,
+      lng: poi.lng
+    }))
+    
+    console.log('🔄 Transformed Hunting Stand POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform firepit POIs to our POI interface
+  const transformFirepitPOIs = (firepitPOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = firepitPOIs.map(poi => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.tags.description || `${poi.type} - Bålplass eller grillplass`,
+      type: 'fire_places' as POIType, // Fire pits are categorized as fire places
+      lat: poi.lat,
+      lng: poi.lng
+    }))
+    
+    console.log('🔄 Transformed Firepit POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform shelter POIs to our POI interface
+  const transformShelterPOIs = (shelterPOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = shelterPOIs.map(poi => ({
+      id: poi.id,
+      name: poi.name,
+      description: poi.tags.description || `${poi.type} - Gapahuk, vindskjul eller skjerming`,
+      type: 'wilderness_shelter' as POIType, // Shelters are categorized as wilderness shelter
+      lat: poi.lat,
+      lng: poi.lng
+    }))
+    
+    console.log('🔄 Transformed Shelter POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 

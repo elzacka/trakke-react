@@ -525,6 +525,91 @@ export function MapLibreMap({
     
   }, [searchResult])
 
+  // Handle Kartverket hiking trails WMS layer based on turløype category and subcategories
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+
+    const map = mapRef.current
+    
+    // Check if any trail-related categories are active (parent or any children)
+    const isTrailsActive = _categoryState.checked['turløype'] || 
+                          _categoryState.checked['fotrute'] || 
+                          _categoryState.checked['skiloype_trail'] || 
+                          _categoryState.checked['sykkelrute'] || 
+                          _categoryState.checked['andre_turruter'] || false
+
+    console.log(`🥾 Hiking trails category active: ${isTrailsActive}`)
+    console.log(`📊 Category state:`, {
+      turløype: _categoryState.checked['turløype'],
+      fotrute: _categoryState.checked['fotrute'],
+      skiloype_trail: _categoryState.checked['skiloype_trail'],
+      sykkelrute: _categoryState.checked['sykkelrute'],
+      andre_turruter: _categoryState.checked['andre_turruter']
+    })
+
+    // Define which trail types to show based on active categories
+    const trailLayers = []
+    if (_categoryState.checked['fotrute']) trailLayers.push({ id: 'fotrute', name: 'Fotrute' })
+    if (_categoryState.checked['skiloype_trail']) trailLayers.push({ id: 'skiing', name: 'Skiløype' })
+    if (_categoryState.checked['sykkelrute']) trailLayers.push({ id: 'cycling', name: 'Sykkelrute' })
+    if (_categoryState.checked['andre_turruter']) trailLayers.push({ id: 'other', name: 'Andre turruter' })
+    
+    // If parent category is checked but no specific subcategories, show all trails
+    if (_categoryState.checked['turløype'] && trailLayers.length === 0) {
+      trailLayers.push({ id: 'all', name: 'Alle turløyper' })
+    }
+    
+    console.log('🗺️ Trail layers to show:', trailLayers)
+
+    if (trailLayers.length > 0) {
+      // Add each required trail layer
+      trailLayers.forEach((trailLayer, index) => {
+        const sourceId = `kartverket-trails-${trailLayer.id}`
+        const layerId = `kartverket-trails-layer-${trailLayer.id}`
+        
+        if (!map.getSource(sourceId)) {
+          console.log(`🗺️ Adding Kartverket ${trailLayer.name} WMS layer`)
+          
+          // Use the main trail layer for all types (since specific sublayers don't exist)
+          const layerName = 'kv_tur_og_friluftsruter'
+          
+          map.addSource(sourceId, {
+            type: 'raster',
+            tiles: [
+              `https://wms.geonorge.no/skwms1/wms.nib?service=WMS&request=GetMap&version=1.1.1&layers=${layerName}&styles=&format=image/png&transparent=true&srs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}`
+            ],
+            tileSize: 256
+          })
+
+          map.addLayer({
+            id: layerId,
+            type: 'raster',
+            source: sourceId,
+            paint: {
+              'raster-opacity': 0.7 - (index * 0.1) // Slightly different opacity for each layer
+            }
+          })
+          console.log(`✅ ${trailLayer.name} layer added successfully`)
+        }
+      })
+    } else {
+      // Remove all trail layers if no categories are active
+      const possibleLayers = ['all', 'fotrute', 'skiing', 'cycling', 'other']
+      possibleLayers.forEach(trailType => {
+        const layerId = `kartverket-trails-layer-${trailType}`
+        const sourceId = `kartverket-trails-${trailType}`
+        
+        if (map.getLayer(layerId)) {
+          console.log(`🗑️ Removing ${trailType} trails WMS layer`)
+          map.removeLayer(layerId)
+        }
+        if (map.getSource(sourceId)) {
+          map.removeSource(sourceId)
+        }
+      })
+    }
+  }, [mapLoaded, _categoryState.checked])
+
   return (
     <div className="map-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div 
