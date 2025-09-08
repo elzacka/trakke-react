@@ -317,6 +317,10 @@ export function MapLibreTrakkeApp() {
           activeCategories.push('hule')
         } else if (node.id === 'observasjonstårn') {
           activeCategories.push('observasjonstårn')
+        } else if (node.id === 'bålplass') {
+          activeCategories.push('bålplass')
+        } else if (node.id === 'gapahuk_vindskjul') {
+          activeCategories.push('gapahuk_vindskjul')
         }
       }
       if (node.children) {
@@ -376,14 +380,35 @@ export function MapLibreTrakkeApp() {
 
   // Transform hunting stand POIs to our POI interface
   const transformHuntingStandPOIs = (huntingStandPOIs: OverpassPOI[]): POI[] => {
-    const transformedPOIs = huntingStandPOIs.map(poi => ({
-      id: poi.id,
-      name: poi.name,
-      description: poi.tags.description || `${poi.type} - Jakttårn eller observasjonsplass`,
-      type: 'viewpoints' as POIType, // Hunting stands are categorized as viewpoints
-      lat: poi.lat,
-      lng: poi.lng
-    }))
+    const transformedPOIs = huntingStandPOIs.map(poi => {
+      // Extract specific name or use location-based fallback
+      let specificName = poi.name
+      if (!specificName || specificName === 'Jakttårn') {
+        specificName = poi.tags.place || poi.tags.addr_place || poi.tags.addr_city || 
+                      poi.tags['name:place'] || `Jakttårn`
+      }
+      
+      // Create category-specific description
+      const categoryInfo = 'Observasjonstårn'
+      const additionalInfo = []
+      
+      if (poi.tags.hunting === 'yes') additionalInfo.push('Jakttårn')
+      if (poi.tags.access) additionalInfo.push(`Tilgang: ${poi.tags.access}`)
+      if (poi.tags.height) additionalInfo.push(`Høyde: ${poi.tags.height}m`)
+      
+      const description = additionalInfo.length > 0 
+        ? `${categoryInfo}. ${additionalInfo.join('. ')}`
+        : categoryInfo
+      
+      return {
+        id: poi.id,
+        name: specificName,
+        description: description,
+        type: 'viewpoints' as POIType,
+        lat: poi.lat,
+        lng: poi.lng
+      }
+    })
     
     console.log('🔄 Transformed Hunting Stand POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
@@ -391,14 +416,37 @@ export function MapLibreTrakkeApp() {
 
   // Transform firepit POIs to our POI interface
   const transformFirepitPOIs = (firepitPOIs: OverpassPOI[]): POI[] => {
-    const transformedPOIs = firepitPOIs.map(poi => ({
-      id: poi.id,
-      name: poi.name,
-      description: poi.tags.description || `${poi.type} - Bålplass eller grillplass`,
-      type: 'fire_places' as POIType, // Fire pits are categorized as fire places
-      lat: poi.lat,
-      lng: poi.lng
-    }))
+    const transformedPOIs = firepitPOIs.map(poi => {
+      // Extract specific name or use location-based fallback
+      let specificName = poi.name
+      if (!specificName || specificName === 'Bål-/grillplass') {
+        // Try to get location name from tags
+        specificName = poi.tags.place || poi.tags.addr_place || poi.tags.addr_city || 
+                      poi.tags['name:place'] || `Bål-/grillplass`
+      }
+      
+      // Create category-specific description
+      const categoryInfo = 'Bål-/grillplass'
+      const additionalInfo = []
+      
+      if (poi.tags.fuel) additionalInfo.push(`Brennstoff: ${poi.tags.fuel}`)
+      if (poi.tags.access) additionalInfo.push(`Tilgang: ${poi.tags.access}`)
+      if (poi.tags.fee === 'yes') additionalInfo.push('Avgift påkrevd')
+      if (poi.tags.fee === 'no') additionalInfo.push('Gratis')
+      
+      const description = additionalInfo.length > 0 
+        ? `${categoryInfo}. ${additionalInfo.join('. ')}`
+        : categoryInfo
+      
+      return {
+        id: poi.id,
+        name: specificName,
+        description: description,
+        type: 'fire_places' as POIType,
+        lat: poi.lat,
+        lng: poi.lng
+      }
+    })
     
     console.log('🔄 Transformed Firepit POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
@@ -406,14 +454,41 @@ export function MapLibreTrakkeApp() {
 
   // Transform shelter POIs to our POI interface
   const transformShelterPOIs = (shelterPOIs: OverpassPOI[]): POI[] => {
-    const transformedPOIs = shelterPOIs.map(poi => ({
-      id: poi.id,
-      name: poi.name,
-      description: poi.tags.description || `${poi.type} - Gapahuk, vindskjul eller skjerming`,
-      type: 'wilderness_shelter' as POIType, // Shelters are categorized as wilderness shelter
-      lat: poi.lat,
-      lng: poi.lng
-    }))
+    const transformedPOIs = shelterPOIs.map(poi => {
+      // Extract specific name or use location-based fallback
+      let specificName = poi.name
+      if (!specificName || specificName === 'Gapahuk/Vindskjul') {
+        specificName = poi.tags.place || poi.tags.addr_place || poi.tags.addr_city || 
+                      poi.tags['name:place'] || `Gapahuk/Vindskjul`
+      }
+      
+      // Create category-specific description
+      const categoryInfo = 'Gapahuk/vindskjul'
+      const additionalInfo = []
+      
+      if (poi.tags.shelter_type === 'basic_hut') additionalInfo.push('Enkel hytte')
+      else if (poi.tags.shelter_type === 'weather_shelter') additionalInfo.push('Værbeskyttelse')
+      else if (poi.tags.shelter_type === 'rock_shelter') additionalInfo.push('Bergskjul')
+      else if (poi.tags.shelter_type === 'lavvu') additionalInfo.push('Lavvo')
+      
+      if (poi.tags.capacity) additionalInfo.push(`Kapasitet: ${poi.tags.capacity} personer`)
+      if (poi.tags.access) additionalInfo.push(`Tilgang: ${poi.tags.access}`)
+      if (poi.tags.fee === 'yes') additionalInfo.push('Avgift påkrevd')
+      if (poi.tags.fee === 'no') additionalInfo.push('Gratis')
+      
+      const description = additionalInfo.length > 0 
+        ? `${categoryInfo}. ${additionalInfo.join('. ')}`
+        : categoryInfo
+      
+      return {
+        id: poi.id,
+        name: specificName,
+        description: description,
+        type: 'wilderness_shelter' as POIType,
+        lat: poi.lat,
+        lng: poi.lng
+      }
+    })
     
     console.log('🔄 Transformed Shelter POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
@@ -512,7 +587,7 @@ export function MapLibreTrakkeApp() {
                   color: '#94a3b8',
                   fontStyle: 'italic'
                 }}>
-                  Under utvikling. Sist oppdatert: 7. september 2025.
+                  Under utvikling. Sist oppdatert: 8. september 2025.
                 </p>
               </div>
             </div>

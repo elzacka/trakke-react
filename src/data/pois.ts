@@ -379,9 +379,9 @@ export const categoryConfig: CategoryConfigMap = {
     description: 'Vannkilder og drikkevannspost'
   },
   fire_places: {
-    color: '#DC143C',
+    color: '#4169E1',
     icon: 'local_fire_department',
-    name: 'Bålplasser',
+    name: 'Bål-/grillplasser',
     description: 'Bål- og grillplasser'
   },
   hammock_spots: {
@@ -430,7 +430,7 @@ export const categoryTree: CategoryNode[] = [
       },
       {
         id: 'bålplass',
-        name: 'Bålplass',
+        name: 'Bål-/grillplass',
         parent: 'aktivitet',
         poiTypes: ['fire_places'],
         icon: 'local_fire_department',

@@ -1068,14 +1068,23 @@ export class OverpassService {
       const data = JSON.parse(responseText)
       console.log('📊 Raw hunting stand Overpass response:', data)
       
-      const pois = this.transformOverpassDataToPOIs(data)
-      console.log(`🦌 Transformed ${pois.length} hunting stand POIs from Overpass API`)
+      // Return raw POI data without generic transformation - let the app handle specific transformation
+      const rawPois = data.elements?.map((element: any) => ({
+        id: element.id || `${element.type}-${element.lat}-${element.lon}`,
+        type: element.type || 'node',
+        lat: element.lat || element.center?.lat,
+        lng: element.lon || element.center?.lon,
+        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Jakttårn',
+        tags: element.tags || {}
+      })) || []
+      
+      console.log(`🦌 Extracted ${rawPois.length} raw hunting stand POIs from Overpass API`)
 
       // Cache the results
-      this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
+      this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${pois.length} hunting stand POIs from OpenStreetMap`)
-      return pois
+      console.log(`✅ Fetched ${rawPois.length} hunting stand POIs from OpenStreetMap`)
+      return rawPois
     } catch (error) {
       console.error('❌ Error fetching hunting stands:', error)
       return []
@@ -1129,14 +1138,23 @@ export class OverpassService {
       const data = JSON.parse(responseText)
       console.log('📊 Raw fire pit Overpass response:', data)
       
-      const pois = this.transformOverpassDataToPOIs(data)
-      console.log(`🔥 Transformed ${pois.length} fire pit POIs from Overpass API`)
+      // Return raw POI data without generic transformation - let the app handle specific transformation
+      const rawPois = data.elements?.map((element: any) => ({
+        id: element.id || `${element.type}-${element.lat}-${element.lon}`,
+        type: element.type || 'node',
+        lat: element.lat || element.center?.lat,
+        lng: element.lon || element.center?.lon,
+        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Bål-/grillplass',
+        tags: element.tags || {}
+      })) || []
+      
+      console.log(`🔥 Extracted ${rawPois.length} raw fire pit POIs from Overpass API`)
 
       // Cache the results
-      this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
+      this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${pois.length} fire pit POIs from OpenStreetMap`)
-      return pois
+      console.log(`✅ Fetched ${rawPois.length} fire pit POIs from OpenStreetMap`)
+      return rawPois
     } catch (error) {
       console.error('❌ Error fetching fire pits:', error)
       return []
@@ -1206,14 +1224,23 @@ export class OverpassService {
       const data = JSON.parse(responseText)
       console.log('📊 Raw shelter Overpass response:', data)
       
-      const pois = this.transformOverpassDataToPOIs(data)
-      console.log(`🏠 Transformed ${pois.length} shelter POIs from Overpass API`)
+      // Return raw POI data without generic transformation - let the app handle specific transformation
+      const rawPois = data.elements?.map((element: any) => ({
+        id: element.id || `${element.type}-${element.lat}-${element.lon}`,
+        type: element.type || 'node',
+        lat: element.lat || element.center?.lat,
+        lng: element.lon || element.center?.lon,
+        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Gapahuk/Vindskjul',
+        tags: element.tags || {}
+      })) || []
+      
+      console.log(`🏠 Extracted ${rawPois.length} raw shelter POIs from Overpass API`)
 
       // Cache the results
-      this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
+      this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${pois.length} shelter POIs from OpenStreetMap`)
-      return pois
+      console.log(`✅ Fetched ${rawPois.length} shelter POIs from OpenStreetMap`)
+      return rawPois
     } catch (error) {
       console.error('❌ Error fetching shelters:', error)
       return []
