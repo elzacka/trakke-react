@@ -394,7 +394,7 @@ export const categoryTree: CategoryNode[] = [
   {
     id: 'aktivitet',
     name: 'Aktivitet',
-    icon: 'sports',
+    icon: 'sentiment_very_satisfied',
     color: '#4169E1',
     children: [
       {
@@ -466,7 +466,7 @@ export const categoryTree: CategoryNode[] = [
   {
     id: 'overnatte',
     name: 'Overnatte',
-    icon: 'bed',
+    icon: 'bedtime',
     color: '#8B4513',
     children: [
       {
