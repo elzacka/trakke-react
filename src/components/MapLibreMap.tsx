@@ -377,7 +377,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
         // Get marker position relative to viewport
         const mapContainer = map.getContainer()
-        const mapRect = mapContainer.getBoundingClientRect()
+        const _mapRect = mapContainer.getBoundingClientRect()
         const point = map.project([poi.lng, poi.lat])
 
         // Create custom popup

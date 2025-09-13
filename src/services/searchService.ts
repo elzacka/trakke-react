@@ -541,7 +541,7 @@ function createDisplayName(place: KartverketPlace, typeLabel: string, municipali
   }
   
   // For other places, include municipality context but avoid showing street name type
-  const shouldShowType = !['gate', 'vei', 'plass', 'torg'].some(streetType => 
+  const _shouldShowType = !['gate', 'vei', 'plass', 'torg'].some(streetType =>
     baseName.toLowerCase().includes(streetType)
   )
   

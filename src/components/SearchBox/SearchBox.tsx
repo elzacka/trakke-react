@@ -185,8 +185,8 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
     inputRef.current?.focus()
   }
 
-  // Result icon helper
-  const getResultIcon = (result: SearchResult): string => {
+  // Result icon helper (unused after icon removal)
+  const _getResultIcon = (result: SearchResult): string => {
     const iconMap: Record<SearchResult['type'], string> = {
       coordinates: 'my_location',
       poi: 'place',

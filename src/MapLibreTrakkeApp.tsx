@@ -33,7 +33,7 @@ export function MapLibreTrakkeApp() {
 
   // Ref for search input to enable keyboard shortcut focus
   const searchInputRef = useRef<SearchBoxRef>(null)
-  const searchService = useRef(new SearchService())
+  const _searchService = useRef(new SearchService())
   const mapRef = useRef<MapLibreMapRef>(null)
 
   console.log(`🎯 MapLibre App: ${pois.length} POIs loaded`)
