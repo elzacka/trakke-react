@@ -410,8 +410,8 @@ export const categoryTree: CategoryNode[] = [
   {
     id: 'aktivitet',
     name: 'Aktivitet',
-    icon: 'sentiment_very_satisfied',
-    color: '#4169E1',
+    icon: 'sentiment_satisfied',
+    color: '#0d9488',
     children: [
       {
         id: 'badeplass',
@@ -419,7 +419,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'aktivitet',
         poiTypes: ['swimming'],
         icon: 'pool',
-        color: '#4169E1'
+        color: '#0d9488'
       },
       {
         id: 'badeplass_med_strand',
@@ -427,7 +427,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'aktivitet',
         poiTypes: ['beach'],
         icon: 'beach_access',
-        color: '#4169E1'
+        color: '#0d9488'
       },
       {
         id: 'bålplass',
@@ -435,7 +435,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'aktivitet',
         poiTypes: ['fire_places'],
         icon: 'local_fire_department',
-        color: '#4169E1'
+        color: '#0d9488'
       },
       {
         id: 'fiskeplass',
@@ -443,7 +443,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'aktivitet',
         poiTypes: ['fishing_spots'],
         icon: 'phishing',
-        color: '#4169E1'
+        color: '#0d9488'
       },
       {
         id: 'kanopadling',
@@ -451,15 +451,15 @@ export const categoryTree: CategoryNode[] = [
         parent: 'aktivitet',
         poiTypes: ['canoeing'],
         icon: 'kayaking',
-        color: '#4169E1'
+        color: '#0d9488'
       }
     ]
   },
   {
     id: 'naturperle',
     name: 'Naturperle',
-    icon: 'nature',
-    color: '#20B2AA',
+    icon: 'landscape',
+    color: '#059669',
     children: [
       {
         id: 'foss',
@@ -467,7 +467,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'naturperle',
         poiTypes: ['nature_gems'],
         icon: 'water_drop',
-        color: '#20B2AA'
+        color: '#059669'
       },
       {
         id: 'utsiktspunkt',
@@ -475,15 +475,15 @@ export const categoryTree: CategoryNode[] = [
         parent: 'naturperle',
         poiTypes: ['viewpoints'],
         icon: 'landscape',
-        color: '#20B2AA'
+        color: '#059669'
       }
     ]
   },
   {
     id: 'overnatte',
     name: 'Overnatte',
-    icon: 'bedtime',
-    color: '#8B4513',
+    icon: 'cottage',
+    color: '#b45309',
     children: [
       {
         id: 'campingplass',
@@ -491,7 +491,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['camping_site'],
         icon: 'camping',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'gapahuk_vindskjul',
@@ -499,7 +499,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['wilderness_shelter'],
         icon: 'cottage',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'fri_camping',
@@ -507,7 +507,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['wild_camping'],
         icon: 'forest',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'hengekøyeplass',
@@ -515,7 +515,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['hammock_spots'],
         icon: 'weekend',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'hytte_dagstur',
@@ -523,7 +523,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['self_service_huts'],
         icon: 'cabin',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'hytte_turisthytte_betjent',
@@ -531,7 +531,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['staffed_huts'],
         icon: 'house',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'hytte_turisthytte_selvbetjent',
@@ -539,7 +539,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['self_service_huts'],
         icon: 'cabin',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'hytte_turisthytte_ubetjent',
@@ -547,7 +547,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['self_service_huts'],
         icon: 'cabin',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'hytte_utleie',
@@ -555,7 +555,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['staffed_huts'],
         icon: 'house',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'teltplass',
@@ -563,7 +563,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['tent_area'],
         icon: 'holiday_village',
-        color: '#8B4513'
+        color: '#b45309'
       },
       {
         id: 'vandrerhjem',
@@ -571,7 +571,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'overnatte',
         poiTypes: ['staffed_huts'],
         icon: 'house',
-        color: '#8B4513'
+        color: '#b45309'
       }
     ]
   },
@@ -579,7 +579,7 @@ export const categoryTree: CategoryNode[] = [
     id: 'på_eventyr',
     name: 'På eventyr',
     icon: 'explore',
-    color: '#8B4B8B',
+    color: '#7c3aed',
     children: [
       {
         id: 'hule',
@@ -587,7 +587,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'på_eventyr',
         poiTypes: ['nature_gems'],
         icon: 'terrain',
-        color: '#8B4B8B'
+        color: '#7c3aed'
       },
       {
         id: 'krigsminne',
@@ -595,7 +595,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'på_eventyr',
         poiTypes: ['war_memorials'],
         icon: 'military_tech',
-        color: '#8B4B8B'
+        color: '#7c3aed'
       },
       {
         id: 'kulturminne',
@@ -603,7 +603,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'på_eventyr',
         poiTypes: ['archaeological'],
         icon: 'archaeology',
-        color: '#8B4B8B'
+        color: '#7c3aed'
       },
       {
         id: 'observasjonstårn',
@@ -611,15 +611,15 @@ export const categoryTree: CategoryNode[] = [
         parent: 'på_eventyr',
         poiTypes: ['viewpoints'],
         icon: 'tower',
-        color: '#8B4B8B'
+        color: '#7c3aed'
       }
     ]
   },
   {
     id: 'service',
     name: 'Service',
-    icon: 'local_gas_station',
-    color: '#FF8C00',
+    icon: 'support',
+    color: '#ea580c',
     children: [
       {
         id: 'informasjon',
@@ -627,7 +627,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'service',
         poiTypes: ['information_boards'],
         icon: 'info',
-        color: '#FF8C00'
+        color: '#ea580c'
       },
       {
         id: 'drikkevann',
@@ -635,7 +635,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'service',
         poiTypes: ['drinking_water'],
         icon: 'water_drop',
-        color: '#FF8C00'
+        color: '#ea580c'
       },
       {
         id: 'spise_rasteplass',
@@ -643,7 +643,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'service',
         poiTypes: ['rest_areas'],
         icon: 'deck',
-        color: '#FF8C00'
+        color: '#ea580c'
       },
       {
         id: 'toalett',
@@ -651,7 +651,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'service',
         poiTypes: ['toilets'],
         icon: 'wc',
-        color: '#FF8C00'
+        color: '#ea580c'
       },
       {
         id: 'utfartparkering',
@@ -659,7 +659,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'service',
         poiTypes: ['parking'],
         icon: 'local_parking',
-        color: '#FF8C00'
+        color: '#ea580c'
       }
     ]
   },
@@ -667,7 +667,7 @@ export const categoryTree: CategoryNode[] = [
     id: 'transport',
     name: 'Transport',
     icon: 'directions_transit',
-    color: '#4682B4',
+    color: '#0284c7',
     children: [
       {
         id: 'bussholdeplass',
@@ -675,7 +675,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'transport',
         poiTypes: ['public_transport'],
         icon: 'directions_bus',
-        color: '#4682B4'
+        color: '#0284c7'
       },
       {
         id: 'taubane',
@@ -683,7 +683,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'transport',
         poiTypes: ['cable_cars'],
         icon: 'cable_car',
-        color: '#4682B4'
+        color: '#0284c7'
       },
       {
         id: 'togstasjon',
@@ -691,7 +691,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'transport',
         poiTypes: ['train_stations'],
         icon: 'train',
-        color: '#4682B4'
+        color: '#0284c7'
       }
     ]
   },
@@ -699,7 +699,7 @@ export const categoryTree: CategoryNode[] = [
     id: 'turløype',
     name: 'Turløype',
     icon: 'hiking',
-    color: '#228B22',
+    color: '#16a34a',
     children: [
       {
         id: 'fotrute',
@@ -707,7 +707,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'turløype',
         poiTypes: ['hiking'],
         icon: 'directions_walk',
-        color: '#228B22' // Use parent category color (green)
+        color: '#16a34a' // Use parent category color (green)
       },
       {
         id: 'skiloype_trail',
@@ -715,7 +715,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'turløype',
         poiTypes: ['ski_trails'],
         icon: 'downhill_skiing',
-        color: '#228B22' // Use parent category color (green)
+        color: '#16a34a' // Use parent category color (green)
       },
       {
         id: 'sykkelrute',
@@ -723,7 +723,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'turløype',
         poiTypes: ['cycling'],
         icon: 'directions_bike',
-        color: '#228B22' // Use parent category color (green)
+        color: '#16a34a' // Use parent category color (green)
       },
       {
         id: 'andre_turruter',
@@ -731,7 +731,7 @@ export const categoryTree: CategoryNode[] = [
         parent: 'turløype',
         poiTypes: ['other_trails'],
         icon: 'route',
-        color: '#228B22' // Use parent category color (green)
+        color: '#16a34a' // Use parent category color (green)
       }
     ]
   }

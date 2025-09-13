@@ -1,50 +1,118 @@
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { POI, CategoryState, CategoryNode } from '../data/pois'
 import { SearchResult } from '../services/searchService'
 
-interface MapLibreMapProps {
+// ARCHITECTURAL SAFEGUARDS - PREVENT REGRESSION TO OLD APPROACHES
+// ================================================================
+// 🚫 NO GeoJSON - This file must NEVER use GeoJSON for POI rendering
+// 🚫 NO WMS Raster tiles - This file must NEVER use Kartverket WMS raster tiles
+// ✅ API-BASED POI rendering using custom DOM overlays (not MapLibre markers)
+// ✅ WMTS tiles only for base map
+// ================================================================
+
+
+export interface MapLibreMapRef {
+  resetBearing: () => void
+  getMap: () => maplibregl.Map | null
+}
+
+export interface MapLibreMapProps {
   pois: POI[]
   categoryState: CategoryState
   categoryTree: CategoryNode[]
   onCategoryToggle: (nodeId: string) => void
   onExpandToggle: (nodeId: string) => void
-  onViewportChange?: (bounds: { north: number; south: number; east: number; west: number; zoom: number }) => void
   searchResult?: SearchResult | null
+  userLocation?: {lat: number, lng: number} | null
+  onViewportChange?: (viewport: {
+    north: number
+    south: number
+    east: number
+    west: number
+    zoom: number
+  }) => void
+  onBearingChange?: (bearing: number) => void
+  sidebarCollapsed?: boolean // Add sidebar state for overlay behavior
 }
 
-export function MapLibreMap({
+export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   pois,
   categoryState: _categoryState,
   categoryTree: _categoryTree,
   onCategoryToggle: _onCategoryToggle,
   onExpandToggle: _onExpandToggle,
+  searchResult,
+  userLocation,
   onViewportChange,
-  searchResult
-}: MapLibreMapProps) {
-  const mapContainer = useRef<HTMLDivElement>(null)
+  onBearingChange,
+  sidebarCollapsed = true
+}, ref) => {
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const onViewportChangeRef = useRef(onViewportChange)
+  const onBearingChangeRef = useRef(onBearingChange)
   const [mapLoaded, setMapLoaded] = useState(false)
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null)
-  const onViewportChangeRef = useRef(onViewportChange)
+  const [currentZoom, setCurrentZoom] = useState<number>(13)
+  const [coordinatesCopied, setCoordinatesCopied] = useState(false)
+  const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null)
+  const searchMarkerRef = useRef<maplibregl.Marker | null>(null)
+  const positionMarkerRef = useRef<maplibregl.Marker | null>(null)
 
-  // Update the ref when onViewportChange changes
+  // Expose map methods to parent component
+  useImperativeHandle(ref, () => ({
+    resetBearing: () => {
+      if (mapRef.current) {
+        mapRef.current.easeTo({
+          bearing: 0,
+          duration: 500
+        })
+      }
+    },
+    getMap: () => mapRef.current
+  }))
+
+  // Copy coordinates to clipboard
+  const handleCopyCoordinates = async () => {
+    if (!coordinates) return
+
+    try {
+      const coordinatesText = `${coordinates.lat.toFixed(5)}°N, ${coordinates.lng.toFixed(5)}°E`
+      await navigator.clipboard.writeText(coordinatesText)
+      setCoordinatesCopied(true)
+
+      // Reset copy feedback after 2 seconds
+      setTimeout(() => {
+        setCoordinatesCopied(false)
+      }, 2000)
+    } catch (error) {
+      console.error('Failed to copy coordinates:', error)
+    }
+  }
+
+  // Update refs when callbacks change
   useEffect(() => {
     onViewportChangeRef.current = onViewportChange
   }, [onViewportChange])
 
-  // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return
+    onBearingChangeRef.current = onBearingChange
+  }, [onBearingChange])
 
-    console.log('🗺️ Initializing MapLibre with Kartverket WMS tiles...')
+  // Initialize map only once
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return
 
-    // Try to get user location for initial center, fallback to Oslo
+    console.log('🗺️ [DEBUG] Initializing MapLibre with Kartverket topographic raster tiles...')
+
+    // Map initialization function
     const initializeWithLocation = (center: [number, number]) => {
       const map = new maplibregl.Map({
-        container: mapContainer.current!,
-        // Kartverket WMS as raster source (reliable and official)
+        container: containerRef.current!,
+        // KARTVERKET TOPOGRAPHIC MAP - Using WMTS raster tiles (vector tiles not available)
+        // Custom MapLibre style with Kartverket's official topographic raster tiles
         style: {
           version: 8,
           sources: {
@@ -54,70 +122,54 @@ export function MapLibreMap({
                 'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
               ],
               tileSize: 256,
-              attribution: '© Kartverket'
+              attribution: '© Kartverket',
+              minzoom: 0,
+              maxzoom: 17 // Practical limit for Kartverket WMTS tiles
             }
           },
           layers: [
             {
-              id: 'kartverket-topo',
+              id: 'kartverket-topo-layer',
               type: 'raster',
-              source: 'kartverket-topo'
+              source: 'kartverket-topo',
+              minzoom: 0,
+              maxzoom: 17 // Match practical tile availability limit
             }
           ]
         },
-        // Start with 500m scale level (zoom ~13) at user location or Oslo
         center: center,
-        zoom: 13, // Approximately 500m scale level
-        bearing: 0, // Start north-up
+        zoom: 13,
+        minZoom: 3, // Prevent zooming out too far (Norway-wide view)
+        maxZoom: 17, // Practical maximum for Kartverket tiles without grey areas
+        bearing: 0,
         pitch: 0,
-        // Enable all interactions with centered zoom
         interactive: true,
         dragPan: true,
         dragRotate: true,
-        scrollZoom: { around: 'center' }, // Always zoom to center
+        scrollZoom: { around: 'center' },
         boxZoom: true,
         doubleClickZoom: true,
         keyboard: true,
-        touchZoomRotate: true
+        touchZoomRotate: true,
+        // Disable default attribution control - using custom credits component instead
+        attributionControl: false,
+        // Allow all tile requests - let Kartverket handle availability
+        transformRequest: (url: string) => {
+          return { url, credentials: 'same-origin' }
+        }
       })
       return map
     }
 
-    // Setup map event handlers (extracted to avoid duplication)
+    // Setup map event handlers
     const setupMapEventHandlers = (map: maplibregl.Map) => {
-      // Add navigation controls with compass enabled
-      map.addControl(new maplibregl.NavigationControl({
-        visualizePitch: true,
-        showCompass: true,
-        showZoom: true
-      }), 'bottom-right')
-      
-      // Add geolocation control
-      map.addControl(
-        new maplibregl.GeolocateControl({
-          positionOptions: {
-            enableHighAccuracy: true
-          },
-          trackUserLocation: true
-        }),
-        'bottom-right'
-      )
-      
-      // Add native MapLibre scale control (accurate) with custom styling
-      const scaleControl = new maplibregl.ScaleControl({
-        maxWidth: 100,
-        unit: 'metric'
-      })
-      map.addControl(scaleControl, 'bottom-left')
+      // No default controls - using custom overlay UI components instead
 
       map.on('load', () => {
-        console.log('✅ MapLibre loaded with Kartverket WMS topographic tiles at 500m scale')
-        
-        // Using simple circle + text approach for reliable rendering
-        
+        console.log('✅ MapLibre loaded with Kartverket topographic raster tiles')
         setMapLoaded(true)
         
-        // Emit initial viewport bounds at 500m scale level
+        // Emit initial viewport bounds
         setTimeout(() => {
           if (onViewportChangeRef.current) {
             const bounds = map.getBounds()
@@ -132,11 +184,7 @@ export function MapLibreMap({
         }, 100)
       })
 
-      map.on('error', (e) => {
-        console.error('❌ MapLibre error:', e)
-      })
-
-      // Viewport change handlers
+      // Handle viewport changes
       const handleViewportChange = () => {
         if (onViewportChangeRef.current) {
           const bounds = map.getBounds()
@@ -153,7 +201,33 @@ export function MapLibreMap({
       map.on('moveend', handleViewportChange)
       map.on('zoomend', handleViewportChange)
 
-      // Track mouse coordinates and zoom for display
+      // Handle bearing changes for compass
+      const handleBearingChange = () => {
+        if (onBearingChangeRef.current) {
+          onBearingChangeRef.current(map.getBearing())
+        }
+      }
+
+      map.on('rotate', handleBearingChange)
+      map.on('rotateend', handleBearingChange)
+
+      // Listen for zoom events to track zoom level
+      map.on('zoom', () => {
+        setCurrentZoom(map.getZoom())
+        // Close any custom popups during zoom for better UX
+        const existingPopups = document.querySelectorAll('.custom-poi-popup')
+        existingPopups.forEach(popup => popup.remove())
+      })
+      map.on('zoomend', () => setCurrentZoom(map.getZoom()))
+      
+      // Emit initial bearing
+      setTimeout(() => {
+        if (onBearingChangeRef.current) {
+          onBearingChangeRef.current(map.getBearing())
+        }
+      }, 100)
+
+      // Track mouse coordinates
       map.on('mousemove', (e) => {
         setCoordinates({
           lat: e.lngLat.lat,
@@ -176,510 +250,731 @@ export function MapLibreMap({
         },
         (error) => {
           console.log(`❌ Geolocation failed: ${error.message}, using Oslo fallback`)
-          const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
+          const osloCenter: [number, number] = [10.7522, 59.9139]
           const map = initializeWithLocation(osloCenter)
           setupMapEventHandlers(map)
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 300000 // 5 minutes
-        }
+        { timeout: 5000, maximumAge: 300000 }
       )
     } else {
-      console.log('🏛️ Geolocation not available, using Oslo as center')
-      const osloCenter: [number, number] = [10.7522, 59.9139] // Oslo coordinates
+      console.log('📍 No geolocation support, using Oslo fallback')
+      const osloCenter: [number, number] = [10.7522, 59.9139]
       const map = initializeWithLocation(osloCenter)
       setupMapEventHandlers(map)
     }
 
-    // Cleanup function
+    // Cleanup
     return () => {
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
       }
+      // Clean up custom overlays
+      const existingOverlays = document.querySelectorAll('.custom-poi-overlay')
+      existingOverlays.forEach(overlay => overlay.remove())
     }
   }, []) // Empty dependency array - initialize map only once
 
-  // Update POI layers when map is loaded and POIs change
+  // API-BASED POI RENDERING - Using Custom DOM Overlays (not MapLibre markers)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
 
     const map = mapRef.current
-    console.log(`🎯 Updating map with ${pois.length} POIs:`, pois.map(p => `${p.name} (${p.lat}, ${p.lng})`).join(', '))
+    console.log(`🎯 API-based POI rendering: ${pois.length} POIs`)
 
-    // Clean up existing POI layers first to ensure clean state
-    const existingLayers = ['poi-labels', 'poi-points'] // Remove in reverse order
-    existingLayers.forEach(layerId => {
-      if (map.getLayer(layerId)) {
-        console.log(`🗑️ Removing existing layer: ${layerId}`)
-        map.removeLayer(layerId)
+    // Clean up existing POI overlays
+    const existingOverlays = document.querySelectorAll('.custom-poi-overlay')
+    existingOverlays.forEach(overlay => overlay.remove())
+
+    console.log(`🎯 Creating ${pois.length} POI markers`)
+
+    // Create API-based POI markers using custom DOM overlays positioned over the map
+    pois.forEach((poi, index) => {
+      console.log(`🎨 Creating marker ${index + 1} for POI:`, poi.name, 'with color:', poi.color, 'at coords:', poi.lat, poi.lng)
+
+      // Create overlay container
+      const overlay = document.createElement('div')
+      overlay.className = 'custom-poi-overlay'
+      overlay.style.cssText = `
+        position: absolute;
+        z-index: 100;
+        pointer-events: auto;
+        transform: translate(-50%, -50%);
+      `
+
+      // Create the actual marker element
+      const markerElement = document.createElement('div')
+      markerElement.className = 'custom-poi-marker'
+      markerElement.style.cssText = `
+        width: 20px;
+        height: 20px;
+        background: ${poi.color};
+        background-color: ${poi.color};
+        border-radius: 50%;
+        border: 2px solid white;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        display: block;
+        transition: all 0.2s ease;
+      `
+
+      overlay.appendChild(markerElement)
+
+      // Function to update overlay position
+      const updatePosition = () => {
+        const point = map.project([poi.lng, poi.lat])
+        overlay.style.left = point.x + 'px'
+        overlay.style.top = point.y + 'px'
       }
-    })
 
-    // Remove existing POI source if it exists
-    if (map.getSource('pois')) {
-      console.log(`🗑️ Removing existing POI source`)
-      map.removeSource('pois')
-    }
+      // Initial position
+      updatePosition()
 
-    // Create GeoJSON source from POIs (empty collection if no POIs)
-    const geojsonData = {
-      type: 'FeatureCollection' as const,
-      features: pois.map(poi => ({
-        type: 'Feature' as const,
-        properties: {
-          id: poi.id,
-          name: poi.name,
-          description: poi.description,
-          type: poi.type
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [poi.lng, poi.lat]
-        }
-      }))
-    }
-    
-    // Debug: Log the GeoJSON structure that will be sent to MapLibre
-    console.log('📊 GeoJSON structure:', JSON.stringify(geojsonData, null, 2))
+      // Update position on map move/zoom
+      map.on('move', updatePosition)
+      map.on('zoom', updatePosition)
 
-    // Add POI source
-    map.addSource('pois', {
-      type: 'geojson',
-      data: geojsonData
-    })
+      // Add overlay to map container
+      map.getContainer().appendChild(overlay)
 
-    // POI markers with soft, zoom-responsive design following best practices
-    map.addLayer({
-      id: 'poi-points',
-      type: 'circle',
-      source: 'pois',
-      paint: {
-        'circle-radius': [
-          'interpolate',
-          ['exponential', 1.5], // Exponential scaling for natural zoom feel
-          ['zoom'],
-          8, 2,     // Very small at low zoom levels
-          10, 4,    // Small at regional level  
-          12, 6,    // Medium at city level
-          14, 9,    // Large at neighborhood level
-          16, 12,   // Extra large at street level
-          18, 16    // Maximum size at building level
-        ],
-        'circle-color': [
-          'case',
-          ['has', 'color'], // If POI has color property
-          ['get', 'color'], // Use the color property directly (assuming it's already rgba)
-          '#8B4B8B' // Fallback purple
-        ],
-        'circle-stroke-width': [
-          'interpolate',
-          ['exponential', 1.2],
-          ['zoom'],
-          8, 1,     // Thin border at low zoom
-          12, 2,    // Medium border
-          16, 3     // Thicker border at high zoom
-        ],
-        'circle-stroke-color': 'rgba(255, 255, 255, 0.9)' // Soft white border with transparency
-      }
-    })
+      console.log('✅ Marker overlay added to map with color:', poi.color)
 
-    // 3. Text labels (top layer)
-    map.addLayer({
-      id: 'poi-labels',
-      type: 'symbol',
-      source: 'pois',
-      layout: {
-        'text-field': ['get', 'name'],
-        'text-font': ['Arial Regular', 'sans-serif'],
-        'text-size': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          8, 10,
-          14, 14
-        ],
-        'text-offset': [0, 2],
-        'text-anchor': 'top'
-      },
-      paint: {
-        'text-color': '#374151',
-        'text-halo-color': '#ffffff',
-        'text-halo-width': 1
-      }
-    })
+      // Enhanced hover effects with smooth animations
+      markerElement.addEventListener('mouseenter', () => {
+        markerElement.style.transform = 'scale(1.15)'
+        markerElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'
+        markerElement.style.zIndex = '101'
+      })
+      markerElement.addEventListener('mouseleave', () => {
+        markerElement.style.transform = 'scale(1.0)'
+        markerElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)'
+        markerElement.style.zIndex = '100'
+      })
 
-    console.log('✅ All POI layers created')
-    
-    // Debug: Check that all layers exist and in correct order
-    const allLayers = map.getStyle().layers?.map(layer => layer.id) || []
-    console.log('🔍 All map layers after POI creation:', allLayers)
-    console.log('🔍 POI-specific layers:', allLayers.filter(id => id.includes('poi')))
+      // Add click handler for custom popup
+      markerElement.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
 
-    // Define POI click handler
-    const handlePOIClick = (e: maplibregl.MapMouseEvent) => {
-      console.log('🎯 POI click detected at:', e.lngLat)
-      
-      // Debug: Check what layers actually exist
-      const allLayers = map.getStyle().layers?.map(layer => layer.id) || []
-      console.log('🔍 All map layers:', allLayers)
-      
-      // Get feature from the event (MapLibre provides this directly for layer clicks)
-      const features = (e as maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }).features || []
-      console.log('📊 POI Features from event:', features.length, features)
-      
-      if (features && features.length > 0) {
-        const feature = features[0]
-        console.log('🔍 Feature properties:', feature.properties)
-        const { name, description, id, color } = feature.properties || {}
-        
-        console.log(`✅ Creating popup for: ${name} (${id})`)
-        
-        // Use POI color or fallback
-        const poiColor = color || '#8B4B8B'
-        
-        // Split description to get category name and additional info
-        const parts = description ? description.split('. ') : []
-        const categoryName = parts[0] || name || 'Ukjent sted' // First part is category name
-        const additionalInfo = parts.slice(1).join('. ') // Rest is additional info
-        
-        // Determine what to show above and below the line
-        // Above line: Category name (e.g. "Bål-/grillplass") 
-        // Below line: Location name and additional details (e.g. "Bråten. Gratis")
+        // Close any existing popups
+        const existingPopups = document.querySelectorAll('.custom-poi-popup')
+        existingPopups.forEach(popup => popup.remove())
+
+        // Parse description for popup content
+        const parts = poi.description ? poi.description.split('. ') : []
+        const categoryName = parts[0] || poi.name || 'Ukjent sted'
+        const additionalInfo = parts.slice(1).join('. ')
+
         const headerText = categoryName
-        const detailText = (name && name !== categoryName) 
-          ? `${name}${additionalInfo ? '. ' + additionalInfo : ''}` 
+        const detailText = (poi.name && poi.name !== categoryName)
+          ? `${poi.name}${additionalInfo ? '. ' + additionalInfo : ''}`
           : (additionalInfo || '')
 
-        // Enhanced popup with better formatting for rich information
-        const formattedDetailText = detailText 
+        const formattedDetailText = detailText
           ? detailText.replace(/📖 Les mer: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Les mer på Wikipedia →</a>')
                       .replace(/📖 Wikidata: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Se på Wikidata →</a>')
           : 'Ingen tilleggsinformasjon'
 
-        new maplibregl.Popup({
-          closeButton: true,
-          closeOnClick: true,
-          maxWidth: '350px'
-        })
-          .setLngLat(e.lngLat)
-          .setHTML(`
-            <div style="padding: 12px; min-width: 250px; max-width: 350px; font-family: 'Segoe UI', sans-serif;">
-              <h3 style="margin: 0 0 8px 0; color: #2c5530; font-size: 16px; font-weight: 600; border-bottom: 2px solid ${poiColor}; padding-bottom: 4px;">
-                ${headerText}
-              </h3>
-              <div style="margin: 0; color: #444; font-size: 13px; line-height: 1.4;">
-                ${formattedDetailText}
-              </div>
-            </div>
-          `)
-          .addTo(map)
-      } else {
-        console.log('❌ No POI features found in click event')
-      }
-    }
-    
-    // Add click handlers to each POI layer (MapLibre GL approach)
-    map.on('click', 'poi-points', handlePOIClick)
-    map.on('click', 'poi-labels', handlePOIClick)
-    console.log('🔧 POI layer-specific click handlers registered')
+        // Get marker position relative to viewport
+        const mapContainer = map.getContainer()
+        const mapRect = mapContainer.getBoundingClientRect()
+        const point = map.project([poi.lng, poi.lat])
 
-    // Add hover effects
-    const handleMouseEnter = () => { map.getCanvas().style.cursor = 'pointer' }
-    const handleMouseLeave = () => { map.getCanvas().style.cursor = '' }
-    
-    // Add hover handlers for all POI layers
-    ['poi-points', 'poi-labels'].forEach(layerId => {
-      map.on('mouseenter', layerId, handleMouseEnter)
-      map.on('mouseleave', layerId, handleMouseLeave)
+        // Create custom popup
+        const popup = document.createElement('div')
+        popup.className = 'custom-poi-popup'
+        popup.style.cssText = `
+          position: absolute;
+          left: ${point.x}px;
+          top: ${point.y}px;
+          transform: translate(-50%, -100%);
+          margin-top: -15px;
+          z-index: 1000;
+          pointer-events: auto;
+        `
+
+        popup.innerHTML = `
+          <div style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+            max-width: 320px;
+            min-width: 280px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+          ">
+            <!-- Close button -->
+            <button onclick="this.closest('.custom-poi-popup').remove()" style="
+              position: absolute;
+              top: 8px;
+              right: 8px;
+              width: 24px;
+              height: 24px;
+              border: none;
+              background: rgba(0,0,0,0.1);
+              border-radius: 50%;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-family: Arial, sans-serif;
+              font-size: 14px;
+              color: #666;
+              transition: background 0.2s ease;
+              z-index: 1001;
+            " onmouseover="this.style.background='rgba(0,0,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.1)'">
+              ×
+            </button>
+
+            <!-- Header -->
+            <div style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding: 16px 16px 12px 16px;
+              border-bottom: 1px solid rgba(0,0,0,0.1);
+            ">
+              <div style="
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, ${poi.color || '#8B4B8B'}, ${adjustBrightness(poi.color || '#8B4B8B', -20)});
+                flex-shrink: 0;
+              "></div>
+              <h3 style="
+                margin: 0;
+                font-size: 16px;
+                font-weight: 600;
+                color: #1f2937;
+                line-height: 1.3;
+              ">${headerText}</h3>
+            </div>
+
+            <!-- Body -->
+            <div style="
+              padding: 12px 16px 16px 16px;
+              font-size: 14px;
+              line-height: 1.5;
+              color: #4b5563;
+            ">
+              ${formattedDetailText}
+            </div>
+
+            <!-- Arrow pointing to marker -->
+            <div style="
+              position: absolute;
+              top: 100%;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 0;
+              height: 0;
+              border-left: 8px solid transparent;
+              border-right: 8px solid transparent;
+              border-top: 8px solid white;
+            "></div>
+          </div>
+        `
+
+        // Add popup to map container so it moves with the map
+        mapContainer.appendChild(popup)
+
+        // Close popup when clicking outside
+        const closeOnClickOutside = (e: Event) => {
+          if (!popup.contains(e.target as Node) && !overlay.contains(e.target as Node)) {
+            popup.remove()
+            document.removeEventListener('click', closeOnClickOutside)
+          }
+        }
+        setTimeout(() => document.addEventListener('click', closeOnClickOutside), 100)
+      })
     })
 
-    // Close any existing popups when POIs change
-    if (mapRef.current) {
-      const existingPopups = document.querySelectorAll('.maplibregl-popup')
-      existingPopups.forEach(popup => popup.remove())
-    }
-
-    // Cleanup function to remove event handlers when component unmounts or POIs change
-    return () => {
-      // Remove click handlers
-      map.off('click', 'poi-points', handlePOIClick)
-      map.off('click', 'poi-labels', handlePOIClick)
-      
-      // Remove hover handlers
-      ;['poi-points', 'poi-labels'].forEach(layerId => {
-        map.off('mouseenter', layerId, handleMouseEnter)
-        map.off('mouseleave', layerId, handleMouseLeave)
-      })
-    }
+    console.log(`✅ Created ${pois.length} API-based POI overlays`)
   }, [mapLoaded, pois])
 
-  // Handle search result centering and marker
+  // Handle search result centering
   useEffect(() => {
     if (!mapRef.current || !searchResult) return
 
     const map = mapRef.current
-    console.log(`🔍 Centering map on search result: ${searchResult.name} at [${searchResult.lng}, ${searchResult.lat}]`)
+    console.log(`🔍 Centering map on search result: ${searchResult.displayName}`)
+    console.log('🔍 Creating search marker at coordinates:', searchResult.lat, searchResult.lng)
     
     // Remove existing search marker if it exists
-    if (map.getLayer('search-marker-pulse')) {
-      map.removeLayer('search-marker-pulse')
-    }
-    if (map.getLayer('search-marker')) {
-      map.removeLayer('search-marker')
-    }
-    if (map.getSource('search-marker')) {
-      map.removeSource('search-marker')
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove()
     }
     
-    // Add search result marker
-    map.addSource('search-marker', {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [searchResult.lng, searchResult.lat]
-        },
-        properties: {
-          name: searchResult.name,
-          displayName: searchResult.displayName,
-          type: searchResult.type
-        }
-      }
-    })
+    // Create modern search marker
+    const searchElement = document.createElement('div')
+    searchElement.className = 'search-marker'
+    searchElement.style.cssText = `
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ff0000 !important;
+      border: 4px solid #ffffff !important;
+      box-shadow: 0 4px 16px rgba(255, 0, 0, 0.8) !important;
+      position: absolute !important;
+      z-index: 9999 !important;
+      transform: translate(-50%, -50%) !important;
+      pointer-events: auto !important;
+    `
+    searchElement.innerHTML = '<div style="width: 100%; height: 100%; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">S</div>'
     
-    // Search marker with soft, prominent zoom-responsive design
-    map.addLayer({
-      id: 'search-marker',
-      type: 'circle',
-      source: 'search-marker',
-      paint: {
-        'circle-radius': [
-          'interpolate',
-          ['exponential', 1.5], // Same exponential scaling as POIs
-          ['zoom'],
-          8, 3,     // Small but visible at low zoom
-          10, 5,    // Slightly larger than POIs at regional level  
-          12, 8,    // Medium prominence at city level
-          14, 12,   // Large at neighborhood level
-          16, 16,   // Extra large at street level
-          18, 20    // Maximum prominence at building level
-        ],
-        'circle-color': 'rgba(255, 107, 53, 0.85)', // Orange with transparency
-        'circle-stroke-width': [
-          'interpolate',
-          ['exponential', 1.2],
-          ['zoom'],
-          8, 1,     // Thin border at low zoom
-          12, 2,    // Medium border
-          16, 3     // Thicker border at high zoom
-        ],
-        'circle-stroke-color': 'rgba(255, 255, 255, 0.9)' // Soft white border with transparency
-      }
-    })
-    
-    // Soft pulsing animation effect with proportional sizing
-    map.addLayer({
-      id: 'search-marker-pulse',
-      type: 'circle',
-      source: 'search-marker',
-      paint: {
-        'circle-radius': [
-          'interpolate',
-          ['exponential', 1.5], // Same exponential scaling for consistency
-          ['zoom'],
-          8, 6,     // Pulse extends ~2x beyond main marker
-          10, 10,   // Proportional pulse growth
-          12, 16,   // Medium pulse
-          14, 24,   // Large pulse
-          16, 32,   // Extra large pulse
-          18, 40    // Maximum pulse at building level
-        ],
-        'circle-color': [
-          'interpolate',
-          ['exponential', 0.8],
-          ['zoom'],
-          8, 'rgba(255, 107, 53, 0.20)',   // More visible at low zoom levels
-          12, 'rgba(255, 107, 53, 0.15)',  // Medium visibility at city level
-          16, 'rgba(255, 107, 53, 0.10)',  // Lower visibility at high zoom
-          18, 'rgba(255, 107, 53, 0.06)'   // Very subtle at maximum zoom
-        ]
-      }
-    })
-    
-    // Center map on search result with appropriate zoom
-    map.easeTo({
-      center: [searchResult.lng, searchResult.lat],
-      zoom: 12, // Zoom in to show local details
-      duration: 1000 // Smooth animation
-    })
-    
-    // Add popup for search result
-    const popup = new maplibregl.Popup({
-      offset: 15,
-      closeButton: true,
-      closeOnClick: false
-    })
+    const searchMarker = new maplibregl.Marker(searchElement)
       .setLngLat([searchResult.lng, searchResult.lat])
-      .setHTML(`
-        <div style="padding: 8px; min-width: 200px; font-family: 'Segoe UI', sans-serif;">
-          <h4 style="margin: 0 0 4px 0; color: #FF6B35; font-size: 14px; font-weight: 600;">
-            📍 ${searchResult.displayName}
-          </h4>
-          <div style="color: #666; font-size: 12px;">
-            ${searchResult.description || 'Søkeresultat'}
-          </div>
-          <div style="color: #888; font-size: 11px; margin-top: 4px;">
-            ${searchResult.lat.toFixed(5)}°N, ${searchResult.lng.toFixed(5)}°E
-          </div>
-        </div>
-      `)
       .addTo(map)
+
+    searchMarkerRef.current = searchMarker
+    console.log('✅ Search marker added to map successfully')
     
-    // Auto-close popup after 5 seconds
-    setTimeout(() => {
-      popup.remove()
-    }, 5000)
-    
+    // Center map on search result
+    map.flyTo({
+      center: [searchResult.lng, searchResult.lat],
+      zoom: 15,
+      duration: 1000
+    })
   }, [searchResult])
 
-  // Handle Kartverket hiking trails WMS layer based on turløype category and subcategories
+  // Handle user location centering and marker
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return
+    if (!mapRef.current || !userLocation) return
 
     const map = mapRef.current
+    console.log(`📍 Centering map on user location: ${userLocation.lat}, ${userLocation.lng}`)
+    console.log('📍 Creating position marker at coordinates:', userLocation.lat, userLocation.lng)
     
-    // Check if any trail-related categories are active (parent or any children)
-    const isTrailsActive = _categoryState.checked['turløype'] || 
-                          _categoryState.checked['fotrute'] || 
-                          _categoryState.checked['skiloype_trail'] || 
-                          _categoryState.checked['sykkelrute'] || 
-                          _categoryState.checked['andre_turruter'] || false
+    // Remove existing user location marker if it exists
+    if (userLocationMarkerRef.current) {
+      userLocationMarkerRef.current.remove()
+    }
+    
+    // Create user location marker with pulsing animation
+    const locationElement = document.createElement('div')
+    locationElement.className = 'user-location-marker'
+    locationElement.style.cssText = `
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0d9488, #0891b2);
+      border: 3px solid white;
+      box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1);
+      animation: locationPulse 2s infinite;
+      position: relative;
+    `
+    
+    // Add inner dot for better visibility
+    const innerDot = document.createElement('div')
+    innerDot.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: white;
+    `
+    locationElement.appendChild(innerDot)
+    
+    const locationMarker = new maplibregl.Marker(locationElement)
+      .setLngLat([userLocation.lng, userLocation.lat])
+      .addTo(map)
+    
+    userLocationMarkerRef.current = locationMarker
 
-    console.log(`🥾 Hiking trails category active: ${isTrailsActive}`)
-    console.log(`📊 Category state:`, {
-      turløype: _categoryState.checked['turløype'],
-      fotrute: _categoryState.checked['fotrute'],
-      skiloype_trail: _categoryState.checked['skiloype_trail'],
-      sykkelrute: _categoryState.checked['sykkelrute'],
-      andre_turruter: _categoryState.checked['andre_turruter']
+    // Remove existing position marker if it exists
+    if (positionMarkerRef.current) {
+      positionMarkerRef.current.remove()
+    }
+
+    // Create position marker (distinct from user location marker)
+    const positionElement = document.createElement('div')
+    positionElement.className = 'position-marker'
+    positionElement.style.cssText = `
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #0000ff !important;
+      border: 4px solid #ffffff !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 255, 0.8) !important;
+      position: absolute !important;
+      z-index: 9999 !important;
+      transform: translate(-50%, -50%) !important;
+      pointer-events: auto !important;
+    `
+    positionElement.innerHTML = '<div style="width: 100%; height: 100%; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px;">P</div>'
+
+    const positionMarker = new maplibregl.Marker(positionElement)
+      .setLngLat([userLocation.lng, userLocation.lat])
+      .addTo(map)
+
+    positionMarkerRef.current = positionMarker
+    console.log('✅ Position marker added to map successfully')
+
+    // Fly to user location
+    map.flyTo({
+      center: [userLocation.lng, userLocation.lat],
+      zoom: 14,
+      duration: 1500
     })
-
-    // Define which trail types to show based on active categories
-    const trailLayers = []
-    if (_categoryState.checked['fotrute']) trailLayers.push({ id: 'fotrute', name: 'Fotrute' })
-    if (_categoryState.checked['skiloype_trail']) trailLayers.push({ id: 'skiing', name: 'Skiløype' })
-    if (_categoryState.checked['sykkelrute']) trailLayers.push({ id: 'cycling', name: 'Sykkelrute' })
-    if (_categoryState.checked['andre_turruter']) trailLayers.push({ id: 'other', name: 'Andre turruter' })
-    
-    // If parent category is checked but no specific subcategories, show all trails
-    if (_categoryState.checked['turløype'] && trailLayers.length === 0) {
-      trailLayers.push({ id: 'all', name: 'Alle turløyper' })
-    }
-    
-    console.log('🗺️ Trail layers to show:', trailLayers)
-
-    if (trailLayers.length > 0) {
-      // Add each required trail layer
-      trailLayers.forEach((trailLayer, index) => {
-        const sourceId = `kartverket-trails-${trailLayer.id}`
-        const layerId = `kartverket-trails-layer-${trailLayer.id}`
-        
-        if (!map.getSource(sourceId)) {
-          console.log(`🗺️ Adding Kartverket ${trailLayer.name} WMS layer`)
-          
-          // Use the main trail layer for all types (since specific sublayers don't exist)
-          const layerName = 'kv_tur_og_friluftsruter'
-          
-          map.addSource(sourceId, {
-            type: 'raster',
-            tiles: [
-              `https://wms.geonorge.no/skwms1/wms.nib?service=WMS&request=GetMap&version=1.1.1&layers=${layerName}&styles=&format=image/png&transparent=true&srs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}`
-            ],
-            tileSize: 256
-          })
-
-          map.addLayer({
-            id: layerId,
-            type: 'raster',
-            source: sourceId,
-            paint: {
-              'raster-opacity': 0.7 - (index * 0.1) // Slightly different opacity for each layer
-            }
-          })
-          console.log(`✅ ${trailLayer.name} layer added successfully`)
-        }
-      })
-    } else {
-      // Remove all trail layers if no categories are active
-      const possibleLayers = ['all', 'fotrute', 'skiing', 'cycling', 'other']
-      possibleLayers.forEach(trailType => {
-        const layerId = `kartverket-trails-layer-${trailType}`
-        const sourceId = `kartverket-trails-${trailType}`
-        
-        if (map.getLayer(layerId)) {
-          console.log(`🗑️ Removing ${trailType} trails WMS layer`)
-          map.removeLayer(layerId)
-        }
-        if (map.getSource(sourceId)) {
-          map.removeSource(sourceId)
-        }
-      })
-    }
-  }, [mapLoaded, _categoryState.checked])
+  }, [userLocation])
 
   return (
     <div className="map-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div 
-        ref={mapContainer} 
+        ref={containerRef}
         style={{ width: '100%', height: '100%' }}
       />
       
-      {/* Loading indicator */}
-      {!mapLoaded && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(255, 255, 255, 0.9)',
-          padding: '20px',
-          borderRadius: '8px',
-          fontSize: '14px',
-          color: '#666',
-          textAlign: 'center'
-        }}>
-          <div>Kobler til Kartverket...</div>
-          <div style={{ fontSize: '12px', marginTop: '8px', color: '#888' }}>
-            Laster norske vektorkart
+      {/* Scale and Coordinate Display - Bottom Center */}
+      {coordinates && (() => {
+        // Calculate map scale based on zoom level and latitude - Kartverket WMTS compatible
+        const calculateMapScale = (zoom: number, latitude: number): string => {
+          // Web Mercator scale factor calculation (EPSG:3857 used by Kartverket WMTS)
+          // Based on official formula: 156543.03392 * Math.cos(latitude) / Math.pow(2, z) meters per pixel
+          const metersPerPixel = 156543.03392 * Math.cos(latitude * Math.PI / 180) / Math.pow(2, zoom)
+          
+          // Calculate scale for a standardized 60px reference line (common cartographic practice)
+          const referencePixels = 60
+          const referenceMeters = metersPerPixel * referencePixels
+          
+          // Round to cartographically appropriate values
+          if (referenceMeters >= 1000) {
+            const km = referenceMeters / 1000
+            if (km >= 50) return `${Math.round(km / 10) * 10}km`      // Round to 10s above 50km
+            else if (km >= 10) return `${Math.round(km / 5) * 5}km`   // Round to 5s between 10-50km
+            else if (km >= 2) return `${Math.round(km)}km`            // Round to 1s between 2-10km
+            else return `${km.toFixed(1)}km`                          // 1 decimal below 2km
+          } else {
+            if (referenceMeters >= 500) return `${Math.round(referenceMeters / 100) * 100}m`      // Round to 100s above 500m
+            else if (referenceMeters >= 100) return `${Math.round(referenceMeters / 50) * 50}m`   // Round to 50s between 100-500m
+            else if (referenceMeters >= 20) return `${Math.round(referenceMeters / 10) * 10}m`    // Round to 10s between 20-100m
+            else return `${Math.round(referenceMeters)}m`                                         // Round to 1s below 20m
+          }
+        }
+        
+        const scaleText = calculateMapScale(currentZoom, coordinates.lat)
+        
+        return (
+        <>
+          {/* Scale Line - Bottom Left Corner */}
+          <div style={{
+            position: 'absolute',
+            bottom: '16px',
+            left: '16px',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '12px', // As specified
+            color: '#374151', // As specified
+            opacity: 0.6, // Idle opacity as specified
+            pointerEvents: 'none'
+          }}>
+            <span style={{
+              fontFamily: 'Material Symbols Outlined',
+              fontSize: '14px',
+              color: '#374151'
+            }}>
+              straighten
+            </span>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '2px'
+            }}>
+              {/* Scale bar */}
+              <div style={{
+                width: '60px',
+                height: '3px',
+                background: '#374151',
+                borderRadius: '1px',
+                position: 'relative'
+              }}>
+                {/* Scale bar end caps */}
+                <div style={{
+                  position: 'absolute',
+                  left: '0',
+                  top: '-2px',
+                  width: '1px',
+                  height: '7px',
+                  background: '#374151'
+                }} />
+                <div style={{
+                  position: 'absolute',
+                  right: '0',
+                  top: '-2px',
+                  width: '1px',
+                  height: '7px',
+                  background: '#374151'
+                }} />
+              </div>
+              {/* Scale text */}
+              <span style={{
+                fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
+                fontSize: '10px',
+                fontWeight: '600',
+                color: '#374151'
+              }}>
+                {scaleText}
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+
+          {/* Coordinates Display - Bottom Left with overlay behavior */}
+          <div
+            className="coordinate-display"
+            onClick={handleCopyCoordinates}
+            title={coordinatesCopied ? "Koordinater kopiert!" : "Klikk for å kopiere koordinater"}
+            style={{
+              position: 'absolute',
+              bottom: '16px',
+              left: '16px',
+              zIndex: 100,
+              // Styling adapts based on sidebar state as specified
+              ...(sidebarCollapsed ? {
+                // On Map styling
+                background: coordinatesCopied ? 'rgba(34,197,94,0.9)' : 'rgba(255,255,255,0.8)',
+                borderRadius: '4px',
+                padding: '4px 6px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                fontSize: '12px',
+                color: coordinatesCopied ? '#ffffff' : '#374151'
+              } : {
+                // On Sidebar Overlay styling
+                background: coordinatesCopied ? '#22c55e' : '#ffffff',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                padding: '4px 6px',
+                fontSize: '12px',
+                color: coordinatesCopied ? '#ffffff' : '#111827',
+                fontWeight: '500'
+              }),
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              pointerEvents: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginTop: '60px', // Space below scale line
+              cursor: 'pointer',
+              transition: 'all 0.2s ease-in-out'
+            }}>
+            <span style={{
+              fontFamily: 'Material Symbols Outlined',
+              fontSize: '14px',
+              color: coordinatesCopied ? '#ffffff' : (sidebarCollapsed ? '#374151' : '#111827')
+            }}>
+              my_location
+            </span>
+            <span style={{
+              fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
+              fontSize: '11px',
+              fontWeight: sidebarCollapsed ? '500' : '500'
+            }}>
+              {coordinates.lat.toFixed(5)}°N, {coordinates.lng.toFixed(5)}°E
+            </span>
+          </div>
+        </>
+        )
+      })()}
       
-      {/* Coordinate display positioned next to native scale control */}
-      {coordinates && (
-        <div style={{
-          position: 'absolute',
-          bottom: '10px',
-          left: '120px', // Position after the native scale control
-          padding: '2px 6px',
-          background: 'rgba(255, 255, 255, 0.8)',
-          borderRadius: '3px',
-          fontSize: '11px',
-          color: 'rgba(0, 0, 0, 0.8)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontWeight: '400',
-          border: 'none',
-          boxShadow: 'none',
-          zIndex: 1000,
-          backdropFilter: 'blur(2px)'
-        }}>
-          {coordinates.lat.toFixed(5)}°N, {coordinates.lng.toFixed(5)}°E
-        </div>
-      )}
+      <style>{`
+        /* Clean map styling - no default controls */
+        
+        /* Hide any remaining MapLibre attribution elements */
+        .maplibregl-ctrl-attrib,
+        .maplibregl-ctrl-bottom-right,
+        .maplibregl-ctrl-bottom-left {
+          display: none !important;
+        }
+        
+        /* POI Popup Styling */
+        .maplibregl-popup-content {
+          background: rgba(255, 255, 255, 0.98) !important;
+          backdrop-filter: blur(16px) !important;
+          border-radius: 12px !important;
+          border: 1px solid rgba(255, 255, 255, 0.3) !important;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+          padding: 0 !important;
+          max-width: 320px !important;
+          min-width: 260px !important;
+        }
+        
+        .poi-popup-content {
+          padding: 16px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .poi-popup-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        
+        .poi-popup-icon {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          flex-shrink: 0;
+        }
+        
+        .poi-popup-title {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #1F2937;
+          line-height: 1.3;
+        }
+        
+        .poi-popup-body {
+          font-size: 13px;
+          color: #4B5563;
+          line-height: 1.5;
+          margin: 0;
+        }
+        
+        .poi-popup-body a {
+          color: #059669;
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.2s ease;
+        }
+        
+        .poi-popup-body a:hover {
+          color: #047857;
+          text-decoration: underline;
+        }
+        
+        .maplibregl-popup-tip {
+          border-top-color: rgba(255, 255, 255, 0.98) !important;
+          border-bottom-color: rgba(255, 255, 255, 0.98) !important;
+        }
+        
+        .maplibregl-popup-close-button {
+          position: absolute !important;
+          top: 8px !important;
+          right: 8px !important;
+          width: 24px !important;
+          height: 24px !important;
+          border-radius: 50% !important;
+          background: rgba(0, 0, 0, 0.05) !important;
+          border: none !important;
+          font-size: 16px !important;
+          color: #6B7280 !important;
+          cursor: pointer !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          transition: all 0.2s ease !important;
+        }
+        
+        .maplibregl-popup-close-button:hover {
+          background: rgba(0, 0, 0, 0.1) !important;
+          color: #374151 !important;
+        }
+        
+        /* Search marker animation */
+        @keyframes searchPulse {
+          0% {
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(255, 107, 107, 0.7);
+          }
+          70% {
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 12px rgba(255, 107, 107, 0);
+          }
+          100% {
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(255, 107, 107, 0);
+          }
+        }
+        
+        /* User location marker animation */
+        @keyframes locationPulse {
+          0% {
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(13, 148, 136, 0.7);
+          }
+          70% {
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 10px rgba(13, 148, 136, 0);
+          }
+          100% {
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(13, 148, 136, 0);
+          }
+        }
+
+        /* Position marker animation */
+        @keyframes positionPulse {
+          0% {
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(220, 38, 38, 0.7);
+          }
+          70% {
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 14px rgba(220, 38, 38, 0);
+          }
+          100% {
+            box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(220, 38, 38, 0);
+          }
+        }
+        
+        /* Aggressive POI marker overrides */
+        .custom-poi-marker {
+          transition: all 0.2s ease !important;
+        }
+
+        .custom-poi-marker:hover {
+          transform: scale(1.15) !important;
+          z-index: 1000 !important;
+        }
+
+        /* Override ALL MapLibre marker default styling - COMMENTED OUT TO ALLOW SEARCH/LOCATION MARKERS */
+        /*
+        .maplibregl-marker {
+          background: none !important;
+          border: none !important;
+          cursor: inherit !important;
+        }
+
+        .maplibregl-marker svg {
+          display: none !important;
+        }
+
+        .maplibregl-marker .custom-poi-marker {
+          background: inherit !important;
+          background-color: inherit !important;
+          border: inherit !important;
+          box-shadow: inherit !important;
+        }
+
+        /* Force override MapLibre's default blue marker */
+        .maplibregl-marker .maplibregl-marker-anchor {
+          display: none !important;
+        }
+        */
+      `}</style>
     </div>
   )
+})
+
+// Extend window for search marker
+declare global {
+  interface Window {
+    searchMarker?: maplibregl.Marker
+  }
+}
+
+// Helper function to adjust color brightness
+function adjustBrightness(color: string, percent: number): string {
+  const num = parseInt(color.replace('#', ''), 16)
+  const amt = Math.round(2.55 * percent)
+  const R = (num >> 16) + amt
+  const G = (num >> 8 & 0x00FF) + amt
+  const B = (num & 0x0000FF) + amt
+  return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+    (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1)
 }

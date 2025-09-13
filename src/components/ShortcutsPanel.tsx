@@ -8,17 +8,15 @@ export function ShortcutsPanel({ className = '' }: ShortcutsPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const shortcuts = {
-    map: [
-      { action: 'Panorer', method: 'Dra med en finger' },
-      { action: 'Zoom inn', method: 'Pinch ut / scroll opp' },
-      { action: 'Zoom ut', method: 'Pinch inn / scroll ned' },
-      { action: 'Roter', method: 'To fingre + roter' },
-      { action: 'Tilt', method: 'Ctrl + dra' }
-    ],
     app: [
-      { action: 'Gå til søkefelt', method: 'Ctrl+K / ⌘+K' },
-      { action: 'Vis/skjul sidemeny', method: 'Ctrl+B / ⌘+B' },
-      { action: 'Lukk søkeresultater', method: 'Escape' }
+      { action: 'Søk', method: 'Ctrl+K' },
+      { action: 'Meny', method: 'Ctrl+B' },
+      { action: 'Lukk', method: 'Esc' }
+    ],
+    map: [
+      { action: 'Panorér', method: 'Dra' },
+      { action: 'Zoom', method: 'Rull / pinch' },
+      { action: 'Roter', method: 'To fingre' }
     ]
   }
 
@@ -54,15 +52,21 @@ export function ShortcutsPanel({ className = '' }: ShortcutsPanelProps) {
           }
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ 
-            fontSize: '12px', 
-            fontWeight: '600', 
-            color: '#475569', 
-            textTransform: 'uppercase', 
-            letterSpacing: '0.5px' 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '16px',
+            color: '#64748b'
           }}>
-            Hurtigtaster og bevegelser
+            keyboard
+          </span>
+          <span style={{ 
+            fontSize: '14px', 
+            fontWeight: '500', 
+            color: '#334155',
+            letterSpacing: '0.2px' 
+          }}>
+            Hurtigtaster
           </span>
         </div>
         <span 
@@ -80,92 +84,86 @@ export function ShortcutsPanel({ className = '' }: ShortcutsPanelProps) {
       {/* Expanded Content */}
       {isExpanded && (
         <div style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '6px',
+          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          border: '1px solid rgba(226, 232, 240, 0.6)',
+          borderRadius: '8px',
           overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+          backdropFilter: 'blur(8px)'
         }}>
-          {/* App Controls Section */}
-          <div style={{ padding: '8px 12px' }}>
-            {shortcuts.app.map((shortcut, index) => (
-              <div key={index} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '3px 0',
-                borderBottom: index < shortcuts.app.length - 1 ? '1px solid #f1f5f9' : 'none'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '13px', color: '#334155', fontWeight: '500' }}>
-                    {shortcut.action}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    color: '#64748b',
-                    backgroundColor: '#f8fafc',
-                    padding: '2px 4px',
-                    borderRadius: '3px',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    {shortcut.method}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: '1px', backgroundColor: '#e2e8f0' }} />
-
-          {/* Map Navigation Section */}
-          <div style={{ padding: '8px 12px' }}>
-            {shortcuts.map.map((shortcut, index) => (
-              <div key={index} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '3px 0',
-                borderBottom: index < shortcuts.map.length - 1 ? '1px solid #f1f5f9' : 'none'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '13px', color: '#334155', fontWeight: '500' }}>
-                    {shortcut.action}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    color: '#64748b',
-                    backgroundColor: '#f8fafc',
-                    padding: '2px 4px',
-                    borderRadius: '3px',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    {shortcut.method}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer tip */}
-          <div style={{
-            padding: '8px 12px',
-            backgroundColor: '#f8fafc',
-            borderTop: '1px solid #f1f5f9'
-          }}>
-            <p style={{
-              margin: '0',
-              fontSize: '10px',
-              color: '#64748b',
-              fontStyle: 'italic',
-              textAlign: 'left'
+          {/* Single clean grid layout */}
+          <div style={{ padding: '12px 16px' }}>
+            <div style={{
+              display: 'grid',
+              gap: '8px'
             }}>
-              💡 Tips: Hold Shift mens du zoomer for mer kontroll
-            </p>
+              {/* App shortcuts */}
+              {shortcuts.app.map((shortcut, index) => (
+                <div key={`app-${index}`} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '6px 0',
+                  borderBottom: (index === shortcuts.app.length - 1 && shortcuts.map.length > 0) ? '1px solid rgba(241, 245, 249, 0.8)' : 'none',
+                  paddingBottom: (index === shortcuts.app.length - 1 && shortcuts.map.length > 0) ? '10px' : '6px',
+                  marginBottom: (index === shortcuts.app.length - 1 && shortcuts.map.length > 0) ? '4px' : '0'
+                }}>
+                  <span style={{ 
+                    fontSize: '14px', 
+                    color: '#1f2937', 
+                    fontWeight: '400',
+                    letterSpacing: '0.1px'
+                  }}>
+                    {shortcut.action}
+                  </span>
+                  <kbd style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    backgroundColor: '#f3f4f6', // Specified background
+                    padding: '4px 6px', // Specified padding
+                    borderRadius: '6px', // Specified border-radius
+                    border: '1px solid rgba(229, 231, 235, 0.6)',
+                    fontFamily: 'SF Mono, Monaco, "Cascadia Code", monospace'
+                  }}>
+                    {shortcut.method}
+                  </kbd>
+                </div>
+              ))}
+              
+              {/* Map shortcuts */}
+              {shortcuts.map.map((shortcut, index) => (
+                <div key={`map-${index}`} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '6px 0'
+                }}>
+                  <span style={{ 
+                    fontSize: '14px', 
+                    color: '#1f2937', 
+                    fontWeight: '400',
+                    letterSpacing: '0.1px'
+                  }}>
+                    {shortcut.action}
+                  </span>
+                  <kbd style={{
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    color: '#6b7280',
+                    backgroundColor: '#f3f4f6', // Specified background
+                    padding: '4px 6px', // Specified padding
+                    borderRadius: '6px', // Specified border-radius
+                    border: '1px solid rgba(229, 231, 235, 0.6)',
+                    fontFamily: 'SF Mono, Monaco, "Cascadia Code", monospace'
+                  }}>
+                    {shortcut.method}
+                  </kbd>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

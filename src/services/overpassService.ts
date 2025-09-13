@@ -1069,7 +1069,7 @@ export class OverpassService {
       console.log('📊 Raw hunting stand Overpass response:', data)
       
       // Return raw POI data without generic transformation - let the app handle specific transformation
-      const rawPois = data.elements?.map((element: any) => ({
+      const rawPois = data.elements?.map((element: OverpassElement) => ({
         id: element.id || `${element.type}-${element.lat}-${element.lon}`,
         type: element.type || 'node',
         lat: element.lat || element.center?.lat,
@@ -1139,7 +1139,7 @@ export class OverpassService {
       console.log('📊 Raw fire pit Overpass response:', data)
       
       // Return raw POI data without generic transformation - let the app handle specific transformation
-      const rawPois = data.elements?.map((element: any) => ({
+      const rawPois = data.elements?.map((element: OverpassElement) => ({
         id: element.id || `${element.type}-${element.lat}-${element.lon}`,
         type: element.type || 'node',
         lat: element.lat || element.center?.lat,
@@ -1225,7 +1225,7 @@ export class OverpassService {
       console.log('📊 Raw shelter Overpass response:', data)
       
       // Return raw POI data without generic transformation - let the app handle specific transformation
-      const rawPois = data.elements?.map((element: any) => ({
+      const rawPois = data.elements?.map((element: OverpassElement) => ({
         id: element.id || `${element.type}-${element.lat}-${element.lon}`,
         type: element.type || 'node',
         lat: element.lat || element.center?.lat,

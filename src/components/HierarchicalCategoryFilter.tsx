@@ -101,7 +101,15 @@ export function HierarchicalCategoryFilter({
 
     return (
       <div key={node.id} style={{ marginLeft: `${indentLevel}px` }}>
-        <div className="category-item">
+        <div className="category-item" style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '6px 0',
+          minHeight: '32px',
+          borderRadius: '6px',
+          margin: '1px 0',
+          transition: 'background-color 0.2s ease'
+        }}>
           {hasChildren && (
             <button
               className="expand-button"
@@ -110,13 +118,28 @@ export function HierarchicalCategoryFilter({
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                padding: '2px',
-                marginRight: '4px',
+                padding: '4px',
+                marginRight: '6px',
                 fontSize: '12px',
-                color: '#666'
+                color: '#6b7280',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '20px',
+                minHeight: '20px',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f3f4f6'
+                e.currentTarget.style.color = '#374151'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = '#6b7280'
               }}
             >
-              <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px' }}>
+              <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px', transition: 'transform 0.2s ease' }}>
                 {isExpanded ? 'expand_more' : 'chevron_right'}
               </span>
             </button>
@@ -133,7 +156,10 @@ export function HierarchicalCategoryFilter({
             style={{ 
               marginRight: '8px',
               opacity: isDisabled ? 0.4 : 1,
-              cursor: isDisabled ? 'not-allowed' : 'pointer'
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
+              accentColor: '#10b981',
+              width: '14px',
+              height: '14px'
             }}
           />
           
@@ -141,22 +167,26 @@ export function HierarchicalCategoryFilter({
             <div 
               className="icon-preview" 
               style={{ 
-                backgroundColor: isDisabled ? '#ccc' : (node.color || '#ccc'),
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
+                backgroundColor: isDisabled ? '#e5e7eb' : (node.color || '#6b7280'),
+                width: '22px',
+                height: '22px',
+                borderRadius: '6px',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginRight: '8px',
-                opacity: isDisabled ? 0.4 : 1
+                marginRight: '10px',
+                opacity: isDisabled ? 0.5 : 1,
+                boxShadow: isDisabled ? 'none' : '0 1px 3px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s ease'
               }}
             >
               <span style={{ 
                 fontFamily: 'Material Symbols Outlined', 
-                fontSize: '14px', 
+                fontSize: '13px', 
                 color: 'white',
-                opacity: isDisabled ? 0.6 : 1
+                opacity: isDisabled ? 0.6 : 1,
+                fontWeight: '400',
+                fontVariationSettings: '"wght" 400'
               }}>
                 {node.icon}
               </span>
@@ -168,9 +198,12 @@ export function HierarchicalCategoryFilter({
             style={{ 
               cursor: isDisabled ? 'not-allowed' : 'pointer',
               fontSize: '14px',
-              fontWeight: '500',
-              color: isDisabled ? '#999' : 'inherit',
-              opacity: isDisabled ? 0.6 : 1
+              fontWeight: isDisabled ? '400' : '500',
+              color: isDisabled ? '#9ca3af' : '#374151',
+              opacity: isDisabled ? 0.7 : 1,
+              lineHeight: '1.4',
+              letterSpacing: '0.1px',
+              transition: 'color 0.2s ease'
             }}
           >
             {node.name}

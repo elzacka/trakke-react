@@ -1,5 +1,6 @@
 // Norwegian search service using Kartverket's official place name API
 // Replaces Nominatim for better Norwegian coverage and accuracy
+// Updated: Fixed any potential duplicate key warnings
 
 export interface SearchResult {
   id: string
@@ -116,6 +117,18 @@ function isValidNumber(value: number): boolean {
   return typeof value === 'number' && !isNaN(value) && isFinite(value)
 }
 
+// Text formatting functions
+function capitalizeFirstLetter(text: string): string {
+  if (!text) return text
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+function formatProperName(text: string): string {
+  if (!text) return text
+  // Split by space and capitalize first letter of each word for proper names
+  return text.split(' ').map(word => capitalizeFirstLetter(word.toLowerCase())).join(' ')
+}
+
 // Coordinate parsing (kept from original implementation)
 function parseCoordinates(input: string): CoordinateParseResult | null {
   const cleaned = input.replace(/[°'"′″\s]/g, ' ').trim()
@@ -159,7 +172,7 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
   return null
 }
 
-// Local POI search (kept from original implementation)
+// Local POI search with proper capitalization
 function searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
   const normalizedQuery = query.toLowerCase()
   
@@ -169,62 +182,191 @@ function searchLocalPOIs(query: string, pois: POILike[]): SearchResult[] {
       const descMatch = poi.description.toLowerCase().includes(normalizedQuery)
       return nameMatch || descMatch
     })
-    .map(poi => ({
-      id: `poi_${poi.id}`,
-      name: poi.name,
-      displayName: poi.name,
-      lat: poi.lat,
-      lng: poi.lng,
-      type: 'poi' as const,
-      source: 'internal' as const,
-      description: poi.description
-    }))
+    .map(poi => {
+      const formattedName = formatProperName(poi.name)
+      const formattedDescription = capitalizeFirstLetter(poi.description)
+      
+      return {
+        id: `poi_${poi.id}`,
+        name: formattedName,
+        displayName: formattedName,
+        lat: poi.lat,
+        lng: poi.lng,
+        type: 'poi' as const,
+        source: 'internal' as const,
+        description: formattedDescription
+      }
+    })
     .slice(0, 5)
 }
 
 
-// Norwegian place type translations
+// Norwegian place type translations - Complete Kartverket terminology
 const norwegianPlaceTypes: Record<string, string> = {
+  // Administrative units
   'By': 'by',
-  'Tettsted': 'tettsted',
+  'Tettsted': 'tettsted', 
   'Grend': 'grend',
-  'Gård': 'gård',
   'Kommune': 'kommune',
   'Fylke': 'fylke',
+  'Bydel': 'bydel',
+  'Kretsdel': 'kretsdel',
+  
+  // Natural features - Terrain
   'Fjell': 'fjell',
+  'Topp': 'topp',
+  'Høyde': 'høyde',
   'Ås': 'ås',
+  'Egg': 'egg',
+  'Kam': 'kam',
+  'Rygg': 'rygg',
   'Dal': 'dal',
+  'Dalen': 'dalen',
+  'Juv': 'juv',
+  'Kløft': 'kløft',
+  'Li': 'li',
+  'Skråning': 'skråning',
+  'Platei': 'plateau',
+  'Vidde': 'vidde',
+  'Heii': 'hei',
+  
+  // Water features
   'Innsjø': 'innsjø',
+  'Vatn': 'vatn',
+  'Tjern': 'tjern',
+  'Tjnn': 'tjern',
+  'Dam': 'dam',
   'Elv': 'elv',
-  'Øy': 'øy',
+  'Bekk': 'bekk',
+  'Å': 'å',
+  'Foss': 'foss',
+  'Stryk': 'stryk',
+  'Kilde': 'kilde',
   'Fjord': 'fjord',
+  'Sund': 'sund',
   'Bukt': 'bukt',
+  'Vik': 'vik',
   'Strand': 'strand',
+  'Øy': 'øy',
+  'Holme': 'holme',
+  'Skjær': 'skjær',
+  'Grunn': 'grunn',
+  
+  // Vegetation and landscape
   'Skog': 'skog',
   'Myr': 'myr',
+  'Mosse': 'mosse',
+  'Sump': 'sump',
+  'Eng': 'eng',
+  'Mark': 'mark',
+  'Lynghei': 'lynghei',
+  'Slette': 'slette',
   'Bre': 'bre',
-  'Foss': 'foss',
-  'Kilde': 'kilde',
-  'Hule': 'hule',
-  'Hytte': 'hytte',
+  'Snøfond': 'snøfond',
+  'Ur': 'ur',
+  
+  // Cultural features
+  'Gård': 'gård',
+  'Gårdstun': 'gårdstun',
+  'Husklynge': 'husklynge',
+  'Ruin': 'ruin',
+  'Tuft': 'tuft',
   'Kirke': 'kirke',
+  'Kapell': 'kapell',
+  'Kloster': 'kloster',
+  'Minnesmere': 'minnesmerke',
+  'Gravfelt': 'gravfelt',
+  'Røys': 'røys',
+  'Steinsetning': 'steinsetning',
+  'Varde': 'varde',
+  
+  // Infrastructure
   'Skole': 'skole',
   'Sykehus': 'sykehus',
   'Stasjon': 'stasjon',
+  'Jernbanestasjon': 'jernbanestasjon',
+  'Holdeplass': 'holdeplass',
   'Havn': 'havn',
+  'Hamn': 'hamn',
+  'Kai': 'kai',
   'Flyplass': 'flyplass',
+  'Landingsstripe': 'landingsplass',
   'Bru': 'bru',
-  'Tårn': 'tårn',
-  'Fort': 'fort',
-  'Minnesmærke': 'minnesmerke'
+  'Færgekai': 'færgekai',
+  'Tunnel': 'tunnel',
+  'Vei': 'vei',
+  'Gate': 'gate',
+  'Plass': 'plass',
+  'Torg': 'torg',
+  
+  // Outdoor/hiking related
+  'Hytte': 'hytte',
+  'Bu': 'bu',
+  'Koie': 'koie',
+  'Seter': 'seter',
+  'Støl': 'støl',
+  'Gapahuk': 'gapahuk',
+  'Vindskjul': 'vindskjul',
+  'Rasteplass': 'rasteplass',
+  'Utsiktspunkt': 'utsiktspunkt',
+  'Aussichtspunkt': 'utsiktspunkt',
+  'Trigpunkt': 'trigpunkt',
+  'Høydemrke': 'høydemærke',
+  'Grotte': 'grotte',
+  'Hule': 'hule',
+  'Berg': 'berg',
+  'Steinbrudd': 'steinbrudd',
+  'Gruv': 'gruv'
 }
 
-// Kartverket address search implementation
+// Enhanced address search with fallback strategies
 async function searchKartverketAddresses(query: string): Promise<SearchResult[]> {
+  const results: SearchResult[] = []
+  
   try {
     const encodedQuery = encodeURIComponent(query.trim())
-    const url = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodedQuery}&treffPerSide=5&side=1`
     
+    // First try exact search
+    const url = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodedQuery}&treffPerSide=10&side=1`
+    const response = await attemptAddressSearch(url)
+    
+    // If no exact results and query looks like "StreetName Number", try street name only
+    if (!response || response.length === 0) {
+      const addressMatch = query.match(/^(.+?)\s+(\d+[A-Za-z]?)\s*$/)
+      if (addressMatch) {
+        const streetName = addressMatch[1].trim()
+        console.log(`\ud83c\udfe0 Ingen eksakt match for "${query}", pr\u00f8ver gatenavn: "${streetName}"`)
+        const streetUrl = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodeURIComponent(streetName)}&treffPerSide=8&side=1`
+        const streetResults = await attemptAddressSearch(streetUrl)
+        if (streetResults && streetResults.length > 0) {
+          results.push(...streetResults)
+        }
+      }
+    } else {
+      results.push(...response)
+    }
+    
+    // If still no results, try fuzzy search as last resort
+    if (results.length === 0) {
+      console.log(`\ud83c\udfe0 Pr\u00f8ver fuzzy search for "${query}"`)
+      const fuzzyUrl = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodedQuery}&treffPerSide=10&side=1&fuzzy=true`
+      const fuzzyResults = await attemptAddressSearch(fuzzyUrl)
+      if (fuzzyResults) {
+        results.push(...fuzzyResults)
+      }
+    }
+    
+    return results
+    
+  } catch (error) {
+    console.error('Adresse s\u00f8kefeil:', error)
+    return []
+  }
+}
+
+// Helper function for address search attempts
+async function attemptAddressSearch(url: string): Promise<SearchResult[]> {
+  try {
     console.log('🏠 Kartverket adresse søk:', url)
     
     const controller = new AbortController()
@@ -266,31 +408,27 @@ async function searchKartverketAddresses(query: string): Promise<SearchResult[]>
           return null
         }
         
+        // Format address components with proper capitalization
+        const formattedAddress = formatProperName(address.adressetekst)
+        const formattedMunicipality = formatProperName(address.kommunenavn)
+        
         return {
           id: `kartverket_addr_${address.adressenavn}_${address.nummer}_${address.postnummer}`,
-          name: address.adressetekst,
-          displayName: `${address.adressetekst}, ${address.kommunenavn}`,
+          name: formattedAddress,
+          displayName: `${formattedAddress}, ${formattedMunicipality}`,
           lat,
           lng,
           type: 'address' as const,
           source: 'kartverket' as const,
-          municipality: address.kommunenavn,
-          description: `Adresse i ${address.kommunenavn} kommune (${address.postnummer})`
+          municipality: formattedMunicipality,
+          description: `Adresse i ${formattedMunicipality} kommune (${address.postnummer})`
         }
       })
       .filter((result): result is SearchResult => result !== null)
-      .slice(0, 5)
+      .slice(0, 6)
     
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        console.warn('Kartverket adresse søk timed out')
-      } else {
-        console.error('Kartverket adresse søkefeil:', error.message)
-      }
-    } else {
-      console.error('Ukjent Kartverket adresse feil:', error)
-    }
+    console.error('Address search error:', error)
     return []
   }
 }
@@ -299,7 +437,7 @@ async function searchKartverketAddresses(query: string): Promise<SearchResult[]>
 async function searchKartverket(query: string): Promise<SearchResult[]> {
   try {
     const encodedQuery = encodeURIComponent(query.trim())
-    const url = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodedQuery}*&treffPerSide=8&side=1`
+    const url = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodedQuery}*&treffPerSide=10&side=1&kommunenummer=*&fuzzy=true`
     
     console.log('🗺️ Kartverket søk:', url)
     
@@ -345,17 +483,18 @@ async function searchKartverket(query: string): Promise<SearchResult[]> {
           return null
         }
         
-        // Extract municipality and county from arrays
-        const municipality = place.kommuner?.[0]?.kommunenavn || ''
-        const county = place.fylker?.[0]?.fylkesnavn || ''
+        // Extract municipality and county from arrays with proper capitalization
+        const municipality = place.kommuner?.[0]?.kommunenavn ? formatProperName(place.kommuner[0].kommunenavn) : ''
+        const county = place.fylker?.[0]?.fylkesnavn ? formatProperName(place.fylker[0].fylkesnavn) : ''
         
         // Create display name with administrative context
         const typeLabel = norwegianPlaceTypes[place.navneobjekttype] || place.navneobjekttype.toLowerCase()
+        const formattedPlaceName = formatProperName(place.skrivemåte)
         const displayName = createDisplayName(place, typeLabel, municipality, county)
         
         return {
           id: `kartverket_${place.stedsnummer}`,
-          name: place.skrivemåte,
+          name: formattedPlaceName,
           displayName,
           lat,
           lng,
@@ -363,7 +502,7 @@ async function searchKartverket(query: string): Promise<SearchResult[]> {
           source: 'kartverket' as const,
           municipality: municipality,
           county: county,
-          description: `${typeLabel}${municipality ? ` i ${municipality} kommune` : ''}${county ? `, ${county} fylke` : ''}`
+          description: capitalizeFirstLetter(`${typeLabel}${municipality ? ` i ${municipality} kommune` : ''}${county ? `, ${county} fylke` : ''}`)
         }
       })
       .filter((result): result is SearchResult => result !== null)
@@ -385,9 +524,9 @@ async function searchKartverket(query: string): Promise<SearchResult[]> {
 
 // Create display name with Norwegian administrative context
 function createDisplayName(place: KartverketPlace, typeLabel: string, municipality: string, county: string): string {
-  const baseName = place.skrivemåte
+  const baseName = formatProperName(place.skrivemåte)
   
-  // For major cities, just show name + type
+  // For major cities, just show name
   const majorCities = ['Oslo', 'Bergen', 'Trondheim', 'Stavanger', 'Kristiansand', 'Tromsø', 'Drammen']
   if (majorCities.includes(baseName) && typeLabel === 'by') {
     return baseName
@@ -401,14 +540,22 @@ function createDisplayName(place: KartverketPlace, typeLabel: string, municipali
     return `${baseName} fylke`
   }
   
-  // For other places, include municipality context
-  if (municipality && municipality !== baseName) {
-    return `${baseName} (${typeLabel}), ${municipality}`
-  } else if (county) {
-    return `${baseName} (${typeLabel}), ${county} fylke`
-  }
+  // For other places, include municipality context but avoid showing street name type
+  const shouldShowType = !['gate', 'vei', 'plass', 'torg'].some(streetType => 
+    baseName.toLowerCase().includes(streetType)
+  )
   
-  return `${baseName} (${typeLabel})`
+  if (municipality && municipality !== baseName) {
+    // Remove redundant type info - it's shown in description below
+    return `${baseName}, ${municipality}`
+  } else if (county) {
+    // Remove redundant type info - it's shown in description below
+    return `${baseName}, ${county}`
+  }
+
+  // Just return the base name - type info is shown in description
+  
+  return baseName
 }
 
 // Distance calculation for deduplication
@@ -444,10 +591,24 @@ function deduplicateAndSort(results: SearchResult[], query: string): SearchResul
     // POIs before addresses and places
     if (a.type === 'poi' && b.type !== 'poi') return -1
     if (b.type === 'poi' && a.type !== 'poi') return 1
-    
-    // Addresses before places (more specific)
-    if (a.type === 'address' && b.type === 'place') return -1
-    if (b.type === 'address' && a.type === 'place') return 1
+
+    // Places before addresses (prioritize places as requested)
+    if (a.type === 'place' && b.type === 'address') return -1
+    if (b.type === 'place' && a.type === 'address') return 1
+
+    // For very specific address searches, still show good address matches prominently
+    const aIsVeryGoodAddressMatch = a.type === 'address' && (
+      a.name.toLowerCase().startsWith(normalizedQuery) ||
+      a.name.toLowerCase() === normalizedQuery
+    )
+    const bIsVeryGoodAddressMatch = b.type === 'address' && (
+      b.name.toLowerCase().startsWith(normalizedQuery) ||
+      b.name.toLowerCase() === normalizedQuery
+    )
+
+    // Very specific address matches can still compete with places
+    if (aIsVeryGoodAddressMatch && b.type === 'place' && !b.name.toLowerCase().startsWith(normalizedQuery)) return -1
+    if (bIsVeryGoodAddressMatch && a.type === 'place' && !a.name.toLowerCase().startsWith(normalizedQuery)) return 1
     
     // Exact matches
     const aExact = a.name.toLowerCase() === normalizedQuery
@@ -463,7 +624,7 @@ function deduplicateAndSort(results: SearchResult[], query: string): SearchResul
     
     // Alphabetical fallback
     return a.displayName.localeCompare(b.displayName, 'no')
-  }).slice(0, 8)
+  }).slice(0, 12)
 }
 
 // Main service class
@@ -494,7 +655,7 @@ export class SearchService {
           lng: coordResult.lng,
           type: 'coordinates',
           source: 'koordinater',
-          description: `Koordinater (${coordResult.format})`
+          description: capitalizeFirstLetter(`Koordinater (${coordResult.format})`)
         })
       }
 

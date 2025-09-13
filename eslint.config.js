@@ -35,7 +35,24 @@ export default tseslint.config([
         }
       ],
       // Mindre strenge regler for utvikling
-      '@typescript-eslint/no-explicit-any': 'warn'
+      '@typescript-eslint/no-explicit-any': 'warn',
+      
+      // 🚨 ARCHITECTURAL SAFEGUARDS - Prevent regression to forbidden patterns
+      'no-restricted-properties': [
+        'error',
+        {
+          object: '*',
+          property: 'geojson',
+          message: '❌ GeoJSON is FORBIDDEN. Use API-based POI rendering with MapLibre GL Markers instead. See ARCHITECTURE.md'
+        }
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value="geojson"]',
+          message: '❌ GeoJSON sources are FORBIDDEN. Use API-based POI rendering only. See ARCHITECTURE.md'
+        }
+      ]
     },
   },
 ])

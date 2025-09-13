@@ -84,15 +84,21 @@ export function CategoryPanel({
             }
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ 
-              fontSize: '12px', 
-              fontWeight: '600', 
-              color: '#475569', 
-              textTransform: 'uppercase', 
-              letterSpacing: '0.5px' 
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              fontFamily: 'Material Symbols Outlined',
+              fontSize: '16px',
+              color: '#64748b'
             }}>
-              Kategorier å se på kartet
+              layers
+            </span>
+            <span style={{ 
+              fontSize: '14px', 
+              fontWeight: '500', 
+              color: '#334155',
+              letterSpacing: '0.2px' 
+            }}>
+              Kategorier
             </span>
           </div>
           <span 

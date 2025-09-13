@@ -2,227 +2,116 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository Structure
+## 🗺️ Project Overview
 
-This is a React-based outdoor recreation app called "Tråkke" that helps users discover hiking trails, swimming spots, camping areas, and other points of interest (POIs) throughout Norway. The app focuses on Norwegian "friluftsliv" culture with comprehensive coverage of all mainland Norway plus Arctic regions.
+Tråkke is a Norwegian outdoor recreation app built with React + TypeScript + Vite that displays Points of Interest (POIs) on interactive maps using official Norwegian map data from Kartverket. The app focuses on hiking, camping, cultural sites, and outdoor activities across Norway.
 
-**Tech Stack:**
-- React 19.1.0 + TypeScript 5.8.3 + Vite 7.0.4
-- MapLibre GL JS 5.7.0 (replaced Leaflet implementation)
-- Material Symbols for icons
-- CSS for styling (no framework)
+## 🛠️ Development Commands
 
-**Key Architecture:**
-- Component-based structure with MapLibreTrakkeApp as main component
-- Service layer for Norwegian place name search via Nominatim
-- Norwegian outdoor recreation POI data with TypeScript interfaces
-- MapLibre GL JS with official Kartverket topographic tiles
-- Category-based POI filtering with real-time viewport updates
+- **Development**: `npm run dev` - Start development server on http://localhost:3000
+- **Build**: `npm run build` - TypeScript compilation and production build
+- **Lint**: `npm run lint` - ESLint checking with React and TypeScript rules
+- **Deploy**: `npm run deploy` - Deploy to GitHub Pages using gh-pages
 
-## Development Commands
+## 🏗️ Architecture Overview
 
-```bash
-npm run dev          # Start dev server (usually port 3000)
-npm run build        # Build for production (TypeScript compile + Vite build)  
-npm run preview      # Preview production build
-npm run lint         # Run ESLint with max 0 warnings (strict policy)
-npm run deploy       # Deploy to GitHub Pages
-```
+### Core Components Structure
+- **`MapLibreTrakkeApp.tsx`** - Main application component containing all state management, POI loading logic, and API orchestration
+- **`MapLibreMap.tsx`** - Map rendering component using MapLibre GL JS with Kartverket WMTS raster tiles (zoom limits: 3-17)
+- **`CategoryPanel.tsx`** - Sidebar with hierarchical POI category filtering
+- **`SearchBox/`** - Norwegian place name search using Nominatim API
+- **`HierarchicalCategoryFilter.tsx`** - Multi-level category tree with checkbox states
 
-## Current Implementation Status
+### Data Architecture
+- **POI Categories**: Defined in `src/data/pois.ts` with 7 main categories (Aktivitet, Naturperle, Overnatte, På eventyr, Service, Transport, Turløype)
+- **API-Based POI Rendering**: Uses MapLibre GL Markers (NOT GeoJSON layers) for performance
+- **Color Coordination**: Each POI category has specific colors that must match between markers and UI elements
+- **POI Transform Functions**: Located in `MapLibreTrakkeApp.tsx` - convert API data to internal POI format with correct colors
 
-### ✅ **Complete Feature Set**
-- **Geographic Coverage**: Full Norway (57.5-71.5°N, 4.0-31.5°E) using Kartverket official maps
-- **POI Categories**: Currently only Krigsminne (war memorials) from OpenStreetMap are active
-- **Language**: 100% Norwegian (Bokmål) throughout
-- **Map Technology**: MapLibre GL JS with Kartverket WMS topographic tiles
-- **Search**: Norwegian place name search with coordinate display
+### Service Layer
+- **`overpassService.ts`** - OpenStreetMap Overpass API queries for POI data (war memorials, caves, towers, hunting stands)
+- **`searchService.ts`** - Norwegian place name search with coordinate/address/POI type detection  
+- **`kartverketTrailService.ts`** - Future integration with official Norwegian trail data
 
-### **Critical Configuration Values**
+### Map Integration
+- **Map Library**: MapLibre GL JS with Kartverket WMTS raster tiles
+- **Zoom Configuration**: minZoom: 3, maxZoom: 17 (prevents grey map at extreme zoom levels)
+- **Coordinate System**: Web Mercator (EPSG:3857) 
+- **POI Popups**: Custom HTML popups with close buttons (X), not default MapLibre popups
 
-#### **Norwegian Territory Bounds**
-```typescript
-// MapLibreMap.tsx - Used for initial map bounds and maxBounds
-const NORWAY_BOUNDS = [
-  [3.0, 57.5],   // Southwest (extended west for full coastline)  
-  [32.0, 72.0]   // Northeast (extended north for full coverage)
-]
-```
+## 🚨 Critical Architecture Rules
 
-#### **Map Initialization**
-```typescript
-// MapLibreMap.tsx - Constructor bounds for complete Norway visibility
-bounds: [
-  [3.0, 57.5],   // Southwest corner - extended for full coastline
-  [32.0, 72.0]   // Northeast corner - extended for full northern coverage
-],
-fitBoundsOptions: {
-  padding: { top: 10, bottom: 10, left: 10, right: 10 }
-}
-```
+The ESLint configuration enforces these architectural decisions:
 
-#### **Kartverket Tile Source**
-```typescript
-// Official Norwegian topographic tiles
-'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
-```
+### ✅ REQUIRED Patterns
+- **API-based POI rendering**: Use `new maplibregl.Marker()` with DOM elements
+- **Kartverket WMTS tiles**: Use the official cache.kartverket.no raster tile service
+- **Color consistency**: POI marker colors must match category colors from `pois.ts`
 
-## Code Architecture
+### ❌ FORBIDDEN Patterns  
+- **GeoJSON sources**: Banned by ESLint rules - causes performance issues
+- **Vector tiles**: Currently forbidden (legacy rule from architecture document)
+- **Inconsistent POI colors**: All POI transform functions must use correct category colors
 
-### **Core Application Structure**
-```
-src/
-├── MapLibreTrakkeApp.tsx         # Main app component
-├── main.tsx                      # Entry point using MapLibreTrakkeApp
-├── components/
-│   ├── MapLibreMap.tsx           # MapLibre GL map component (core)
-│   ├── CategoryPanel.tsx         # POI category filtering
-│   ├── SearchBox/                # Norwegian search with translations
-│   └── HierarchicalCategoryFilter.tsx
-├── data/
-│   ├── pois.ts                   # POI types and category tree definitions
-│   └── norwegianOutdoorPOIs.ts  # Famous Norwegian outdoor locations
-└── services/
-    └── searchService.ts          # Nominatim search with Norwegian translations
-```
+## 🎯 POI System
 
-### **Core Data Types**
-- `POI` interface: Main data structure for points of interest  
-- `CategoryState`: Manages checked/expanded state for category tree
-- `CategoryNode`: Hierarchical category structure with Norwegian names
-- `SearchResult`: Search results from Nominatim with Norwegian place names
+### POI Loading Flow
+1. User checks POI categories in CategoryPanel
+2. `MapLibreTrakkeApp.tsx` detects active categories via `getActiveCategoryTypes()`
+3. Appropriate transform functions called (e.g., `transformOverpassPOIs()`)
+4. POI data loaded from APIs (Overpass API for OpenStreetMap data)
+5. `MapLibreMap.tsx` receives POI array and creates MapLibre GL Markers
+6. Each marker gets click handler for custom popup display
 
-### **Key Components**
-- **MapLibreTrakkeApp.tsx**: Main application component managing state and layout
-- **MapLibreMap.tsx**: MapLibre GL map with Kartverket tiles, POI rendering, and coordinate display
-- **CategoryPanel.tsx**: Category filtering UI with expand/collapse functionality
-- **SearchBox/**: Norwegian place name search with real-time suggestions
+### POI Categories & Colors
+- **Aktivitet** (`#0d9488` teal): Swimming, beaches, fishing, fire places, canoeing
+- **Naturperle** (`#059669` green): Nature gems, caves, viewpoints, observation towers
+- **Overnatte** (`#b45309` orange): Camping, shelters, cabins, tent areas
+- **På eventyr** (`#7c3aed` purple): War memorials, cultural heritage, archaeological sites
+- **Service** (`#ea580c` orange): Information, drinking water, rest areas, toilets, parking
+- **Transport** (`#0284c7` blue): Public transport, cable cars, train stations
+- **Turløype** (`#16a34a` green): Hiking trails, ski routes, cycling paths
 
-### **Data Flow**
-1. Norwegian POI data loaded from `norwegianOutdoorPOIs.ts` (Preikestolen, Besseggen, etc.)
-2. Category state managed in MapLibreTrakkeApp with real-time filtering
-3. Map viewport changes trigger POI filtering based on bounds and active categories
-4. Search integrates Norwegian place names via Nominatim with coordinate results
+### Custom Popup System
+POI popups are custom HTML elements positioned above markers with:
+- Color-coded headers matching POI category
+- Close button (×) in upper-right corner  
+- Wikipedia/Wikidata links when available
+- Auto-close on zoom/pan and outside clicks
 
-## Map Technology & Norwegian Integration
+## 🎨 Styling & Design
 
-### **MapLibre GL JS with Kartverket**
-- **Base Tiles**: Official Kartverket WMS topographic tiles
-- **Initial View**: Automatic bounds fitting to show complete Norway
-- **Controls**: Navigation, scale (målestokk), geolocation with Norwegian attribution
-- **Coordinate Display**: Real-time coordinate overlay at map bottom
+- **Icons**: Material Symbols Outlined font for consistency
+- **Norwegian UI**: All interface text in Norwegian (bokmål)
+- **Responsive**: Mobile-first design with collapsible sidebar
+- **Color System**: Consistent color palette across categories, POIs, and UI elements
+- **Typography**: System fonts (-apple-system, BlinkMacSystemFont, Segoe UI, Roboto)
 
-### **Norwegian POI Data**
-- **Famous Landmarks**: Preikestolen, Trolltunga, Nordkapp, Galdhøpiggen
-- **DNT Infrastructure**: Fannaråkhytta, Gjendesheim (staffed huts)
-- **Cultural Sites**: Stave churches (Borgund, Urnes), war memorials
-- **Outdoor Activities**: Skiing (Holmenkollen), fishing (Gaula), waterfalls
+## 📱 User Experience
 
-### **Search & Localization** 
-- **Norwegian Search**: Nominatim API with 150+ Norwegian translations
-- **Coordinate Parsing**: Decimal degrees, DMS, UTM coordinate support
-- **Place Name Translation**: fjell→mountain, elv→river, etc.
-- **Rate Limiting**: 1 request/second with 5-minute caching
+### Default State
+- Sidebar collapsed on load
+- No POI categories active (user must explicitly select)
+- Map centered on user location (with fallback to Oslo)
 
-## POI Categories (Currently Only Active: Krigsminne)
+### Keyboard Shortcuts  
+- Handled in `MapLibreTrakkeApp.tsx` with focus management
+- Search input can be focused via keyboard shortcuts
 
-**Currently Available:**
-- **Historiske steder > Krigsminne** (Cultural Heritage > War Memorials): ACTIVE - loaded from OpenStreetMap
+### Map Controls
+- Custom controls for compass, credits, and zoom
+- Scale display with metric units (meter/kilometer)
+- Location button with loading states
+- Norwegian coordinate display
 
-**Future Categories (currently inactive/greyed out):**
-- **Turløyper** (Outdoor Activities): hiking, mountain_peaks, ski_trails
-- **Bade** (Water Activities): swimming, beach  
-- **Sove** (Accommodation): staffed_huts, self_service_huts, camping_site, tent_area
-- **Naturperler** (Nature Experiences): viewpoints, nature_gems (waterfalls)
-- **Historiske steder** (Other): churches, archaeological (inactive)
-- **Service** (Infrastructure): parking, toilets, information_boards, cable_cars
+## 🔧 Configuration Notes
 
-## User Experience & Norwegian Standards
+- **Base URL**: Set to `./` for GitHub Pages deployment
+- **Port**: Development server runs on 3000 with auto-open
+- **Build**: TypeScript strict mode with Vite optimization
+- **ESLint**: Custom rules prevent architectural regressions
+- **No testing framework**: Tests not currently implemented
 
-### **Language Guidelines (Klarspråk)**
-- **Contemporary Bokmål**: Active voice, direct address with "du/deg"
-- **Outdoor Terminology**: Consistent friluftsliv vocabulary
-- **Clear Actions**: "Søk", "Lagre", "Del rute" for UI elements
-- **Error Messages**: Explain what happened + what user can do
+## 🚀 Deployment
 
-### **Map Interaction**
-- **Initial View**: Complete Norwegian territory visible on load
-- **Category Selection**: Real-time POI filtering with expand/collapse
-- **Search Results**: Smooth map centering with 1-second animation
-- **Coordinate Display**: Live mouse coordinates in Norwegian format
-
-## Technical Implementation Notes
-
-### **Performance Considerations**
-- **Viewport-based Loading**: POIs load only when categories selected and in view
-- **Category Pre-selection**: Key categories (viewpoints, hiking, mountains) pre-selected for immediate content
-- **Search Caching**: 5-minute cache for place name results
-- **Map Optimization**: Constructor bounds more reliable than post-init fitBounds calls
-
-### **API Integration**
-- **Nominatim Search**: Norwegian place name translation with proper User-Agent
-- **Kartverket Tiles**: Official Norwegian topographic maps via WMS
-- **No OSM Dependency**: Removed OpenStreetMap POI loading, uses curated Norwegian data
-
-### **Development Workflow**
-1. **Hot Reload**: Vite dev server with instant updates
-2. **Type Safety**: Strict TypeScript with no ESLint warnings policy
-3. **Norwegian Focus**: All content, coordinates, and interactions in Norwegian context
-4. **Map-First Design**: Geography and outdoor recreation drive all feature decisions
-
-## Current Status
-
-- **Primary Component**: MapLibreTrakkeApp.tsx
-- **Map Technology**: MapLibre GL JS with Kartverket tiles (replaced Leaflet)
-- **Data Source**: OpenStreetMap via Overpass API for Krigsminne (war memorials)
-- **Language**: 100% Norwegian Bokmål interface and content
-- **Coverage**: Complete Norway from Lindesnes to Nordkapp with Arctic regions
-- **Build Status**: All TypeScript and linting issues resolved
-
-## APP- OG KARTNAVIGASJON
-
-### **Keyboard Shortcuts**
-- **Ctrl+K / ⌘+K**: Open sidebar and focus search field (or focus search if already open)
-- **Ctrl+B / ⌘+B**: Toggle sidebar open/closed
-- **Escape**: Close sidebar (if open) or blur search field (if focused)
-
-### **Mouse Navigation**
-- **Click & Drag**: Pan map
-- **Mouse Wheel**: Zoom in/out
-- **Double-click**: Zoom in
-- **Right-click**: Context menu (browser default)
-
-### **POI Interaction**
-- **Click purple markers**: Show POI popup with name and description
-- **Hover over markers**: Cursor changes to pointer
-- **Click popup close**: Close popup
-
-### **Search Functionality**
-- **Type location name**: Real-time Norwegian place name search
-- **Arrow keys**: Navigate search results
-- **Enter**: Select highlighted result and center map
-- **Tab**: Select result without closing dropdown
-- **Escape**: Close search results or blur search field
-
-### **Category Navigation**
-- **Click category checkbox**: Toggle POI visibility for that category
-- **Click expand/collapse arrows**: Show/hide subcategories
-- **Parent categories**: Auto-select when all children are selected
-
-### **Sidebar Controls**
-- **Chevron button**: Toggle sidebar visibility
-- **Search shortcuts**: Quick access via keyboard
-- **Responsive collapse**: Automatically adapts to screen size
-
-## CURRENT STATUS ✅
-
-### **Fully Working Features**
-- ✅ POI popup clicks - Fixed with layer-specific event handlers
-- ✅ Keyboard shortcuts for navigation and search
-- ✅ MapLibre GL JS with Kartverket topographic tiles
-- ✅ Norwegian place name search via Nominatim API
-- ✅ POI data loading from OpenStreetMap Overpass API
-- ✅ Category-based filtering with real-time updates
-- ✅ Material Symbols icons for POI markers and UI
-- ✅ Responsive design with sidebar toggle
-- ✅ Clean codebase with no legacy leftovers
+Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and pushes the `dist` folder to the `gh-pages` branch.

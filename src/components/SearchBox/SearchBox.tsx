@@ -1,4 +1,4 @@
-// src/components/SearchBox/SearchBox.tsx - Fullstendig fikset versjon
+// src/components/SearchBox/SearchBox.tsx - Enhanced with improved hover effects and navigation
 
 import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { SearchService, SearchResult } from '../../services/searchService'
@@ -259,33 +259,6 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
           </button>
         )}
         
-        {!query && !isLoading && (
-          <div style={{
-            position: 'absolute',
-            right: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
-            alignItems: 'center',
-            color: '#9ca3af',
-            fontSize: '12px',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            pointerEvents: 'none'
-          }}>
-            <kbd style={{
-              padding: '3px 6px',
-              borderRadius: '4px',
-              border: '1px solid #d1d5db',
-              backgroundColor: '#f9fafb',
-              color: '#6b7280',
-              fontSize: '11px',
-              fontFamily: 'system-ui',
-              whiteSpace: 'nowrap'
-            }}>
-              Ctrl+K/⌘+K
-            </kbd>
-          </div>
-        )}
       </div>
 
       {error && (
@@ -314,13 +287,6 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
               aria-selected={index === selectedIndex}
               tabIndex={-1}
             >
-              <span 
-                className="result-icon material-symbols-outlined"
-                aria-hidden="true"
-              >
-                {getResultIcon(result)}
-              </span>
-              
               <div className="result-content">
                 <div className="result-name">{result.displayName}</div>
                 {result.description && (
@@ -345,6 +311,18 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
             <small>
               💡 Du kan utvide kategoriene nedenfor og velge det du vil se på kartet.
             </small>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '12px',
+              marginTop: '6px',
+              fontSize: '11px',
+              color: '#9ca3af'
+            }}>
+              <span>↑↓ Naviger</span>
+              <span>↵ Velg</span>
+            </div>
           </div>
         </div>
       )}
