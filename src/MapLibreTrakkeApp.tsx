@@ -111,19 +111,25 @@ export function MapLibreTrakkeApp() {
   // Enhanced keyboard shortcuts for navigation and search
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      // Ctrl+K / ⌘+K: Open sidebar and focus search (or just focus if already open)
+      // Ctrl+K / ⌘+K: Open sidebar and focus search (or close if search already focused)
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         event.stopPropagation()
-        
+
+        const activeElement = document.activeElement as HTMLElement
+        const isSearchFocused = activeElement?.closest('[data-search-box]')
+
         if (sidebarCollapsed) {
           // Sidebar is collapsed, open it first then focus search
           setSidebarCollapsed(false)
           setTimeout(() => {
             searchInputRef.current?.focusInput()
           }, 300) // Wait for sidebar animation
+        } else if (isSearchFocused) {
+          // Search is already focused, close sidebar
+          setSidebarCollapsed(true)
         } else {
-          // Sidebar is open, just focus search
+          // Sidebar is open but search not focused, focus search
           searchInputRef.current?.focusInput()
         }
       }
