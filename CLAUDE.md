@@ -171,3 +171,138 @@ Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and p
 - Enhanced error handling and loading states
 - Improved TypeScript export patterns for better build compatibility
 - Fixed all ESLint unused variable warnings for clean CI/CD
+
+## 🔧 Troubleshooting & Solutions Guide
+
+This section documents proven solutions to recurring problems in the Trakke project.
+
+### MapLibre Marker Visibility Issues
+
+**Problem**: POI markers created but invisible on map, popups not working
+**Symptoms**: Console logs show markers being created, but nothing appears on map
+**Root Cause**: Aggressive CSS overrides hiding MapLibre marker content
+
+**Investigation Method**:
+1. Check browser DevTools for markers in DOM (they exist but invisible)
+2. Inspect CSS computed styles on `.maplibregl-marker` elements
+3. Look for conflicting CSS rules with `!important` declarations
+
+**Solution**: In `MapLibreMap.tsx`, comment out aggressive CSS overrides:
+```typescript
+// PROBLEMATIC CODE (causes invisible markers):
+// .maplibregl-marker {
+//   background: none !important;
+//   border: none !important;
+//   cursor: pointer !important;
+//   ...
+// }
+
+// WORKING CODE: Let MapLibre handle default marker styles
+```
+
+**Prevention**: Avoid CSS overrides on `.maplibregl-marker` class. Use specific marker element styling instead.
+
+### TypeScript Export Issues (isolatedModules)
+
+**Problem**: Build fails with "Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'"
+**Symptoms**: `npm run build` fails, `npm run dev` works fine
+
+**Investigation Method**:
+1. Check build error message for specific file and export
+2. Look for mixed type/value exports in index files
+
+**Solution**: Separate type and value exports:
+```typescript
+// PROBLEMATIC:
+export { SearchBox, SearchBoxRef } from './SearchBox'
+
+// WORKING:
+export { SearchBox } from './SearchBox'
+export type { SearchBoxRef } from './SearchBox'
+```
+
+### POI Category Color Mismatches
+
+**Problem**: POI markers show wrong colors compared to category definitions
+**Symptoms**: Visual inconsistency between sidebar categories and map markers
+
+**Investigation Method**:
+1. Check POI transform functions in `MapLibreTrakkeApp.tsx`
+2. Verify category color assignments in `pois.ts`
+3. Compare expected vs actual colors in browser
+
+**Solution**: Ensure transform functions use correct category colors:
+```typescript
+// In transform functions, match category colors from pois.ts:
+color: '#7c3aed' // Purple for "På eventyr" category (caves, war memorials)
+color: '#059669' // Green for "Naturperle" category (waterfalls, viewpoints)
+```
+
+### Keyboard Shortcut State Management
+
+**Problem**: Chevron icon doesn't flip when using keyboard shortcuts
+**Symptoms**: Manual clicks work, Ctrl+K/Ctrl+B don't update UI state
+
+**Investigation Method**:
+1. Check if keyboard handlers update the same state as click handlers
+2. Verify state is properly connected to UI components
+3. Test all interaction methods (click, Ctrl+K, Ctrl+B)
+
+**Solution**: Ensure all interaction methods use consistent state updates:
+```typescript
+// Progressive Ctrl+K behavior:
+if (sidebarCollapsed) {
+  setSidebarCollapsed(false) // Open
+} else if (isSearchFocused) {
+  setSidebarCollapsed(true)  // Close if search focused
+} else {
+  searchInputRef.current?.focusInput() // Focus if open
+}
+```
+
+### Search API Integration Issues
+
+**Problem**: Norwegian place names not found or poor search results
+**Symptoms**: Empty results for valid Norwegian locations
+
+**Investigation Method**:
+1. Test API endpoints directly in browser/Postman
+2. Check API response format and data structure
+3. Verify query parameters and encoding
+
+**Solution**: Use Kartverket's official APIs with proper parameters:
+```typescript
+// Primary: Place name search
+const placeUrl = `https://ws.geonorge.no/stedsnavn/v1/navn?...`
+
+// Secondary: Address search
+const addressUrl = `https://ws.geonorge.no/adresser/v1/sok?...`
+
+// Combine results and prioritize places over addresses
+```
+
+### ESLint Unused Variables in CI/CD
+
+**Problem**: GitHub Actions build fails with unused variable errors
+**Symptoms**: Local development works, CI/CD pipeline fails
+
+**Investigation Method**:
+1. Run `npm run lint` locally to reproduce
+2. Check which variables are flagged as unused
+3. Determine if variables are actually needed or can be prefixed
+
+**Solution**: Prefix unused variables with underscore:
+```typescript
+// Instead of: const mapRect = ...
+const _mapRect = mapContainer.getBoundingClientRect()
+
+// Or remove if truly unused
+```
+
+### General Debugging Approach
+
+1. **Console Logging**: Add strategic console.logs to track data flow
+2. **Browser DevTools**: Inspect DOM, CSS, and network requests
+3. **Systematic Testing**: Test each interaction method separately
+4. **Version Control**: Use git blame/history to find when issues were introduced
+5. **Documentation**: Update CLAUDE.md after solving complex issues
