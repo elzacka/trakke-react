@@ -134,7 +134,6 @@ POI popups are custom HTML elements positioned above markers with:
 
 ### Map Controls
 - Custom controls for compass, credits, and zoom
-- Scale display with metric units (meter/kilometer)
 - Location button with loading states and marker placement
 - Click-to-copy Norwegian coordinate display (decimal degrees)
 
@@ -150,7 +149,7 @@ POI popups are custom HTML elements positioned above markers with:
 
 Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and pushes the `dist` folder to the `gh-pages` branch. GitHub Actions automatically run lint and build checks on every push.
 
-## 🧩 Recent Major Features (2024)
+## 🧩 Recent Major Features (September 13th. 2025)
 
 ### Search Enhancements
 - Replaced Nominatim with Kartverket's official APIs for better Norwegian coverage
