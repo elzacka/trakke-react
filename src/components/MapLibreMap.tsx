@@ -213,22 +213,24 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       map.on('rotateend', handleBearingChange)
 
       // Monitor tile loading and zoom events for debugging - FIXED SOURCE ID
-      map.on('data', (e: any) => {
-        if (e.sourceId === 'kartverket-topo' && e.isSourceLoaded === false) {
+      map.on('data', (e: maplibregl.MapDataEvent) => {
+        if ((e as unknown as {sourceId?: string, isSourceLoaded?: boolean}).sourceId === 'kartverket-topo' &&
+            (e as unknown as {sourceId?: string, isSourceLoaded?: boolean}).isSourceLoaded === false) {
           console.log(`🔄 [TILE DEBUG] Loading tiles at zoom ${map.getZoom().toFixed(2)}`)
         }
       })
 
-      map.on('sourcedataloading', (e: any) => {
-        if (e.sourceId === 'kartverket-topo') {
+      map.on('sourcedataloading', (e: maplibregl.MapDataEvent) => {
+        if ((e as unknown as {sourceId?: string}).sourceId === 'kartverket-topo') {
           console.log(`⏳ [TILE DEBUG] Tile loading started at zoom ${map.getZoom().toFixed(2)}`)
         }
       })
 
       // Enhanced tile error handling and debugging
-      map.on('sourcedata', (e: any) => {
-        if (e.sourceId === 'kartverket-topo') {
-          if (e.isSourceLoaded) {
+      map.on('sourcedata', (e: maplibregl.MapDataEvent) => {
+        const eventData = e as unknown as {sourceId?: string, isSourceLoaded?: boolean}
+        if (eventData.sourceId === 'kartverket-topo') {
+          if (eventData.isSourceLoaded) {
             console.log(`✅ [TILE DEBUG] Source loaded successfully at zoom ${map.getZoom().toFixed(2)}`)
           } else {
             console.log(`⚠️ [TILE DEBUG] Source loading issue at zoom ${map.getZoom().toFixed(2)}`)
@@ -237,8 +239,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       })
 
       // Detailed tile request monitoring with URL inspection
-      map.on('dataloading', (e: any) => {
-        if (e.sourceId === 'kartverket-topo') {
+      map.on('dataloading', (e: maplibregl.MapDataEvent) => {
+        if ((e as unknown as {sourceId?: string}).sourceId === 'kartverket-topo') {
           const zoom = map.getZoom()
           console.log(`📡 [TILE DEBUG] Data loading event at zoom ${zoom.toFixed(2)}`, e)
 
