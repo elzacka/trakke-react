@@ -18,9 +18,31 @@ Tråkke is a Norwegian outdoor recreation app built with React + TypeScript + Vi
 ### Core Components Structure
 - **`MapLibreTrakkeApp.tsx`** - Main application component containing all state management, POI loading logic, and API orchestration
 - **`MapLibreMap.tsx`** - Map rendering component using MapLibre GL JS with Kartverket WMTS raster tiles (zoom limits: 3-17)
-- **`CategoryPanel.tsx`** - Sidebar with hierarchical POI category filtering
+- **`CategoryPanel.tsx`** - Sidebar with hierarchical POI category filtering and keyboard shortcuts
 - **`SearchBox/`** - Norwegian place name search using Kartverket's official place name API
 - **`HierarchicalCategoryFilter.tsx`** - Multi-level category tree with checkbox states
+
+### Sidebar (Category Panel) Layout Specifications
+
+**Structure & Hierarchy**:
+- **Header**: Logo "Tråkke" with tagline "Oppdag Norge med turskoa på"
+- **Category List**: Expandable/collapsible categories with consistent icon + label layout
+- **Keyboard Shortcuts**: Fixed at bottom with monospace chip styling
+
+**Spacing & Visual Guidelines**:
+- Tagline: Lighter text weight (`font-weight: 400`, `color: #6b7280`)
+- Category groups: 16px vertical spacing between main categories
+- Subcategories: +12px indent from parent level
+- Expand/collapse indicators: 24x24px hitbox for touch accessibility
+- Shortcuts: Background `#f3f4f6`, border-radius 6px, padding 4px 6px
+
+**Keyboard Shortcuts Display**:
+```
+⌘+K   Søk
+⌘+B   Skjul/vis meny
+⇧+Scroll   Presis zoom
+```
+- Styled as monospace chips with grouped layout (8px spacing)
 
 ### Data Architecture
 - **POI Categories**: Defined in `src/data/pois.ts` with 7 main categories (Aktivitet, Naturperle, Overnatte, På eventyr, Service, Transport, Turløype)
@@ -110,6 +132,27 @@ POI popups are custom HTML elements positioned above markers with:
 - **Typography**: System fonts (-apple-system, BlinkMacSystemFont, Segoe UI, Roboto)
 - **Animations**: Smooth transitions for sidebar, markers, and popups
 
+### Visual Hierarchy & Spacing Guidelines
+
+**Consistent Spacing Scale**:
+- Use multiples of 4 or 8px for all spacing
+- Touch targets minimum 44x44px (WCAG compliance)
+- Category groups: 16px vertical spacing
+- Subcategories: +12px indent from parent
+- Map controls: 12px gaps between buttons
+
+**Button Design System**:
+- **Default State**: `rgba(255,255,255,0.9)` background, 8px border-radius
+- **Hover/Active**: `scale(1.05)` transform, enhanced shadow
+- **Size**: 44x44px for touch accessibility
+- **Icon Color**: `#111827` with Material Symbols Outlined
+
+**Typography Hierarchy**:
+- **Logo**: Standard weight with tagline in lighter `#6b7280`
+- **Categories**: Consistent icon + label layout
+- **Coordinates**: 12px font size, monospace-style
+- **Attribution**: 12px, subtle `#6b7280` color
+
 ## 📱 User Experience & Features
 
 ### Default State
@@ -132,10 +175,34 @@ POI popups are custom HTML elements positioned above markers with:
 - **Enter**: Select highlighted search result
 - **Tab**: Auto-complete search result without closing dropdown
 
-### Map Controls
-- Custom controls for compass, credits, and zoom
-- Location button with loading states and marker placement
-- Click-to-copy Norwegian coordinate display (decimal degrees)
+### Map Controls Layout & Specifications
+
+**Right-Side Control Cluster** (top to bottom):
+1. **Compass** - Reset map to north orientation
+2. **Location** - Center on user's position with loading states
+3. **Zoom In** - Plus (+) symbol
+4. **Zoom Out** - Minus (–) symbol
+5. **Info Button** - Information ("i") symbol
+
+**Layout Requirements**:
+- All buttons: 44x44px (touch-friendly)
+- Equal 12px vertical gaps between controls
+- Aligned as single visual cluster with subtle shadow
+- Border-radius: 8px for grouped appearance
+- Position: Fixed right side of viewport
+
+**Bottom Overlay Elements**:
+- **Coordinates**: Bottom-left corner, always visible, click-to-copy functionality
+- **Attribution**: Bottom-right corner, always visible ("© Kartverket | © OpenStreetMap-bidragsytere")
+- **Scale Display**: Currently not implemented (removed from previous versions)
+
+**Coordinate Display Behavior**:
+- **Fixed Position**: Bottom-left corner (16px from edges)
+- **Overlay Behavior**: When sidebar opens, coordinates overlay on top (higher z-index)
+- **Visual Adaptation**:
+  - On map: Semi-transparent background `rgba(255,255,255,0.8)`
+  - Over sidebar: Solid white background with border
+- **Font**: 12px, monospace-style for precision
 
 ## 🔧 Configuration Notes
 
