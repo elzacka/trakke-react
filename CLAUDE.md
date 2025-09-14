@@ -18,9 +18,10 @@ Tråkke is a Norwegian outdoor recreation app built with React + TypeScript + Vi
 ### Core Components Structure
 - **`MapLibreTrakkeApp.tsx`** - Main application component containing all state management, POI loading logic, and API orchestration
 - **`MapLibreMap.tsx`** - Map rendering component using MapLibre GL JS with Kartverket WMTS raster tiles (zoom limits: 3-17)
-- **`CategoryPanel.tsx`** - Sidebar with hierarchical POI category filtering and keyboard shortcuts
+- **`CategoryPanel.tsx`** - Sidebar with hierarchical POI category filtering
 - **`SearchBox/`** - Norwegian place name search using Kartverket's official place name API
 - **`HierarchicalCategoryFilter.tsx`** - Multi-level category tree with checkbox states
+- **`ShortcutsPanel.tsx`** - Expandable keyboard shortcuts help panel with app and map controls
 
 ### Sidebar (Category Panel) Layout Specifications
 
@@ -36,13 +37,21 @@ Tråkke is a Norwegian outdoor recreation app built with React + TypeScript + Vi
 - Expand/collapse indicators: 24x24px hitbox for touch accessibility
 - Shortcuts: Background `#f3f4f6`, border-radius 6px, padding 4px 6px
 
-**Keyboard Shortcuts Display**:
+**Keyboard Shortcuts Display** (via ShortcutsPanel.tsx):
 ```
-⌘+K   Søk
-⌘+B   Skjul/vis meny
-⇧+Scroll   Presis zoom
+App Shortcuts:
+  Ctrl+K   Søk (Search)
+  Ctrl+B   Meny (Menu toggle)
+  Esc      Lukk (Close/Cancel)
+
+Map Shortcuts:
+  Drag      Panorér (Pan)
+  Scroll    Zoom
+  Two-finger Roter (Rotate)
 ```
-- Styled as monospace chips with grouped layout (8px spacing)
+- Expandable help panel styled as monospace chips
+- Separate categories for app controls vs map controls
+- Touch-friendly interaction hints
 
 ### Data Architecture
 - **POI Categories**: Defined in `src/data/pois.ts` with 7 main categories (Aktivitet, Naturperle, Overnatte, På eventyr, Service, Transport, Turløype)
@@ -206,17 +215,36 @@ POI popups are custom HTML elements positioned above markers with:
 
 ## 🔧 Configuration Notes
 
+### Development Environment
 - **Base URL**: Set to `./` for GitHub Pages deployment
 - **Port**: Development server runs on 3000 with auto-open
 - **Build**: TypeScript strict mode with Vite optimization
 - **ESLint**: Custom rules prevent architectural regressions and unused variables
 - **No testing framework**: Tests not currently implemented
 
+### Environment Variables & API Keys
+- **No API keys required**: Uses public Norwegian government APIs (Kartverket, Overpass)
+- **CORS handling**: All APIs support cross-origin requests
+- **Rate limiting**: Be mindful of API rate limits during development
+
+### Performance Considerations
+- **Marker rendering**: Uses MapLibre Markers (not GeoJSON) for better performance with large datasets
+- **API caching**: Search results and POI data should be cached to reduce API calls
+- **Image optimization**: POI category icons use Material Symbols (font-based)
+- **Bundle size**: Currently ~1.2MB gzipped (consider code splitting for future optimization)
+
+### Accessibility Features
+- **WCAG Compliance**: 44x44px minimum touch targets
+- **Keyboard Navigation**: Full keyboard accessibility for search and controls
+- **Screen Reader Support**: Proper ARIA labels and roles
+- **Color Contrast**: All text meets WCAG AA contrast requirements
+- **Focus Management**: Visible focus indicators and logical tab order
+
 ## 🚀 Deployment
 
 Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and pushes the `dist` folder to the `gh-pages` branch. GitHub Actions automatically run lint and build checks on every push.
 
-## 🧩 Recent Major Features (September 13th. 2025)
+## 🧩 Recent Major Features (September 2025)
 
 ### Search Enhancements
 - Replaced Nominatim with Kartverket's official APIs for better Norwegian coverage
@@ -373,3 +401,25 @@ const _mapRect = mapContainer.getBoundingClientRect()
 3. **Systematic Testing**: Test each interaction method separately
 4. **Version Control**: Use git blame/history to find when issues were introduced
 5. **Documentation**: Update CLAUDE.md after solving complex issues
+
+## 🚧 Future Development Considerations
+
+### Planned Enhancements
+- **Kartverket Trail Integration**: `kartverketTrailService.ts` exists but not yet implemented
+- **Testing Framework**: Consider adding Jest + React Testing Library for component testing
+- **Performance Optimization**: Code splitting for larger POI datasets
+- **Offline Support**: PWA capabilities and service worker integration
+- **Advanced Search**: Fuzzy search, search history, and search filters
+
+### Technical Debt & Improvements
+- **Bundle Optimization**: Current ~1.2MB could be reduced with dynamic imports
+- **API Response Caching**: Implement proper caching for POI and search data
+- **Error Boundaries**: Add React error boundaries for better error handling
+- **Telemetry**: Consider adding privacy-friendly usage analytics
+- **Internationalization**: Currently Norwegian-only, could expand to other languages
+
+### Architecture Evolution
+- **State Management**: Consider upgrading to Zustand or Redux Toolkit for complex state
+- **Component Library**: Extract reusable components for design system consistency
+- **API Layer**: Centralize API calls with proper error handling and retries
+- **Type Safety**: Enhance TypeScript coverage and add runtime type validation
