@@ -119,12 +119,13 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
             'kartverket-topo': {
               type: 'raster',
               tiles: [
+                // Official Kartverket WMTS cache service (2025)
                 'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
               ],
               tileSize: 256,
               attribution: '© Kartverket',
               minzoom: 0,
-              maxzoom: 17 // Practical limit for Kartverket WMTS tiles
+              maxzoom: 18 // Official Kartverket WMTS supports zoom levels 0-18
             }
           },
           layers: [
@@ -133,14 +134,14 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
               type: 'raster',
               source: 'kartverket-topo',
               minzoom: 0,
-              maxzoom: 17 // Match practical tile availability limit
+              maxzoom: 18 // Official Kartverket WMTS specification
             }
           ]
         },
         center: center,
         zoom: 13,
         minZoom: 3, // Prevent zooming out too far (Norway-wide view)
-        maxZoom: 17, // Practical maximum for Kartverket tiles without grey areas
+        maxZoom: 17, // Conservative limit within Kartverket's 0-18 range, avoiding extreme zoom
         bearing: 0,
         pitch: 0,
         interactive: true,
@@ -153,9 +154,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         touchZoomRotate: true,
         // Disable default attribution control - using custom credits component instead
         attributionControl: false,
-        // Allow all tile requests - let Kartverket handle availability
+        // Standard WMTS request handling - no special headers needed
         transformRequest: (url: string) => {
-          return { url, credentials: 'same-origin' }
+          return { url }
         }
       })
       return map
@@ -211,14 +212,116 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       map.on('rotate', handleBearingChange)
       map.on('rotateend', handleBearingChange)
 
-      // Listen for zoom events to track zoom level
-      map.on('zoom', () => {
-        setCurrentZoom(map.getZoom())
+      // Monitor tile loading and zoom events for debugging - FIXED SOURCE ID
+      map.on('data', (e: any) => {
+        if (e.sourceId === 'kartverket-topo' && e.isSourceLoaded === false) {
+          console.log(`🔄 [TILE DEBUG] Loading tiles at zoom ${map.getZoom().toFixed(2)}`)
+        }
+      })
+
+      map.on('sourcedataloading', (e: any) => {
+        if (e.sourceId === 'kartverket-topo') {
+          console.log(`⏳ [TILE DEBUG] Tile loading started at zoom ${map.getZoom().toFixed(2)}`)
+        }
+      })
+
+      // Enhanced tile error handling and debugging
+      map.on('sourcedata', (e: any) => {
+        if (e.sourceId === 'kartverket-topo') {
+          if (e.isSourceLoaded) {
+            console.log(`✅ [TILE DEBUG] Source loaded successfully at zoom ${map.getZoom().toFixed(2)}`)
+          } else {
+            console.log(`⚠️ [TILE DEBUG] Source loading issue at zoom ${map.getZoom().toFixed(2)}`)
+          }
+        }
+      })
+
+      // Detailed tile request monitoring with URL inspection
+      map.on('dataloading', (e: any) => {
+        if (e.sourceId === 'kartverket-topo') {
+          const zoom = map.getZoom()
+          console.log(`📡 [TILE DEBUG] Data loading event at zoom ${zoom.toFixed(2)}`, e)
+
+          // Log tile requests at critical zoom levels
+          if (zoom >= 15) {
+            console.log(`📡 [HIGH ZOOM] Tile request at zoom ${zoom.toFixed(2)} - monitoring for failures`)
+          }
+        }
+      })
+
+      // Enhanced error handling with tile-specific debugging
+      map.on('error', (e) => {
+        const zoom = map.getZoom()
+        const center = map.getCenter()
+        console.error(`❌ [MAP ERROR] Zoom ${zoom.toFixed(2)}, Center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}:`, e)
+
+        // Check if error is tile-related at critical zoom
+        if (e.error && e.error.message) {
+          console.error(`❌ [ERROR DETAILS] ${e.error.message}`)
+          if (e.error.message.includes('404') || e.error.message.includes('tile')) {
+            console.error(`❌ [TILE ERROR] Tile loading failed - this may be the grey map cause!`)
+          }
+        }
+      })
+
+      // Monitor tile loading failures specifically
+      map.on('sourceerror', (e) => {
+        console.error(`❌ [SOURCE ERROR] Source: ${e.sourceId}`, e)
+        if (e.sourceId === 'kartverket-topo') {
+          console.error(`❌ [KARTVERKET ERROR] Topographic tiles failed to load at zoom ${map.getZoom().toFixed(2)}`)
+        }
+      })
+
+      // Enhanced zoom tracking with coordinate/projection debugging
+      map.on('zoomend', () => {
+        const currentZoom = map.getZoom()
+        const center = map.getCenter()
+        const calculateMapScale = (zoom: number, latitude: number): string => {
+          const metersPerPixel = 156543.03392 * Math.cos(latitude * Math.PI / 180) / Math.pow(2, zoom)
+          const referencePixels = 60
+          const referenceMeters = metersPerPixel * referencePixels
+          if (referenceMeters >= 1000) {
+            const km = referenceMeters / 1000
+            if (km >= 50) return `${Math.round(km / 10) * 10}km`
+            else if (km >= 10) return `${Math.round(km / 5) * 5}km`
+            else if (km >= 2) return `${Math.round(km)}km`
+            else return `${km.toFixed(1)}km`
+          } else {
+            if (referenceMeters >= 500) return `${Math.round(referenceMeters / 100) * 100}m`
+            else if (referenceMeters >= 100) return `${Math.round(referenceMeters / 50) * 50}m`
+            else if (referenceMeters >= 20) return `${Math.round(referenceMeters / 10) * 10}m`
+            else return `${Math.round(referenceMeters)}m`
+          }
+        }
+        const scale = calculateMapScale(currentZoom, center.lat)
+        const metersPerPixel = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, currentZoom)
+
+        console.log(`🔍 [ZOOM DEBUG] Zoom: ${currentZoom.toFixed(2)}, Scale: ${scale}, MaxZoom: ${map.getMaxZoom()}`)
+        console.log(`🌍 [COORD DEBUG] Center: ${center.lat.toFixed(5)}°N, ${center.lng.toFixed(5)}°E, m/px: ${metersPerPixel.toFixed(2)}`)
+
+        // Critical zoom level warning (70m scale issue)
+        if (metersPerPixel <= 1.5 && metersPerPixel >= 0.8) {
+          console.warn(`⚠️ [CRITICAL ZOOM] Approaching 70m scale zone where grey map issue occurs!`)
+          console.warn(`⚠️ [TILE CHECK] At zoom ${currentZoom.toFixed(2)}, requesting tiles that may not exist`)
+        }
+
+        setCurrentZoom(currentZoom)
         // Close any custom popups during zoom for better UX
         const existingPopups = document.querySelectorAll('.custom-poi-popup')
         existingPopups.forEach(popup => popup.remove())
       })
-      map.on('zoomend', () => setCurrentZoom(map.getZoom()))
+
+      // Additional zoom monitoring for real-time debugging
+      map.on('zoom', () => {
+        const zoom = map.getZoom()
+        const center = map.getCenter()
+        const metersPerPixel = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom)
+
+        // Real-time monitoring for the problematic 70m scale
+        if (metersPerPixel <= 2.0 && metersPerPixel >= 0.5) {
+          console.log(`🔄 [REALTIME] Zoom: ${zoom.toFixed(2)}, Scale: ${metersPerPixel.toFixed(2)}m/px - CRITICAL ZONE`)
+        }
+      })
       
       // Emit initial bearing
       setTimeout(() => {
@@ -659,126 +762,126 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         const scaleText = calculateMapScale(currentZoom, coordinates.lat)
         
         return (
-        <>
-          {/* Scale Line - Bottom Left Corner */}
           <div style={{
             position: 'absolute',
             bottom: '16px',
             left: '16px',
             zIndex: 100,
             display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '12px', // As specified
-            color: '#374151', // As specified
-            opacity: 0.6, // Idle opacity as specified
-            pointerEvents: 'none'
+            flexDirection: 'column',
+            gap: '8px'
           }}>
-            <span style={{
-              fontFamily: 'Material Symbols Outlined',
-              fontSize: '14px',
-              color: '#374151'
-            }}>
-              straighten
-            </span>
+            {/* Scale and Coordinates - Bottom Left Corner Grouped */}
+            {/* Scale Line */}
             <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '2px'
-            }}>
-              {/* Scale bar */}
-              <div style={{
-                width: '60px',
-                height: '3px',
-                background: '#374151',
-                borderRadius: '1px',
-                position: 'relative'
-              }}>
-                {/* Scale bar end caps */}
-                <div style={{
-                  position: 'absolute',
-                  left: '0',
-                  top: '-2px',
-                  width: '1px',
-                  height: '7px',
-                  background: '#374151'
-                }} />
-                <div style={{
-                  position: 'absolute',
-                  right: '0',
-                  top: '-2px',
-                  width: '1px',
-                  height: '7px',
-                  background: '#374151'
-                }} />
-              </div>
-              {/* Scale text */}
-              <span style={{
-                fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
-                fontSize: '10px',
-                fontWeight: '600',
-                color: '#374151'
-              }}>
-                {scaleText}
-              </span>
-            </div>
-          </div>
-
-          {/* Coordinates Display - Bottom Left with overlay behavior */}
-          <div
-            className="coordinate-display"
-            onClick={handleCopyCoordinates}
-            title={coordinatesCopied ? "Koordinater kopiert!" : "Klikk for å kopiere koordinater"}
-            style={{
-              position: 'absolute',
-              bottom: '16px',
-              left: '16px',
-              zIndex: 100,
-              // Styling adapts based on sidebar state as specified
-              ...(sidebarCollapsed ? {
-                // On Map styling
-                background: coordinatesCopied ? 'rgba(34,197,94,0.9)' : 'rgba(255,255,255,0.8)',
-                borderRadius: '4px',
-                padding: '4px 6px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                fontSize: '12px',
-                color: coordinatesCopied ? '#ffffff' : '#374151'
-              } : {
-                // On Sidebar Overlay styling
-                background: coordinatesCopied ? '#22c55e' : '#ffffff',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                padding: '4px 6px',
-                fontSize: '12px',
-                color: coordinatesCopied ? '#ffffff' : '#111827',
-                fontWeight: '500'
-              }),
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              pointerEvents: 'auto',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              marginTop: '60px', // Space below scale line
-              cursor: 'pointer',
-              transition: 'all 0.2s ease-in-out'
+              fontSize: '12px',
+              color: '#374151',
+              opacity: 0.6,
+              pointerEvents: 'none'
             }}>
-            <span style={{
-              fontFamily: 'Material Symbols Outlined',
-              fontSize: '14px',
-              color: coordinatesCopied ? '#ffffff' : (sidebarCollapsed ? '#374151' : '#111827')
-            }}>
-              my_location
-            </span>
-            <span style={{
-              fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
-              fontSize: '11px',
-              fontWeight: sidebarCollapsed ? '500' : '500'
-            }}>
-              {coordinates.lat.toFixed(5)}°N, {coordinates.lng.toFixed(5)}°E
-            </span>
+              <span style={{
+                fontFamily: 'Material Symbols Outlined',
+                fontSize: '14px',
+                color: '#374151'
+              }}>
+                straighten
+              </span>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '2px'
+              }}>
+                {/* Scale bar */}
+                <div style={{
+                  width: '60px',
+                  height: '3px',
+                  background: '#374151',
+                  borderRadius: '1px',
+                  position: 'relative'
+                }}>
+                  {/* Scale bar end caps */}
+                  <div style={{
+                    position: 'absolute',
+                    left: '0',
+                    top: '-2px',
+                    width: '1px',
+                    height: '7px',
+                    background: '#374151'
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    right: '0',
+                    top: '-2px',
+                    width: '1px',
+                    height: '7px',
+                    background: '#374151'
+                  }} />
+                </div>
+                {/* Scale text */}
+                <span style={{
+                  fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  color: '#374151'
+                }}>
+                  {scaleText}
+                </span>
+              </div>
+            </div>
+
+            {/* Coordinates Display */}
+            <div
+              className="coordinate-display"
+              onClick={handleCopyCoordinates}
+              title={coordinatesCopied ? "Koordinater kopiert!" : "Klikk for å kopiere koordinater"}
+              style={{
+                // Styling adapts based on sidebar state as specified
+                ...(sidebarCollapsed ? {
+                  // On Map styling
+                  background: coordinatesCopied ? 'rgba(34,197,94,0.9)' : 'rgba(255,255,255,0.8)',
+                  borderRadius: '4px',
+                  padding: '4px 6px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                  fontSize: '12px',
+                  color: coordinatesCopied ? '#ffffff' : '#374151'
+                } : {
+                  // On Sidebar Overlay styling
+                  background: coordinatesCopied ? '#22c55e' : '#ffffff',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  padding: '4px 6px',
+                  fontSize: '12px',
+                  color: coordinatesCopied ? '#ffffff' : '#111827',
+                  fontWeight: '500'
+                }),
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                pointerEvents: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease-in-out'
+              }}>
+              <span style={{
+                fontFamily: 'Material Symbols Outlined',
+                fontSize: '14px',
+                color: coordinatesCopied ? '#ffffff' : (sidebarCollapsed ? '#374151' : '#111827')
+              }}>
+                my_location
+              </span>
+              <span style={{
+                fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
+                fontSize: '11px',
+                fontWeight: sidebarCollapsed ? '500' : '500'
+              }}>
+                {coordinates.lat.toFixed(5)}°N, {coordinates.lng.toFixed(5)}°E
+              </span>
+            </div>
           </div>
-        </>
         )
       })()}
       

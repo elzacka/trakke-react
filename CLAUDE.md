@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**⚠️ DATE AWARENESS REMINDER**: Always check today's date and ensure all references to years, dates, and "current" information reflect the actual current date. Update version references, "Recent Features" sections, and any temporal language accordingly.
+
 ## 🗺️ Project Overview
 
 Tråkke is a Norwegian outdoor recreation app built with React + TypeScript + Vite that displays Points of Interest (POIs) on interactive maps using official Norwegian map data from Kartverket. The app focuses on hiking, camping, cultural sites, and outdoor activities across Norway.
@@ -12,6 +14,230 @@ Tråkke is a Norwegian outdoor recreation app built with React + TypeScript + Vi
 - **Build**: `npm run build` - TypeScript compilation and production build
 - **Lint**: `npm run lint` - ESLint checking with React and TypeScript rules
 - **Deploy**: `npm run deploy` - Deploy to GitHub Pages using gh-pages
+
+## 🔄 Daily Development Startup Protocol
+
+### 📅 MANDATORY: Daily Context Check
+**CRITICAL**: Before performing ANY task each day, Claude MUST:
+
+1. **Verify Current Date**: Check today's date and ensure all references to years, dates, and 'current' information reflect the actual current date
+2. **Read CLAUDE.md Completely**: Review this entire document for current setup, learned lessons, and avoid repeating mistakes
+3. **Environment Status Check**: Verify single dev server, clean port usage, and optimal setup
+
+### 📦 Dependencies & Updates Management
+
+**Before starting development work:**
+
+```bash
+# Check for outdated packages
+npm outdated
+
+# Update dependencies (review changes first)
+npm update
+
+# Check Node.js version
+node --version
+
+# Check npm version
+npm --version
+
+# Verify Vite version
+npx vite --version
+```
+
+**Monthly Dependency Audit:**
+- Review package.json for unused dependencies
+- Check for security vulnerabilities: `npm audit`
+- Update major versions with careful testing
+- Document breaking changes in this file
+
+**Critical Dependencies to Monitor:**
+- **Vite**: Core build tool - check for performance improvements
+- **React & TypeScript**: Framework updates for new features/fixes
+- **MapLibre GL JS**: Map rendering - crucial for map functionality
+- **ESLint**: Code quality - may require config updates
+
+### 🔄 Development Workflow Protocol
+
+**MANDATORY Order for ALL Development Tasks:**
+
+1. **Daily Startup** (each day before first task):
+   - Read CLAUDE.md completely ✅
+   - Verify current date context ✅
+   - Check dependency updates ✅
+   - Ensure clean dev environment ✅
+
+2. **Pre-Development**:
+   - Kill duplicate servers: `lsof -i:3000 && pkill -f "npm run dev"`
+   - Start clean server: `npm run dev`
+   - Verify single instance: `lsof -i:3000`
+
+3. **During Development**:
+   - Follow architectural safeguards (no GeoJSON, use API-based POI rendering)
+   - Test changes incrementally
+   - Monitor console for errors
+
+4. **Pre-Commit Protocol**:
+   ```bash
+   # MANDATORY before any commit
+   npm run lint      # Fix all linting issues
+   npm run build     # Ensure production build works
+   # Run app manually and verify core functionality
+   ```
+
+5. **Testing & Verification Requirements**:
+   - **Unit Testing**: Claude performs technical testing of features
+   - **Integration Testing**: Both Claude and user test together
+   - **User Acceptance**: User MUST verify final functionality
+   - **Performance Testing**: Check zoom, POI loading, map interactions
+
+6. **Commit & Push Protocol**:
+   - Never commit without explicit user approval
+   - Include meaningful commit messages with 🤖 Generated with Claude Code footer
+   - Update CLAUDE.md if new patterns/issues discovered
+
+## 📋 Code Review & Maintenance Schedule
+
+### 🗓️ Regular Review Cycles
+
+**Weekly Code Review** (every Friday):
+- Review architectural compliance (GeoJSON restrictions, POI rendering patterns)
+- Check for code duplication or inefficiencies
+- Verify ESLint/TypeScript compliance
+- Update documentation for any new patterns
+
+**Monthly Codebase Audit** (first Monday of month):
+- Comprehensive dependency review and updates
+- Performance audit (bundle size, load times)
+- Security vulnerability scan: `npm audit`
+- Remove dead code and unused imports
+- Review and update CLAUDE.md accuracy
+
+**Quarterly Architecture Review** (every 3 months):
+- Evaluate technology stack relevance
+- Review prohibited patterns (are they still necessary?)
+- Plan major upgrades or refactoring
+- Document architectural decisions and reasoning
+
+### 📝 CLAUDE.md Maintenance Protocol
+
+**Update CLAUDE.md Immediately When:**
+- New development patterns are established
+- Troubleshooting solutions are discovered
+- Dependencies are updated with breaking changes
+- New architectural constraints are needed
+- Performance optimizations are implemented
+- User workflow changes occur
+
+**Monthly CLAUDE.md Review:**
+- Verify all commands and examples still work
+- Remove outdated information
+- Add new lessons learned from recent development
+- Reorganize for better clarity if needed
+- Ensure version numbers and references are current
+
+**CLAUDE.md Quality Checklist:**
+- [ ] All bash commands tested and working
+- [ ] Dependency versions reflect current setup
+- [ ] No outdated URLs or references
+- [ ] Troubleshooting steps are complete and accurate
+- [ ] Development workflow is optimized for efficiency
+- [ ] New team members could follow instructions successfully
+
+### 🎯 Efficiency & Mistake Prevention
+
+**Common Mistakes to Avoid** (update as discovered):
+- Multiple dev servers running simultaneously
+- Committing without running lint/build checks
+- Using prohibited patterns (GeoJSON layers)
+- Forgetting to update zoom limits based on real-world services
+- Not verifying current date context for time-sensitive information
+
+## 📋 Map Configuration & Technical Specifications
+
+### Official Kartverket WMTS Configuration (September 14, 2025)
+**Status**: CURRENT - Using official Kartverket specifications
+**Last Updated**: September 14, 2025
+
+**Correct WMTS Configuration**:
+Based on official Kartverket documentation and GetCapabilities specifications:
+
+```javascript
+sources: {
+  'kartverket-topo': {
+    type: 'raster',
+    tiles: [
+      'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
+    ],
+    tileSize: 256,
+    attribution: '© Kartverket',
+    minzoom: 0,
+    maxzoom: 18 // Official Kartverket WMTS supports zoom levels 0-18
+  }
+}
+```
+
+**Map Zoom Limits**:
+- **minZoom**: 3 (Norway-wide view)
+- **maxZoom**: 17 (Conservative limit within official 0-18 range, ~40m scale)
+- **Source maxzoom**: 18 (Official Kartverket specification)
+- **Layer maxzoom**: 18 (Match source specification)
+
+**Service Migration (2024-2025)**:
+- ❌ **Deprecated**: `opencache.statkart.no` (phased out)
+- ✅ **Current**: `cache.kartverket.no/v1/wmts/` (official service)
+- **GetCapabilities**: `https://cache.kartverket.no/v1/wmts/1.0.0/WMTSCapabilities.xml`
+
+**Supported Coordinate Systems**:
+- EPSG:3857 (WebMercator) - Used in this app
+- EPSG:25832, 25833, 25835 (UTM zones) - Available but not used
+
+**Scale Reference**:
+- **Zoom 17**: ~40m scale (Conservative app limit)
+- **Zoom 18**: ~20m scale (Official max, matches DNT/ut.no)
+- **norgeskart.no**: Supports down to 10m scale at higher zooms
+
+**Efficiency Measures:**
+- Use TodoWrite tool for complex multi-step tasks
+- Batch related changes together
+- Test incrementally rather than making large changes
+- Keep browser dev tools open during development
+- Monitor performance impact of changes
+
+## 🚀 Development Environment Best Practices
+
+### Single Server Instance Management
+To ensure optimal development performance and avoid conflicts:
+
+1. **Check for running servers**: `lsof -i:3000` - Verify only one process uses port 3000
+2. **Clean shutdown**: `pkill -f "npm run dev"` or `lsof -ti:3000 | xargs kill -9` - Stop all dev servers
+3. **Single instance start**: Always run only one `npm run dev` command at a time
+4. **Port verification**: Default port 3000 should be used exclusively for this project
+
+### Environment Maintenance
+- **Clear Vite cache**: `rm -rf node_modules/.vite` - If experiencing build issues
+- **Clean dist folder**: `rm -rf dist` - Remove previous build artifacts
+- **Force restart**: `npm run dev -- --force` - Bypass cache on problematic restarts
+- **Dependencies**: Keep `npm install` up to date for latest package versions
+
+### Troubleshooting Multiple Servers
+If multiple dev servers are accidentally running:
+```bash
+# Kill all npm dev processes
+pkill -f "npm run dev"
+
+# Kill all processes on port 3000
+lsof -ti:3000 | xargs kill -9
+
+# Clean start
+npm run dev
+```
+
+### Performance Optimization
+- Run only necessary browser tabs when developing
+- Close unused development tools and processes
+- Use single browser window for testing to reduce resource usage
+- Monitor system resources if experiencing slow performance
 
 ## 🏗️ Architecture Overview
 
@@ -55,7 +281,7 @@ Map Shortcuts:
 
 ### Data Architecture
 - **POI Categories**: Defined in `src/data/pois.ts` with 7 main categories (Aktivitet, Naturperle, Overnatte, På eventyr, Service, Transport, Turløype)
-- **API-Based POI Rendering**: Uses MapLibre GL Markers (NOT GeoJSON layers) for performance
+- **Custom POI Rendering**: Uses custom DOM overlay markers (colored circles) for POI display; MapLibre markers only for position and search results
 - **Color Coordination**: Each POI category has specific colors that must match between markers and UI elements
 - **POI Transform Functions**: Located in `MapLibreTrakkeApp.tsx` - convert API data to internal POI format with correct colors
 
@@ -65,8 +291,9 @@ Map Shortcuts:
 - **`kartverketTrailService.ts`** - Future integration with official Norwegian trail data
 
 ### Map Integration
-- **Map Library**: MapLibre GL JS with Kartverket WMTS raster tiles
-- **Zoom Configuration**: minZoom: 3, maxZoom: 17 (prevents grey map at extreme zoom levels)
+- **Map Library**: MapLibre GL JS with official Kartverket WMTS raster tiles
+- **Zoom Configuration**: minZoom: 3, maxZoom: 17 (within official Kartverket 0-18 range, ~40m scale)
+- **Tile Service**: `cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/` (official 2025 service)
 - **Coordinate System**: Web Mercator (EPSG:3857)
 - **POI Popups**: Custom HTML popups with close buttons (X), not default MapLibre popups
 - **Interactive Features**: Click-to-copy coordinates, position/search markers, smooth animations
@@ -76,7 +303,7 @@ Map Shortcuts:
 The ESLint configuration enforces these architectural decisions:
 
 ### ✅ REQUIRED Patterns
-- **API-based POI rendering**: Use `new maplibregl.Marker()` with DOM elements
+- **Custom POI rendering**: Use custom DOM overlay markers (colored circles) for POI display; MapLibre markers only for position and search results
 - **Kartverket WMTS tiles**: Use the official cache.kartverket.no raster tile service
 - **Color consistency**: POI marker colors must match category colors from `pois.ts`
 - **Kartverket APIs**: Use official Norwegian APIs for place name search (not Nominatim)
@@ -94,10 +321,10 @@ The ESLint configuration enforces these architectural decisions:
 2. `MapLibreTrakkeApp.tsx` detects active categories via `getActiveCategoryTypes()`
 3. Appropriate transform functions called (e.g., `transformOverpassPOIs()`)
 4. POI data loaded from APIs (Overpass API for OpenStreetMap data)
-5. `MapLibreMap.tsx` receives POI array and creates MapLibre GL Markers
+5. `MapLibreMap.tsx` receives POI array and creates custom DOM overlay markers (colored circles)
 6. Each marker gets click handler for custom popup display
 
-### POI Categories & Colors (Current 2024)
+### POI Categories & Colors (Current 2025)
 - **Aktivitet** (`#0d9488` teal): Swimming, beaches, fishing, fire places, canoeing
 - **Naturperle** (`#059669` green): Nature gems, waterfalls, viewpoints, observation towers
 - **Overnatte** (`#b45309` amber): Camping, shelters, cabins, tent areas, hammock spots
@@ -228,7 +455,7 @@ POI popups are custom HTML elements positioned above markers with:
 - **Rate limiting**: Be mindful of API rate limits during development
 
 ### Performance Considerations
-- **Marker rendering**: Uses MapLibre Markers (not GeoJSON) for better performance with large datasets
+- **POI marker rendering**: Uses custom DOM overlay markers (colored circles) for POI display; MapLibre markers only for position and search results
 - **API caching**: Search results and POI data should be cached to reduce API calls
 - **Image optimization**: POI category icons use Material Symbols (font-based)
 - **Bundle size**: Currently ~1.2MB gzipped (consider code splitting for future optimization)
@@ -245,6 +472,7 @@ POI popups are custom HTML elements positioned above markers with:
 Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and pushes the `dist` folder to the `gh-pages` branch. GitHub Actions automatically run lint and build checks on every push.
 
 ## 🧩 Recent Major Features (September 2025)
+**⚠️ Update section title and content dates based on current date**
 
 ### Search Enhancements
 - Replaced Nominatim with Kartverket's official APIs for better Norwegian coverage
@@ -375,6 +603,49 @@ const addressUrl = `https://ws.geonorge.no/adresser/v1/sok?...`
 
 // Combine results and prioritize places over addresses
 ```
+
+### Kartverket WMTS Configuration Issues
+
+**Problem**: Grey tiles, checkerboard patterns, or complete map failure
+**Symptoms**: Map doesn't load, shows grey squares, or displays mixed grey/map tiles
+
+**Root Cause**: Incorrect WMTS endpoint, deprecated services, or invalid zoom limits
+
+**Investigation Method**:
+1. Verify official Kartverket service status at `status.kartverket.no`
+2. Check GetCapabilities: `https://cache.kartverket.no/v1/wmts/1.0.0/WMTSCapabilities.xml`
+3. Test tile URLs directly: `curl -I "https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/10/500/300.png"`
+4. Monitor browser network tab for 404/CORS errors
+
+**Solution**: Use official 2025 Kartverket WMTS configuration:
+```javascript
+// CORRECT Configuration (September 2025)
+sources: {
+  'kartverket-topo': {
+    type: 'raster',
+    tiles: [
+      'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
+    ],
+    tileSize: 256,
+    attribution: '© Kartverket',
+    minzoom: 0,
+    maxzoom: 18 // Official specification
+  }
+}
+
+// Map limits (conservative within official range)
+minZoom: 3, maxZoom: 17
+
+// AVOID These Deprecated/Problematic URLs:
+❌ opencache.statkart.no (phased out 2024)
+❌ Custom headers that cause CORS issues
+❌ Zoom limits beyond official 0-18 range
+```
+
+**Service Migration Notes**:
+- Kartverket migrated from statkart.no to cache.kartverket.no in 2024
+- opencache endpoints are deprecated and unreliable
+- Always use the official v1 WMTS API path structure
 
 ### ESLint Unused Variables in CI/CD
 
