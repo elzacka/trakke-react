@@ -6,6 +6,7 @@ interface ModalProps {
   title: string
   children: React.ReactNode
   ariaLabelledBy?: string
+  className?: string
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -13,7 +14,8 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  ariaLabelledBy
+  ariaLabelledBy,
+  className
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = ariaLabelledBy || `modal-title-${Math.random().toString(36).substr(2, 9)}`
@@ -117,12 +119,13 @@ export const Modal: React.FC<ModalProps> = ({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
+        className={className}
         style={{
           backgroundColor: 'white',
           borderRadius: '12px',
           boxShadow: '0 20px 32px rgba(0, 0, 0, 0.15)',
           width: '100%',
-          maxWidth: '760px',
+          maxWidth: className ? undefined : '760px',
           maxHeight: '90vh',
           overflow: 'hidden',
           display: 'flex',

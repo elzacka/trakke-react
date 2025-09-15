@@ -6,10 +6,14 @@ import { categoryTree, CategoryState, POI, POIType } from './data/pois'
 import { OverpassService, OverpassPOI } from './services/overpassService'
 import { KartverketTrailService } from './services/kartverketTrailService'
 import { SearchResult, SearchService } from './services/searchService'
+import { poiDataService } from './services/poiDataService'
 import { useUIStore } from './state/uiStore'
 import { UIProvider } from './state/UIProvider'
 import { HurtigtasterModal } from './features/shortcuts/HurtigtasterModal'
 import { TegnforklaringModal } from './features/legend/TegnforklaringModal'
+import { AdminLoginModal } from './components/modal/AdminLoginModal'
+import { AdminPanel } from './components/modal/AdminPanel'
+import './services/adminService' // Import to make adminService available globally
 
 function MapLibreTrakkeAppInner() {
   // UI Store for modal management
@@ -344,7 +348,17 @@ function MapLibreTrakkeAppInner() {
                 console.warn('⚠️ Kartverket trail service unavailable - check network connection')
               }
             }
-            
+
+            // Load custom POIs from local storage for all active categories
+            console.log('🏛️ Loading custom POIs for active categories:', activeCategories)
+            const customPOIs = await poiDataService.getPOIsByCategories(activeCategories)
+            if (customPOIs.length > 0) {
+              console.log(`📊 Loaded ${customPOIs.length} custom POIs:`, customPOIs)
+              allPOIs = [...allPOIs, ...(customPOIs as POI[])]
+            } else {
+              console.log('📭 No custom POIs found for active categories')
+            }
+
             if (allPOIs.length === 0) {
               console.log('⚠️ No active categories with POI data:', activeCategories)
             }
@@ -378,6 +392,16 @@ function MapLibreTrakkeAppInner() {
     }))
   }, [])
 
+  // Function to refresh POI data when new POIs are added
+  const handlePOIAdded = useCallback(() => {
+    console.log('🔄 POI added, refreshing data...')
+    // Trigger category toggle to reload POIs for active categories
+    const activeCategories = getActiveCategories(categoryState)
+    if (activeCategories.length > 0 && currentViewport) {
+      // Simulate a category state change to trigger POI reload
+      setCategoryState(prev => ({ ...prev }))
+    }
+  }, [categoryState, currentViewport])
 
   const handleViewportChange = useCallback((viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
     setCurrentViewport(viewport)
@@ -1147,6 +1171,14 @@ function MapLibreTrakkeAppInner() {
       <TegnforklaringModal
         isOpen={isTegnforklaringOpen}
         onClose={closeTegnforklaring}
+      />
+
+      {/* Admin Modal components */}
+      <AdminLoginModal />
+      <AdminPanel
+        onCategoryToggle={handleCategoryToggle}
+        categoryState={categoryState}
+        onPOIAdded={handlePOIAdded}
       />
     </>
   )

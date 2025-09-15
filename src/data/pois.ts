@@ -1175,3 +1175,50 @@ async function _removedLoadUtsiktspunkterPOIs(): Promise<POI[]> {
 // Export empty arrays initially - will be populated by load functions
 export const krigsminnerPOIs: POI[] = []
 export const utsiktspunkterPOIs: POI[] = []
+
+// Helper function to get main categories for admin forms
+export function getMainCategories() {
+  return categoryTree.map(category => ({
+    type: category.id,
+    label: category.name
+  }))
+}
+
+// Helper function to get hierarchical category options for dropdowns
+export function getCategoryHierarchy() {
+  const options: Array<{
+    value: string
+    label: string
+    isMainCategory: boolean
+    mainCategoryName?: string
+    color?: string
+    icon?: string
+  }> = []
+
+  categoryTree.forEach(mainCategory => {
+    // Add main category as non-selectable header
+    options.push({
+      value: mainCategory.id,
+      label: mainCategory.name,
+      isMainCategory: true,
+      color: mainCategory.color,
+      icon: mainCategory.icon
+    })
+
+    // Add subcategories as selectable options
+    if (mainCategory.children) {
+      mainCategory.children.forEach(subCategory => {
+        options.push({
+          value: subCategory.id,
+          label: `  ${subCategory.name}`, // Indent with spaces
+          isMainCategory: false,
+          mainCategoryName: mainCategory.name,
+          color: subCategory.color,
+          icon: subCategory.icon
+        })
+      })
+    }
+  })
+
+  return options
+}
