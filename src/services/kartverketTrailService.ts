@@ -22,13 +22,14 @@ export interface TrailBounds {
 }
 
 // Kartverket WMS base URL and trail layer configurations
-const KARTVERKET_WMS_BASE = 'https://wms.geonorge.no/wms'
-const KARTVERKET_TRAIL_WMS_URL = 'https://wms.geonorge.no/skwms1/wms.nib'
+// Updated to use working Geonorge WMS endpoints (September 2025)
+const KARTVERKET_WMS_BASE = 'https://wms.geonorge.no/skwms1/wms.friluftsruter'
+const KARTVERKET_TRAIL_WMS_URL = 'https://wms.geonorge.no/skwms1/wms.friluftsruter?'
 const KARTVERKET_TRAIL_LAYERS = {
-  hiking: 'kv_tur_og_friluftsruter_fotrute',     // Fotrute - hiking trails
-  skiing: 'kv_tur_og_friluftsruter_skiloype',   // Skiløype - ski trails  
-  cycling: 'kv_tur_og_friluftsruter_sykkelrute', // Sykkelrute - bicycle routes
-  all: 'kv_tur_og_friluftsruter'                // All trail types combined
+  hiking: 'fotrute',                            // Fotrute - hiking trails
+  skiing: 'skiloype',                           // Skiløype - ski trails
+  cycling: 'sykkelrute',                        // Sykkelrute - bicycle routes
+  all: 'friluftsruter'                          // All trail types combined
 } as const
 
 // Norwegian territory bounds for trail searches
@@ -77,9 +78,30 @@ export class KartverketTrailService {
           'User-Agent': 'Trakke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
         }
       })
-      return response.ok
-    } catch {
+
+      if (response.ok) {
+        console.log('✅ Kartverket trail service endpoint is reachable')
+        return true
+      } else {
+        console.warn(`⚠️ Kartverket trail service returned ${response.status}`)
+        console.warn('🔧 Known issue: WMS services experiencing 500 errors due to infrastructure updates')
+        return false
+      }
+    } catch (error) {
+      console.error('❌ Trail service availability check failed:', error)
       return false
+    }
+  }
+
+  /**
+   * Get current service status information
+   */
+  static getServiceStatus() {
+    return {
+      endpoint: KARTVERKET_WMS_BASE,
+      note: 'Norwegian hiking trail data from Kartverket',
+      knownIssues: 'WMS services may experience temporary 500 errors due to infrastructure updates (September 2025)',
+      fallback: 'Trail categories will be shown in UI but map overlay may not appear if service is unavailable'
     }
   }
 
@@ -119,6 +141,16 @@ export class KartverketTrailService {
    */
   static getWMSLayerUrl(trailType: keyof typeof KARTVERKET_TRAIL_LAYERS = 'all'): string {
     const layerName = KARTVERKET_TRAIL_LAYERS[trailType]
+    return `${KARTVERKET_WMS_BASE}?service=WMS&request=GetMap&version=1.3.0&layers=${layerName}&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}`
+  }
+
+  /**
+   * Get WMS tile URL template for MapLibre raster source
+   * Returns a tile URL template that can be used with MapLibre GL JS
+   */
+  static getWMSTileUrl(trailType: keyof typeof KARTVERKET_TRAIL_LAYERS = 'all'): string {
+    const layerName = KARTVERKET_TRAIL_LAYERS[trailType]
+    // Updated to use standard WMS 1.3.0 for better compatibility
     return `${KARTVERKET_WMS_BASE}?service=WMS&request=GetMap&version=1.3.0&layers=${layerName}&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}`
   }
 

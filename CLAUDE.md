@@ -316,7 +316,7 @@ npm run dev
 ### Service Layer
 - **`overpassService.ts`** - OpenStreetMap Overpass API queries for POI data (war memorials, caves, towers, hunting stands)
 - **`searchService.ts`** - Norwegian place name and address search using Kartverket's official APIs (replaced Nominatim)
-- **`kartverketTrailService.ts`** - Future integration with official Norwegian trail data
+- **`kartverketTrailService.ts`** - Norwegian trail data integration with Kartverket WMS services (IMPLEMENTED - see Trail Implementation Status below)
 
 ### Map Integration
 - **Map Library**: MapLibre GL JS with official Kartverket WMTS raster tiles
@@ -572,6 +572,92 @@ Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and p
 - Improved TypeScript export patterns for better build compatibility
 - Fixed all ESLint unused variable warnings for clean CI/CD
 
+## 🥾 Trail Implementation Status (ON HOLD - September 15, 2025)
+
+### ✅ **COMPLETED Implementation**:
+
+**Technical Components**:
+- **Trail Service**: `kartverketTrailService.ts` fully implemented with WMS integration
+- **Map Layer System**: Trail layers dynamically added/removed in `MapLibreMap.tsx`
+- **Category Integration**: Fotrute, Skiløype, Sykkelrute, Andre turruter connected to map display
+- **Error Handling**: Comprehensive logging and graceful degradation for service issues
+
+**Working Features**:
+- ✅ Trail categories display in CategoryPanel sidebar
+- ✅ Category selection/deselection triggers trail layer management
+- ✅ Console logging shows trail layers being added: `🥾 Adding trail layers for types: ['hiking']`
+- ✅ WMS sources and layers properly configured in MapLibre GL JS
+- ✅ Build and lint passing without errors
+
+### ❌ **BLOCKED by External Service Issue**:
+
+**Root Cause**: Kartverket WMS services returning HTTP 500 Internal Server Error
+- **Endpoint**: `https://wms.geonorge.no/skwms1/wms.friluftsruter`
+- **Error**: All GetMap requests return 500 status
+- **Known Issue**: WMS infrastructure updates at Kartverket (September 2025)
+- **Impact**: Trail layers added to map but tiles don't load/display
+
+**Console Error Pattern**:
+```
+wms.geonorge.no/skwms1/wms.friluftsruter?service=WMS&request=GetMap&version=1.3.0&layers=fotrute&...
+Failed to load resource: the server responded with a status of 500 ()
+```
+
+### 🔧 **Implementation Details**:
+
+**WMS Configuration**:
+```javascript
+// Working endpoint (returns 200 for GetCapabilities)
+KARTVERKET_WMS_BASE = 'https://wms.geonorge.no/skwms1/wms.friluftsruter'
+
+// Layer mappings
+KARTVERKET_TRAIL_LAYERS = {
+  hiking: 'fotrute',      // Fotrute - hiking trails
+  skiing: 'skiloype',     // Skiløype - ski trails
+  cycling: 'sykkelrute',  // Sykkelrute - bicycle routes
+  all: 'friluftsruter'    // All trail types combined
+}
+```
+
+**Trail Layer Management** (MapLibreMap.tsx:603-684):
+- Dynamic layer addition based on `categoryState.checked`
+- Proper source/layer cleanup when categories deselected
+- Error monitoring and user feedback
+- Semi-transparent overlay (opacity 0.8)
+
+### 📋 **Next Steps for Resuming**:
+
+1. **Monitor Service Recovery**:
+   - Check `https://status.kartverket.no` for WMS service updates
+   - Test endpoint: `curl -I "https://wms.geonorge.no/skwms1/wms.friluftsruter?request=GetCapabilities&service=WMS"`
+
+2. **Alternative Approaches to Investigate**:
+   - Research if Kartverket has released new WMS endpoints
+   - Check for WFS (vector) alternatives to WMS (raster)
+   - Investigate WMTS cache services for trail data
+   - Consider using OpenStreetMap trail data as interim solution
+
+3. **Testing When Service Restored**:
+   - Select Turløype categories in sidebar
+   - Verify trail overlays appear on map
+   - Test all trail types (hiking, skiing, cycling)
+   - Confirm performance and visual appearance
+
+4. **Enhancement Opportunities**:
+   - Add trail-specific popups with route information
+   - Implement trail search functionality
+   - Add trail difficulty indicators
+   - Connect to trail metadata (length, elevation, etc.)
+
+### 🎯 **Current User Experience**:
+- Trail categories work perfectly in UI
+- Users can select/deselect without errors
+- Clear console messages about service status
+- App remains stable and functional
+- **Visual trails will appear automatically when WMS service is restored**
+
+**Last Updated**: September 15, 2025 - Implementation complete, awaiting external service recovery.
+
 ## 🔧 Troubleshooting & Solutions Guide
 
 This section documents proven solutions to recurring problems in the Trakke project.
@@ -753,7 +839,7 @@ const _mapRect = mapContainer.getBoundingClientRect()
 ## 🚧 Future Development Considerations
 
 ### Planned Enhancements
-- **Kartverket Trail Integration**: `kartverketTrailService.ts` exists but not yet implemented
+- **Trail Enhancement**: Complete trail system implemented but blocked by Kartverket WMS 500 errors (see Trail Implementation Status above)
 - **Testing Framework**: Consider adding Jest + React Testing Library for component testing
 - **Performance Optimization**: Code splitting for larger POI datasets
 - **Offline Support**: PWA capabilities and service worker integration

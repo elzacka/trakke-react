@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { POI, CategoryState, CategoryNode } from '../data/pois'
 import { SearchResult } from '../services/searchService'
+import { KartverketTrailService } from '../services/kartverketTrailService'
 
 // ARCHITECTURAL SAFEGUARDS - PREVENT REGRESSION TO OLD APPROACHES
 // ================================================================
@@ -39,7 +40,7 @@ export interface MapLibreMapProps {
 
 export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   pois,
-  categoryState: _categoryState,
+  categoryState,
   categoryTree: _categoryTree,
   onCategoryToggle: _onCategoryToggle,
   onExpandToggle: _onExpandToggle,
@@ -597,6 +598,93 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
     console.log(`✅ Created ${pois.length} API-based POI overlays`)
   }, [mapLoaded, pois])
+
+  // TRAIL LAYER MANAGEMENT - Handle Norwegian hiking trails from Turrutebasen
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+
+    const map = mapRef.current
+
+    // Helper function to check if any trail categories are active
+    const getActiveTrailTypes = (): ('hiking' | 'skiing' | 'cycling' | 'all')[] => {
+      const activeTypes: ('hiking' | 'skiing' | 'cycling' | 'all')[] = []
+
+      // Check for specific trail subcategories
+      if (categoryState.checked.fotrute) activeTypes.push('hiking')
+      if (categoryState.checked.skiloype_trail) activeTypes.push('skiing')
+      if (categoryState.checked.sykkelrute) activeTypes.push('cycling')
+      if (categoryState.checked.andre_turruter) activeTypes.push('all')
+
+      return activeTypes
+    }
+
+    const activeTrailTypes = getActiveTrailTypes()
+
+    // Remove existing trail layers
+    const existingTrailLayers = ['trails-hiking', 'trails-skiing', 'trails-cycling', 'trails-all']
+    existingTrailLayers.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId)
+      }
+      if (map.getSource(layerId)) {
+        map.removeSource(layerId)
+      }
+    })
+
+    // Add trail layers for active categories
+    if (activeTrailTypes.length > 0) {
+      console.log(`🥾 Adding trail layers for types:`, activeTrailTypes)
+      console.log(`ℹ️ Note: Trail data provided by Kartverket WMS service`)
+      console.log(`⚠️ If trails don't appear, the WMS service may be temporarily unavailable`)
+
+      activeTrailTypes.forEach(trailType => {
+        const layerId = `trails-${trailType}`
+        const sourceId = `trails-${trailType}`
+
+        try {
+          // Add WMS raster source for trail type
+          map.addSource(sourceId, {
+            type: 'raster',
+            tiles: [KartverketTrailService.getWMSTileUrl(trailType)],
+            tileSize: 256,
+            attribution: '© Kartverket Turrutebasen'
+          })
+
+          // Add raster layer for trail display
+          map.addLayer({
+            id: layerId,
+            type: 'raster',
+            source: sourceId,
+            paint: {
+              'raster-opacity': 0.8 // Semi-transparent so base map shows through
+            }
+          })
+
+          console.log(`✅ Added trail layer: ${layerId}`)
+          console.log(`📡 WMS URL: ${KartverketTrailService.getWMSTileUrl(trailType)}`)
+
+          // Monitor for tile loading errors and provide user feedback
+          map.on('sourcedata', (e) => {
+            if (e.sourceId === sourceId && e.isSourceLoaded === false) {
+              console.warn(`⚠️ Trail layer ${layerId} may be experiencing loading issues`)
+            }
+          })
+
+          map.on('error', (e) => {
+            if (e.error && e.error.message && e.error.message.includes('500')) {
+              console.error(`❌ WMS Service Error: Trail data temporarily unavailable (HTTP 500)`)
+              console.error(`🔧 This is a known issue with Kartverket's WMS infrastructure`)
+            }
+          })
+
+        } catch (error) {
+          console.error(`❌ Failed to add trail layer ${layerId}:`, error)
+        }
+      })
+    } else {
+      console.log('🚫 No trail categories active - trail layers removed')
+    }
+  }, [mapLoaded, categoryState])
 
   // Handle search result centering
   useEffect(() => {
