@@ -172,16 +172,16 @@ sources: {
     tileSize: 256,
     attribution: '© Kartverket',
     minzoom: 0,
-    maxzoom: 18 // Official Kartverket WMTS supports zoom levels 0-18
+    maxzoom: 20 // Official Geonorge WMTS specification: 21 levels (0-20)
   }
 }
 ```
 
 **Map Zoom Limits**:
 - **minZoom**: 3 (Norway-wide view)
-- **maxZoom**: 17 (Conservative limit within official 0-18 range, ~40m scale)
-- **Source maxzoom**: 18 (Official Kartverket specification)
-- **Layer maxzoom**: 18 (Match source specification)
+- **maxZoom**: 19 (Conservative limit within official 0-20 range, avoiding grey tiles)
+- **Source maxzoom**: 20 (Official Geonorge WMTS specification: 21 levels)
+- **Layer maxzoom**: 20 (Match source specification)
 
 **Service Migration (2024-2025)**:
 - ❌ **Deprecated**: `opencache.statkart.no` (phased out)
@@ -192,10 +192,12 @@ sources: {
 - EPSG:3857 (WebMercator) - Used in this app
 - EPSG:25832, 25833, 25835 (UTM zones) - Available but not used
 
-**Scale Reference**:
-- **Zoom 17**: ~40m scale (Conservative app limit)
-- **Zoom 18**: ~20m scale (Official max, matches DNT/ut.no)
-- **norgeskart.no**: Supports down to 10m scale at higher zooms
+**Scale Reference** (per official Geonorge specs):
+- **Zoom 0**: 1:81,920,000 (Norway-wide overview)
+- **Zoom levels 0-20**: 21 levels total, each halving previous resolution
+- **Zoom 19**: ~15m scale (Current conservative app limit)
+- **Zoom 20**: ~7.5m scale (Official max, very detailed)
+- **norgeskart.no**: Uses full 0-20 range for maximum detail
 
 **Efficiency Measures:**
 - Use TodoWrite tool for complex multi-step tasks
@@ -292,7 +294,7 @@ Map Shortcuts:
 
 ### Map Integration
 - **Map Library**: MapLibre GL JS with official Kartverket WMTS raster tiles
-- **Zoom Configuration**: minZoom: 3, maxZoom: 17 (within official Kartverket 0-18 range, ~40m scale)
+- **Zoom Configuration**: minZoom: 3, maxZoom: 19 (within official Geonorge 0-20 range, conservative)
 - **Tile Service**: `cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/` (official 2025 service)
 - **Coordinate System**: Web Mercator (EPSG:3857)
 - **POI Popups**: Custom HTML popups with close buttons (X), not default MapLibre popups
@@ -629,17 +631,17 @@ sources: {
     tileSize: 256,
     attribution: '© Kartverket',
     minzoom: 0,
-    maxzoom: 18 // Official specification
+    maxzoom: 20 // Official Geonorge specification: 21 levels (0-20)
   }
 }
 
 // Map limits (conservative within official range)
-minZoom: 3, maxZoom: 17
+minZoom: 3, maxZoom: 19
 
 // AVOID These Deprecated/Problematic URLs:
 ❌ opencache.statkart.no (phased out 2024)
 ❌ Custom headers that cause CORS issues
-❌ Zoom limits beyond official 0-18 range
+❌ Zoom limits beyond official 0-20 range
 ```
 
 **Service Migration Notes**:

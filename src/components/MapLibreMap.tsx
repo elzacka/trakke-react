@@ -125,7 +125,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
               tileSize: 256,
               attribution: '© Kartverket',
               minzoom: 0,
-              maxzoom: 18 // Official Kartverket WMTS supports zoom levels 0-18
+              maxzoom: 20 // Official Geonorge WMTS specification: 21 levels (0-20)
             }
           },
           layers: [
@@ -134,14 +134,14 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
               type: 'raster',
               source: 'kartverket-topo',
               minzoom: 0,
-              maxzoom: 18 // Official Kartverket WMTS specification
+              maxzoom: 20 // Match source: Official Geonorge WMTS specification
             }
           ]
         },
         center: center,
         zoom: 13,
         minZoom: 3, // Prevent zooming out too far (Norway-wide view)
-        maxZoom: 17, // Conservative limit within Kartverket's 0-18 range, avoiding extreme zoom
+        maxZoom: 19, // Updated to match Geonorge specs (0-20), conservative to avoid grey tiles
         bearing: 0,
         pitch: 0,
         interactive: true,
