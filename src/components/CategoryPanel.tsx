@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { CategoryNode, CategoryState, POI } from '../data/pois'
 import { HierarchicalCategoryFilter } from './HierarchicalCategoryFilter'
-import { ShortcutsPanel } from './ShortcutsPanel'
+import { useUIStore } from '../state/uiStore'
 
 interface CategoryPanelProps {
   categoryTree: CategoryNode[]
@@ -23,6 +23,7 @@ export function CategoryPanel({
   error
 }: CategoryPanelProps) {
   const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false) // Start collapsed
+  const { openHurtigtaster, openTegnforklaring } = useUIStore()
 
   return (
     <div>
@@ -134,9 +135,84 @@ export function CategoryPanel({
           </div>
         )}
       </div>
-      
-      {/* Shortcuts panel at the bottom */}
-      <ShortcutsPanel />
+
+      {/* Meta info entries */}
+      <div style={{ marginBottom: '16px' }}>
+        {/* Hurtigtaster */}
+        <button
+          onClick={openHurtigtaster}
+          style={{
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#334155',
+            transition: 'all 0.2s ease',
+            marginBottom: '8px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f8fafc'
+            e.currentTarget.style.borderColor = '#cbd5e1'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#ffffff'
+            e.currentTarget.style.borderColor = '#e2e8f0'
+          }}
+        >
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '16px',
+            color: '#64748b'
+          }}>
+            keyboard
+          </span>
+          <span>Hurtigtaster og handlinger</span>
+        </button>
+
+        {/* Tegnforklaring */}
+        <button
+          onClick={openTegnforklaring}
+          style={{
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: '500',
+            color: '#334155',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f8fafc'
+            e.currentTarget.style.borderColor = '#cbd5e1'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#ffffff'
+            e.currentTarget.style.borderColor = '#e2e8f0'
+          }}
+        >
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '16px',
+            color: '#64748b'
+          }}>
+            list
+          </span>
+          <span>Tegnforklaring</span>
+        </button>
+      </div>
     </div>
   )
 }

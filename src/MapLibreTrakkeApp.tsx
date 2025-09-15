@@ -6,8 +6,20 @@ import { categoryTree, CategoryState, POI, POIType } from './data/pois'
 import { OverpassService, OverpassPOI } from './services/overpassService'
 import { KartverketTrailService } from './services/kartverketTrailService'
 import { SearchResult, SearchService } from './services/searchService'
+import { useUIStore } from './state/uiStore'
+import { UIProvider } from './state/UIProvider'
+import { HurtigtasterModal } from './features/shortcuts/HurtigtasterModal'
+import { TegnforklaringModal } from './features/legend/TegnforklaringModal'
 
-export function MapLibreTrakkeApp() {
+function MapLibreTrakkeAppInner() {
+  // UI Store for modal management
+  const {
+    isHurtigtasterOpen,
+    isTegnforklaringOpen,
+    closeHurtigtaster,
+    closeTegnforklaring
+  } = useUIStore()
+
   // Category state - "På eventyr" expanded, no categories checked by default
   const [categoryState, setCategoryState] = useState<CategoryState>({
     checked: {
@@ -763,7 +775,7 @@ export function MapLibreTrakkeApp() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 14. sept 2025
+                  Under utvikling • Sist oppdatert 15. sept 2025
                 </p>
               </div>
             </div>
@@ -1125,6 +1137,26 @@ export function MapLibreTrakkeApp() {
           will-change: transform;
         }
       `}</style>
+
+      {/* Modal components */}
+      <HurtigtasterModal
+        isOpen={isHurtigtasterOpen}
+        onClose={closeHurtigtaster}
+      />
+
+      <TegnforklaringModal
+        isOpen={isTegnforklaringOpen}
+        onClose={closeTegnforklaring}
+      />
     </>
+  )
+}
+
+// Main component wrapped with UI Provider
+export function MapLibreTrakkeApp() {
+  return (
+    <UIProvider>
+      <MapLibreTrakkeAppInner />
+    </UIProvider>
   )
 }
