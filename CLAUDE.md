@@ -51,6 +51,13 @@ npx vite --version
 - Update major versions with careful testing
 - Document breaking changes in this file
 
+**Current Key Dependencies** (September 15, 2025):
+- **Vite**: v7.0.6 - Core build tool with excellent performance
+- **React**: v19.1.0 - Latest stable with improved performance
+- **MapLibre GL JS**: v5.7.0 - Map rendering library, actively maintained
+- **TypeScript**: v5.8.3 - Type safety with latest language features
+- **ESLint**: v9.30.1 - Code quality enforcement
+
 **Critical Dependencies to Monitor:**
 - **Vite**: Core build tool - check for performance improvements
 - **React & TypeScript**: Framework updates for new features/fixes
@@ -155,9 +162,9 @@ npx vite --version
 
 ## 📋 Map Configuration & Technical Specifications
 
-### Official Kartverket WMTS Configuration (September 14, 2025)
-**Status**: CURRENT - Using official Kartverket specifications
-**Last Updated**: September 14, 2025
+### Official Kartverket WMTS Configuration (September 15, 2025)
+**Status**: CURRENT - Using official Geonorge WMTS specifications (21 levels: 0-20)
+**Last Updated**: September 15, 2025
 
 **Correct WMTS Configuration**:
 Based on official Kartverket documentation and GetCapabilities specifications:
@@ -245,47 +252,66 @@ npm run dev
 
 ### Core Components Structure
 - **`MapLibreTrakkeApp.tsx`** - Main application component containing all state management, POI loading logic, and API orchestration
-- **`MapLibreMap.tsx`** - Map rendering component using MapLibre GL JS with Kartverket WMTS raster tiles (zoom limits: 3-17)
-- **`CategoryPanel.tsx`** - Sidebar with hierarchical POI category filtering
+- **`MapLibreMap.tsx`** - Map rendering component using MapLibre GL JS with Kartverket WMTS raster tiles (zoom limits: 3-19)
+- **`CategoryPanel.tsx`** - Sidebar with hierarchical POI category filtering and modal access buttons
 - **`SearchBox/`** - Norwegian place name search using Kartverket's official place name API
 - **`HierarchicalCategoryFilter.tsx`** - Multi-level category tree with checkbox states
-- **`ShortcutsPanel.tsx`** - Expandable keyboard shortcuts help panel with app and map controls
+- **`Modal.tsx`** - Reusable modal component for legend and shortcuts
+- **`features/legend/TegnforklaringModal.tsx`** - Comprehensive map legend with 79+ official Kartverket symbols
+- **`features/shortcuts/HurtigtasterModal.tsx`** - Keyboard shortcuts help modal replacing deprecated ShortcutsPanel
+- **`state/uiStore.ts` & `UIProvider.tsx`** - UI state management for modal controls
 
 ### Sidebar (Category Panel) Layout Specifications
 
 **Structure & Hierarchy**:
 - **Header**: Logo "Tråkke" with tagline "Oppdag Norge med turskoa på"
 - **Category List**: Expandable/collapsible categories with consistent icon + label layout
-- **Keyboard Shortcuts**: Fixed at bottom with monospace chip styling
+- **Modal Access Buttons**: Hurtigtaster (keyboard icon) and Tegnforklaring (list icon) buttons
 
 **Spacing & Visual Guidelines**:
 - Tagline: Lighter text weight (`font-weight: 400`, `color: #6b7280`)
 - Category groups: 16px vertical spacing between main categories
 - Subcategories: +12px indent from parent level
 - Expand/collapse indicators: 24x24px hitbox for touch accessibility
-- Shortcuts: Background `#f3f4f6`, border-radius 6px, padding 4px 6px
+- Modal buttons: Background `#ffffff`, border `#e2e8f0`, hover effects with smooth transitions
 
-**Keyboard Shortcuts Display** (via ShortcutsPanel.tsx):
-```
-App Shortcuts:
-  Ctrl+K   Søk (Search)
-  Ctrl+B   Meny (Menu toggle)
-  Esc      Lukk (Close/Cancel)
-
-Map Shortcuts:
-  Drag      Panorér (Pan)
-  Scroll    Zoom
-  Two-finger Roter (Rotate)
-```
-- Expandable help panel styled as monospace chips
-- Separate categories for app controls vs map controls
-- Touch-friendly interaction hints
+- **Hurtigtaster**: Keyboard shortcuts modal (keyboard icon)
+- **Tegnforklaring**: Map legend modal (list icon)
+- Both buttons: 12px padding, icon + label layout, hover effects
 
 ### Data Architecture
 - **POI Categories**: Defined in `src/data/pois.ts` with 7 main categories (Aktivitet, Naturperle, Overnatte, På eventyr, Service, Transport, Turløype)
 - **Custom POI Rendering**: Uses custom DOM overlay markers (colored circles) for POI display; MapLibre markers only for position and search results
 - **Color Coordination**: Each POI category has specific colors that must match between markers and UI elements
 - **POI Transform Functions**: Located in `MapLibreTrakkeApp.tsx` - convert API data to internal POI format with correct colors
+- **Map Legend Data**: Defined in `src/data/symbols.ts` with 79+ official Kartverket symbols, organized by categories and columns
+
+### Tegnforklaring (Map Legend) System
+
+**Implementation** (September 15, 2025):
+- **`TegnforklaringModal.tsx`** - Complete legend modal with accurate symbol rendering
+- **`src/data/symbols.ts`** - 79+ symbols with exact RGB values from official Kartverket PDF specifications
+- **Symbol Categories**: 11 categories (bygninger_befolket_omrade, samferdsel, kraftlinje, industri_anlegg, arealbruk, administrative_grenser, hydrografi, kystlinje_terreng, vegetasjon, bebyggelse_tjenester, gjenstander)
+- **Visual Types**: line, fill, point, symbol, mixed - each with proper styling and patterns
+
+**Symbol Rendering System**:
+- **Line symbols**: Various styles (solid, dashed, dotted), patterns (railway, parallel), custom widths
+- **Fill symbols**: Background colors, border colors, pattern overlays (dots)
+- **Point symbols**: Circle and square shapes, special patterns (rocks)
+- **Symbol types**: Geometric shapes (square, circle, triangle) with color combinations
+- **Mixed types**: Complex combinations for advanced cartographic symbols
+
+**Official Color Accuracy**:
+- RGB values extracted from "tegneregler_N5 Kartdata_spesifikasjon-skjermkartografi_compressed.pdf"
+- Example: Tettbebyggelse [247, 190, 140], Roads [210, 35, 42], Administrative boundaries [180, 135, 255]
+- Two-column layout matching official "Tegnforklaring_Kartverket.png" reference
+- Norwegian terminology preserved exactly as in official documentation
+
+**Modal Features**:
+- Responsive grid (1 column mobile, 2 columns desktop)
+- Category headers with proper styling and hierarchy
+- Symbol visual rendering with 24x24px icons
+- Proper spacing and typography matching app design system
 
 ### Service Layer
 - **`overpassService.ts`** - OpenStreetMap Overpass API queries for POI data (war memorials, caves, towers, hunting stands)
@@ -442,6 +468,38 @@ POI popups are custom HTML elements positioned above markers with:
   - Over sidebar: Solid white background with border
 - **Font**: 12px, monospace-style for precision
 
+## 📁 Current Project Structure (September 15, 2025)
+
+```
+src/
+├── components/
+│   ├── modal/
+│   │   └── Modal.tsx              # Reusable modal component
+│   ├── searchbox/
+│   │   ├── SearchBox.tsx          # Search input component
+│   │   └── index.tsx              # Exports
+│   ├── CategoryPanel.tsx          # Sidebar with category filtering + modal buttons
+│   ├── HierarchicalCategoryFilter.tsx  # Category tree component
+│   └── MapLibreMap.tsx            # Main map component
+├── data/
+│   ├── pois.ts                    # POI categories and types
+│   └── symbols.ts                 # Tegnforklaring symbols (79+ definitions)
+├── features/
+│   ├── legend/
+│   │   └── TegnforklaringModal.tsx  # Comprehensive map legend modal
+│   └── shortcuts/
+│       ├── HurtigtasterModal.tsx   # Keyboard shortcuts modal
+│       └── data.ts                 # Shortcuts data
+├── services/
+│   ├── kartverketTrailService.ts   # Future trail integration
+│   ├── overpassService.ts          # OpenStreetMap POI queries
+│   └── searchService.ts            # Norwegian place name search
+├── state/
+│   ├── UIProvider.tsx              # UI state provider
+│   └── uiStore.ts                  # UI state management
+└── MapLibreTrakkeApp.tsx          # Main app component
+```
+
 ## 🔧 Configuration Notes
 
 ### Development Environment
@@ -473,8 +531,25 @@ POI popups are custom HTML elements positioned above markers with:
 
 Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and pushes the `dist` folder to the `gh-pages` branch. GitHub Actions automatically run lint and build checks on every push.
 
-## 🧩 Recent Major Features (September 2025)
-**⚠️ Update section title and content dates based on current date**
+## 🧩 Recent Major Features (September 15, 2025)
+
+### Tegnforklaring (Map Legend) Implementation
+- Complete legend modal with 79+ official Kartverket symbols using exact RGB values from PDF specifications
+- Organized into 11 symbol categories with proper visual rendering (line, fill, point, symbol types)
+- Two-column responsive layout matching official Kartverket reference materials
+- Integrated with CategoryPanel via UI state management system
+
+### Zoom Level & WMTS Configuration Updates
+- Updated to match official Geonorge specifications: 21 zoom levels (0-20)
+- Increased conservative maxZoom from 17 to 19 while avoiding grey tile regression
+- Source and layer maxzoom updated to 20 to match official specification
+- Documentation updated with proper scale references and Geonorge compliance
+
+### UI State Management & Modal System
+- Added UIProvider and uiStore for centralized modal state management
+- Replaced deprecated ShortcutsPanel with modern HurtigtasterModal
+- Created reusable Modal component for consistent modal behavior
+- Integrated modal access buttons into CategoryPanel sidebar
 
 ### Search Enhancements
 - Replaced Nominatim with Kartverket's official APIs for better Norwegian coverage
@@ -621,7 +696,7 @@ const addressUrl = `https://ws.geonorge.no/adresser/v1/sok?...`
 
 **Solution**: Use official 2025 Kartverket WMTS configuration:
 ```javascript
-// CORRECT Configuration (September 2025)
+// CORRECT Configuration (September 15, 2025)
 sources: {
   'kartverket-topo': {
     type: 'raster',
