@@ -108,8 +108,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   const createMapStyle = (mapType: 'topo' | 'satellite') => {
     const baseStyle = {
       version: 8 as const,
-      sources: {} as Record<string, any>,
-      layers: [] as any[]
+      sources: {} as Record<string, maplibregl.SourceSpecification>,
+      layers: [] as maplibregl.LayerSpecification[]
     }
 
     if (mapType === 'topo') {
