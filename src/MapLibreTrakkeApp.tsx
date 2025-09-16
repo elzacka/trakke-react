@@ -37,6 +37,7 @@ function MapLibreTrakkeAppInner() {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true) // Hidden by default
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null)
+  const [mapType, setMapType] = useState<'topo' | 'satellite'>('topo') // Default to topo map
   const [currentViewport, setCurrentViewport] = useState<{ north: number; south: number; east: number; west: number; zoom: number } | null>(null)
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
   const [locationLoading, setLocationLoading] = useState(false)
@@ -403,6 +404,12 @@ function MapLibreTrakkeAppInner() {
     }
   }, [categoryState, currentViewport])
 
+  // Function to handle map type changes
+  const handleMapTypeChange = useCallback((newMapType: 'topo' | 'satellite') => {
+    console.log(`🗺️ Changing map type from ${mapType} to ${newMapType}`)
+    setMapType(newMapType)
+  }, [mapType])
+
   const handleViewportChange = useCallback((viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
     setCurrentViewport(viewport)
     console.log('🗺️ Viewport changed:', viewport)
@@ -688,6 +695,7 @@ function MapLibreTrakkeAppInner() {
           searchResult={searchResult}
           userLocation={userLocation}
           sidebarCollapsed={sidebarCollapsed}
+          mapType={mapType}
         />
       </div>
 
@@ -720,16 +728,16 @@ function MapLibreTrakkeAppInner() {
                 margin: '0 0 8px 0',
                 fontSize: '24px',
                 fontWeight: '600',
-                color: '#3e4533',
+                color: '#0d9488',
                 fontFamily: 'Exo 2, sans-serif',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <span style={{ 
-                  fontFamily: 'Material Symbols Outlined', 
+                <span style={{
+                  fontFamily: 'Material Symbols Outlined',
                   fontSize: '26px',
-                  color: '#3e4533',
+                  color: '#0d9488',
                   fontWeight: '400',
                   fontVariationSettings: '"wght" 400'
                 }}>
@@ -777,6 +785,8 @@ function MapLibreTrakkeAppInner() {
                   pois={pois}
                   loading={loading}
                   error={error}
+                  mapType={mapType}
+                  onMapTypeChange={handleMapTypeChange}
                 />
               </div>
               

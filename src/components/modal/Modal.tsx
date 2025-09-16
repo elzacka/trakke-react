@@ -3,10 +3,11 @@ import React, { useEffect, useRef } from 'react'
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  title: string
+  title?: string
   children: React.ReactNode
   ariaLabelledBy?: string
   className?: string
+  showHeader?: boolean
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -15,10 +16,13 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   ariaLabelledBy,
-  className
+  className,
+  showHeader = true
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null)
-  const titleId = ariaLabelledBy || `modal-title-${Math.random().toString(36).substr(2, 9)}`
+  const internalTitleIdRef = useRef(`modal-title-${Math.random().toString(36).substr(2, 9)}`)
+  const titleId = ariaLabelledBy || internalTitleIdRef.current
+  const labelledBy = ariaLabelledBy || (showHeader ? titleId : undefined)
 
   // Handle ESC key
   useEffect(() => {
@@ -117,7 +121,7 @@ export const Modal: React.FC<ModalProps> = ({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId}
+        aria-labelledby={labelledBy}
         tabIndex={-1}
         className={className}
         style={{
@@ -143,53 +147,63 @@ export const Modal: React.FC<ModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{
-          padding: window.innerWidth < 768 ? '16px 20px' : '24px 32px',
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexShrink: 0
-        }}>
-          <h2
-            id={titleId}
-            style={{
-              margin: 0,
-              fontSize: window.innerWidth < 768 ? '20px' : '24px',
-              fontWeight: 'bold',
-              color: '#111827'
-            }}
-          >
-            {title}
-          </h2>
+        {showHeader && (
+          <div style={{
+            padding: window.innerWidth < 768 ? '16px 20px' : '24px 32px',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0
+          }}>
+            <h2
+              id={titleId}
+              style={{
+                margin: 0,
+                fontSize: window.innerWidth < 768 ? '20px' : '24px',
+                fontWeight: 'bold',
+                color: '#111827'
+              }}
+            >
+              {title || ''}
+            </h2>
 
-          <button
-            onClick={onClose}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: 'rgba(0, 0, 0, 0.1)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              color: '#374151',
-              transition: 'background-color 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.15)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'
-            }}
-            aria-label="Lukk modal"
-          >
-            ×
-          </button>
-        </div>
+            <button
+              onClick={onClose}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '18px',
+                color: '#374151',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc'
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(148, 163, 184, 0.1)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+              aria-label="Lukk modal"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div style={{

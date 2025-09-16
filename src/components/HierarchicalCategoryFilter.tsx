@@ -131,12 +131,22 @@ export function HierarchicalCategoryFilter({
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#f3f4f6'
-                e.currentTarget.style.color = '#374151'
+                e.currentTarget.style.backgroundColor = '#f8fafc'
+                e.currentTarget.style.color = '#334155'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
                 e.currentTarget.style.color = '#6b7280'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc'
+                e.currentTarget.style.color = '#334155'
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(148, 163, 184, 0.1)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = '#6b7280'
+                e.currentTarget.style.boxShadow = 'none'
               }}
             >
               <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px', transition: 'transform 0.2s ease' }}>

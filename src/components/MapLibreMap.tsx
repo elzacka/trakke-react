@@ -36,6 +36,7 @@ export interface MapLibreMapProps {
   }) => void
   onBearingChange?: (bearing: number) => void
   sidebarCollapsed?: boolean // Add sidebar state for overlay behavior
+  mapType?: 'topo' | 'satellite' // Map type selection
 }
 
 export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
@@ -48,7 +49,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   userLocation,
   onViewportChange,
   onBearingChange,
-  sidebarCollapsed = true
+  sidebarCollapsed = true,
+  mapType = 'topo'
 }, ref) => {
   const mapRef = useRef<maplibregl.Map | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -102,47 +104,75 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     onBearingChangeRef.current = onBearingChange
   }, [onBearingChange])
 
+  // Create map style based on map type - shared function
+  const createMapStyle = (mapType: 'topo' | 'satellite') => {
+    const baseStyle = {
+      version: 8 as const,
+      sources: {} as Record<string, any>,
+      layers: [] as any[]
+    }
+
+    if (mapType === 'topo') {
+      // Kartverket Topographic Map
+      baseStyle.sources['kartverket-topo'] = {
+        type: 'raster',
+        tiles: [
+          // Official Kartverket WMTS cache service (2025)
+          'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
+        ],
+        tileSize: 256,
+        attribution: '© Kartverket',
+        minzoom: 0,
+        maxzoom: 20 // Official Geonorge WMTS specification: 21 levels (0-20)
+      }
+      baseStyle.layers.push({
+        id: 'kartverket-topo-layer',
+        type: 'raster',
+        source: 'kartverket-topo',
+        minzoom: 0,
+        maxzoom: 20
+      })
+    } else {
+      // Satellite Map - Using Esri World Imagery (widely available satellite imagery)
+      baseStyle.sources['esri-satellite'] = {
+        type: 'raster',
+        tiles: [
+          // Esri World Imagery - free satellite imagery service
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: '© Esri, Maxar, Earthstar Geographics, CNES/Airbus DS, USDA FSA, USGS, Aerogrid, IGN, IGP, and the GIS User Community',
+        minzoom: 0,
+        maxzoom: 18 // Conservative limit to avoid grey tiles - Esri has reliable coverage up to zoom 18
+      }
+      baseStyle.layers.push({
+        id: 'esri-satellite-layer',
+        type: 'raster',
+        source: 'esri-satellite',
+        minzoom: 0,
+        maxzoom: 18
+      })
+    }
+
+    return baseStyle
+  }
+
   // Initialize map only once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
-    console.log('🗺️ [DEBUG] Initializing MapLibre with Kartverket topographic raster tiles...')
+    console.log(`🗺️ [DEBUG] Initializing MapLibre with ${mapType} map type...`)
 
     // Map initialization function
     const initializeWithLocation = (center: [number, number]) => {
       const map = new maplibregl.Map({
         container: containerRef.current!,
-        // KARTVERKET TOPOGRAPHIC MAP - Using WMTS raster tiles (vector tiles not available)
-        // Custom MapLibre style with Kartverket's official topographic raster tiles
-        style: {
-          version: 8,
-          sources: {
-            'kartverket-topo': {
-              type: 'raster',
-              tiles: [
-                // Official Kartverket WMTS cache service (2025)
-                'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
-              ],
-              tileSize: 256,
-              attribution: '© Kartverket',
-              minzoom: 0,
-              maxzoom: 20 // Official Geonorge WMTS specification: 21 levels (0-20)
-            }
-          },
-          layers: [
-            {
-              id: 'kartverket-topo-layer',
-              type: 'raster',
-              source: 'kartverket-topo',
-              minzoom: 0,
-              maxzoom: 20 // Match source: Official Geonorge WMTS specification
-            }
-          ]
-        },
+        // Dynamic map style based on mapType prop
+        style: createMapStyle(mapType),
         center: center,
         zoom: 13,
         minZoom: 3, // Prevent zooming out too far (Norway-wide view)
-        maxZoom: 19, // Updated to match Geonorge specs (0-20), conservative to avoid grey tiles
+        maxZoom: mapType === 'topo' ? 17 : 16, // Conservative: Topo 17 (Kartverket), Satellite 16 (Esri reliable coverage)
         bearing: 0,
         pitch: 0,
         interactive: true,
@@ -168,7 +198,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       // No default controls - using custom overlay UI components instead
 
       map.on('load', () => {
-        console.log('✅ MapLibre loaded with Kartverket topographic raster tiles')
+        console.log(`✅ MapLibre loaded with ${mapType} map tiles`)
         setMapLoaded(true)
         
         // Emit initial viewport bounds
@@ -272,6 +302,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         console.error(`❌ [SOURCE ERROR] Source: ${e.sourceId}`, e)
         if (e.sourceId === 'kartverket-topo') {
           console.error(`❌ [KARTVERKET ERROR] Topographic tiles failed to load at zoom ${map.getZoom().toFixed(2)}`)
+        } else if (e.sourceId === 'esri-satellite') {
+          console.error(`❌ [ESRI ERROR] Satellite tiles failed to load at zoom ${map.getZoom().toFixed(2)}`)
         }
       })
 
@@ -379,7 +411,42 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       const existingOverlays = document.querySelectorAll('.custom-poi-overlay')
       existingOverlays.forEach(overlay => overlay.remove())
     }
-  }, []) // Empty dependency array - initialize map only once
+  }, [mapType]) // Depend on mapType for initial style selection, but prevent re-initialization
+
+  // Handle map type changes - dynamically update map style
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+
+    const map = mapRef.current
+    console.log(`🗺️ Switching map type to: ${mapType}`)
+
+    // Update map style based on mapType
+    const newStyle = createMapStyle(mapType)
+    map.setStyle(newStyle)
+
+    // Update zoom limits based on map type
+    const newMaxZoom = mapType === 'topo' ? 17 : 16
+    map.setMaxZoom(newMaxZoom)
+
+    // If current zoom exceeds new limit, zoom out
+    if (map.getZoom() > newMaxZoom) {
+      map.setZoom(newMaxZoom)
+    }
+
+    // Re-emit viewport bounds after style change
+    setTimeout(() => {
+      if (onViewportChangeRef.current) {
+        const bounds = map.getBounds()
+        onViewportChangeRef.current({
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+          zoom: map.getZoom()
+        })
+      }
+    }, 100)
+  }, [mapType, mapLoaded])
 
   // API-BASED POI RENDERING - Using Custom DOM Overlays (not MapLibre markers)
   useEffect(() => {
@@ -932,7 +999,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                 // Styling adapts based on sidebar state as specified
                 ...(sidebarCollapsed ? {
                   // On Map styling
-                  background: coordinatesCopied ? 'rgba(34,197,94,0.9)' : 'rgba(255,255,255,0.8)',
+                  background: coordinatesCopied ? 'rgba(13,148,136,0.9)' : 'rgba(255,255,255,0.8)',
                   borderRadius: '4px',
                   padding: '4px 6px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
@@ -940,7 +1007,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                   color: coordinatesCopied ? '#ffffff' : '#374151'
                 } : {
                   // On Sidebar Overlay styling
-                  background: coordinatesCopied ? '#22c55e' : '#ffffff',
+                  background: coordinatesCopied ? '#0d9488' : '#ffffff',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
                   padding: '4px 6px',

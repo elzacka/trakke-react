@@ -1,5 +1,5 @@
-// Admin Login Modal - Secure authentication interface
-// Provides user-friendly login form with security feedback
+// Admin Login Modal - Redesigned for 2025 best practices
+// Clean, modern, accessible authentication interface
 
 import React, { useState, useEffect } from 'react'
 import { useAdminStore } from '../../state/adminStore'
@@ -18,7 +18,7 @@ export const AdminLoginModal: React.FC = () => {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  // Clear form when modal opens/closes
+  // Reset form state when modal closes
   useEffect(() => {
     if (!showAdminLogin) {
       setPassword('')
@@ -34,133 +34,329 @@ export const AdminLoginModal: React.FC = () => {
     }
   }
 
-  const handleClose = () => {
-    setShowAdminLogin(false)
-  }
-
+  const handleClose = () => setShowAdminLogin(false)
   const isLoading = loginStatus === 'loading'
 
   return (
     <Modal
       isOpen={showAdminLogin}
       onClose={handleClose}
-      title=""
-      className="max-w-md shadow-2xl"
+      ariaLabelledBy="admin-login-heading"
+      showHeader={false}
     >
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4">
-          <span className="material-symbols-outlined text-white text-2xl">
-            admin_panel_settings
+      <div
+        style={{
+          maxWidth: '320px',
+          margin: '0 auto',
+          backgroundColor: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '6px',
+          padding: '20px',
+          position: 'relative'
+        }}
+      >
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={handleClose}
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            width: '24px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
+            border: 'none',
+            borderRadius: '4px',
+            color: '#64748b',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f1f5f9'
+            e.currentTarget.style.color = '#334155'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = '#64748b'
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.backgroundColor = '#f1f5f9'
+            e.currentTarget.style.color = '#334155'
+            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(148, 163, 184, 0.1)'
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = '#64748b'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
+          aria-label="Lukk"
+        >
+          <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px' }}>
+            close
           </span>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin innlogging</h2>
-        <p className="text-gray-600">Logg inn for å administrere POI-er</p>
-      </div>
+        </button>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="admin-password" className="block text-sm font-semibold text-gray-700 mb-3">
-            Passord
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="material-symbols-outlined text-gray-400 text-lg">
-                lock
-              </span>
-            </div>
-            <input
-              id="admin-password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Skriv inn ditt passord"
-              className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100 transition-all duration-200 text-gray-900 placeholder-gray-500"
-              disabled={isLoading}
-              autoFocus
-              autoComplete="current-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded transition-colors duration-200"
-              disabled={isLoading}
-              tabIndex={-1}
+        {/* Heading */}
+        <div style={{ marginBottom: '20px' }}>
+          <h2
+            id="admin-login-heading"
+            style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#334155',
+              marginBottom: '4px',
+              textAlign: 'left'
+            }}
+          >
+            Admin innlogging
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#64748b',
+            margin: '0',
+            lineHeight: '1.4'
+          }}>
+            Skriv inn passordet for å få tilgang
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label
+              htmlFor="admin-password"
+              style={{
+                display: 'block',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#334155',
+                marginBottom: '6px'
+              }}
             >
-              <span className="material-symbols-outlined text-lg">
-                {showPassword ? 'visibility_off' : 'visibility'}
-              </span>
-            </button>
+              Passord
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                id="admin-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Skriv inn passord"
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  padding: '0 36px 0 12px',
+                  fontSize: '14px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '6px',
+                  backgroundColor: '#ffffff',
+                  color: '#334155',
+                  transition: 'all 0.2s ease',
+                  outline: 'none'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#0d9488'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.1)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#e2e8f0'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}
+                disabled={isLoading}
+                autoFocus
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f1f5f9'
+                  e.currentTarget.style.color = '#334155'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.color = '#64748b'
+                }}
+                disabled={isLoading}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Skjul passord' : 'Vis passord'}
+              >
+                <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px' }}>
+                  {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        {loginError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 animate-in slide-in-from-top-2 duration-300">
-            <div className="flex items-start">
-              <span className="material-symbols-outlined text-red-500 mr-3 flex-shrink-0 mt-0.5">
+          {/* Error Message */}
+          {loginError && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px',
+                padding: '12px',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '6px',
+                fontSize: '14px',
+                color: '#dc2626'
+              }}
+              role="alert"
+            >
+              <span style={{
+                fontFamily: 'Material Symbols Outlined',
+                fontSize: '16px',
+                color: '#ef4444',
+                marginTop: '1px',
+                flexShrink: 0
+              }}>
                 error
               </span>
-              <div>
-                <h4 className="text-sm font-semibold text-red-800 mb-1">Innlogging feilet</h4>
-                <p className="text-sm text-red-700">{loginError}</p>
-              </div>
+              <p style={{ margin: '0', lineHeight: '1.4' }}>{loginError}</p>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="flex gap-3 pt-4">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-3 focus:ring-gray-500/20 disabled:opacity-50 transition-all duration-200"
-            disabled={isLoading}
-          >
-            Avbryt
-          </button>
-          <button
-            type="submit"
-            disabled={!password.trim() || isLoading}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-3 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            {isLoading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Logger inn...
-              </>
-            ) : (
-              <>
-                <span className="material-symbols-outlined mr-2 text-lg">
-                  login
-                </span>
-                Logg inn
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-
-      <div className="mt-8 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
-        <div className="flex items-start">
-          <span className="material-symbols-outlined text-blue-500 mr-3 flex-shrink-0 mt-0.5">
-            shield
-          </span>
-          <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-2">Sikkerhetsinformasjon</h4>
-            <ul className="space-y-1 text-xs text-gray-600">
-              <li className="flex items-center">
-                <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
-                Maksimalt 5 innloggingsforsøk
-              </li>
-              <li className="flex items-center">
-                <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
-                Automatisk utlogging etter 30 minutter
-              </li>
-              <li className="flex items-center">
-                <span className="w-1 h-1 bg-gray-400 rounded-full mr-2"></span>
-                Krypterte sesjoner og sikker lagring
-              </li>
-            </ul>
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <button
+              type="button"
+              onClick={handleClose}
+              style={{
+                flex: '1',
+                height: '40px',
+                padding: '0 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#334155',
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#f8fafc'
+                e.currentTarget.style.borderColor = '#cbd5e1'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffffff'
+                e.currentTarget.style.borderColor = '#e2e8f0'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#94a3b8'
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(148, 163, 184, 0.1)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#e2e8f0'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+              disabled={isLoading}
+            >
+              Avbryt
+            </button>
+            <button
+              type="submit"
+              disabled={!password.trim() || isLoading}
+              style={{
+                flex: '1',
+                height: '40px',
+                padding: '0 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#ffffff',
+                backgroundColor: '#0d9488',
+                border: '1px solid #0d9488',
+                borderRadius: '6px',
+                cursor: password.trim() && !isLoading ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s ease',
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                opacity: !password.trim() || isLoading ? '0.6' : '1'
+              }}
+              onMouseEnter={(e) => {
+                if (password.trim() && !isLoading) {
+                  e.currentTarget.style.backgroundColor = '#0f766e'
+                  e.currentTarget.style.borderColor = '#0f766e'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (password.trim() && !isLoading) {
+                  e.currentTarget.style.backgroundColor = '#0d9488'
+                  e.currentTarget.style.borderColor = '#0d9488'
+                }
+              }}
+              onFocus={(e) => {
+                if (password.trim() && !isLoading) {
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(13, 148, 136, 0.2)'
+                }
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+              onMouseDown={(e) => {
+                if (password.trim() && !isLoading) {
+                  e.currentTarget.style.backgroundColor = '#0f595e'
+                  e.currentTarget.style.borderColor = '#0f595e'
+                  e.currentTarget.style.transform = 'translateY(1px)'
+                }
+              }}
+              onMouseUp={(e) => {
+                if (password.trim() && !isLoading) {
+                  e.currentTarget.style.backgroundColor = '#0f766e'
+                  e.currentTarget.style.borderColor = '#0f766e'
+                  e.currentTarget.style.transform = 'none'
+                }
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    border: '2px solid transparent',
+                    borderTop: '2px solid #ffffff',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                  Logger inn...
+                </>
+              ) : (
+                <>
+                  <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px' }}>
+                    login
+                  </span>
+                  Logg inn
+                </>
+              )}
+            </button>
           </div>
-        </div>
+        </form>
       </div>
     </Modal>
   )
