@@ -16,6 +16,16 @@ export interface TilfluktsromPOI {
 export class TilfluktsromService {
   private baseUrl = 'https://wfs.geonorge.no/skwms1/wfs.tilfluktsrom_offentlige'
 
+  // Use CORS proxy for production (GitHub Pages) to avoid CORS issues
+  private getCorsProxyUrl(): string {
+    const isProduction = window.location.hostname.includes('github.io')
+    if (isProduction) {
+      // Use a reliable CORS proxy for production
+      return `https://corsproxy.io/?${encodeURIComponent(this.baseUrl)}`
+    }
+    return this.baseUrl
+  }
+
   async fetchTilfluktsrom(bounds: {
     north: number
     south: number
@@ -23,7 +33,8 @@ export class TilfluktsromService {
     west: number
   }): Promise<TilfluktsromPOI[]> {
     try {
-      console.log('🏠 Fetching tilfluktsrom data from Geonorge WFS...', bounds)
+      const isProduction = window.location.hostname.includes('github.io')
+      console.log(`🏠 Fetching tilfluktsrom data from Geonorge WFS... (${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode)`, bounds)
 
       // Construct WFS GetFeature request with bounding box filter
       const params = new URLSearchParams({
@@ -38,7 +49,8 @@ export class TilfluktsromService {
         count: '100' // Limit to 100 features for performance
       })
 
-      const url = `${this.baseUrl}?${params.toString()}`
+      const baseServiceUrl = this.getCorsProxyUrl()
+      const url = `${baseServiceUrl}?${params.toString()}`
       console.log('🔗 WFS URL:', url)
 
       const response = await fetch(url, {
@@ -148,6 +160,10 @@ export class TilfluktsromService {
 
     } catch (error) {
       console.error('❌ Error fetching tilfluktsrom data:', error)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error('🚨 Likely CORS issue - WFS service may not allow requests from this domain')
+        throw new Error('CORS error: Tilfluktsrom service not accessible from this domain. This may work in development but fail in production.')
+      }
       throw error
     }
   }
