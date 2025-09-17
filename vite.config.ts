@@ -14,11 +14,17 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: true, // Listen on all network interfaces
+    host: '127.0.0.1', // Use explicit IP instead of localhost for better reliability
     open: true,
-    strictPort: false, // Allow Vite to use alternative ports if 3000 is busy
+    strictPort: true, // Use exact port to avoid confusion
     hmr: {
-      port: 3001 // Use separate port for HMR to avoid conflicts
+      port: 3001,
+      host: '127.0.0.1' // Match server host for consistency
+    },
+    cors: true,
+    watch: {
+      usePolling: true, // Better compatibility across systems
+      interval: 300
     }
   },
   optimizeDeps: {

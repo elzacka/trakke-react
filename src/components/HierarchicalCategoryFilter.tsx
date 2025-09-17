@@ -33,7 +33,7 @@ export function HierarchicalCategoryFilter({
       'aktivitet': true,          // Contains bålplass with firepit data
       'naturperle': false,
       'overnatte': true,          // Contains gapahuk_vindskjul with shelter data
-      'service': false,
+      'service': true,            // Contains tilfluktsrom with real WFS data
       'transport': false,
       'turløype': true,               // Official Norwegian hiking trails from Kartverket
       
@@ -46,6 +46,7 @@ export function HierarchicalCategoryFilter({
       // Newly active subcategories with real POI data
       'bålplass': true,           // Fire pits from leisure=firepit
       'gapahuk_vindskjul': true,  // Shelters from amenity=shelter
+      'tilfluktsrom': true,       // Emergency shelters from Geonorge WFS
       
       // All other subcategories inactive (no POI sources)
       'badeplass': false,

@@ -90,6 +90,7 @@ export type POIType =
   // Service og tilgjengelighet
   | 'mountain_service'    // Serveringssteder i fjellet
   | 'accessible_sites'    // Tilrettelagt for funksjonshemmede
+  | 'emergency_shelters'  // Tilfluktsrom (offentlige beskyttelsesrom)
   // Bergen-inspirerte kategorier
   | 'fishing_spots'       // Fiskevann og fisketillatelse områder
   | 'canoeing'            // Kanopadling
@@ -317,6 +318,12 @@ export const categoryConfig: CategoryConfigMap = {
     icon: 'accessible',
     name: 'Universell utforming',
     description: 'Tilrettelagt for funksjonshemmede'
+  },
+  emergency_shelters: {
+    color: '#ea580c',
+    icon: 'shield',
+    name: 'Tilfluktsrom',
+    description: 'Offentlige beskyttelsesrom for befolkningen'
   },
   // Bergen-inspirerte kategorier
   fishing_spots: {
@@ -643,6 +650,14 @@ export const categoryTree: CategoryNode[] = [
         parent: 'service',
         poiTypes: ['rest_areas'],
         icon: 'deck',
+        color: '#ea580c'
+      },
+      {
+        id: 'tilfluktsrom',
+        name: 'Tilfluktsrom',
+        parent: 'service',
+        poiTypes: ['emergency_shelters'],
+        icon: 'shield',
         color: '#ea580c'
       },
       {
