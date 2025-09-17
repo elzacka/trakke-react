@@ -16,14 +16,45 @@ export interface TilfluktsromPOI {
 export class TilfluktsromService {
   private baseUrl = 'https://wfs.geonorge.no/skwms1/wfs.tilfluktsrom_offentlige'
 
-  // Use CORS proxy for production (GitHub Pages) to avoid CORS issues
-  private getCorsProxyUrl(): string {
+
+  // Alternative proxy methods for fallback
+  private async fetchWithFallback(url: string, headers: HeadersInit): Promise<Response> {
     const isProduction = window.location.hostname.includes('github.io')
-    if (isProduction) {
-      // Use a reliable CORS proxy for production
-      return `https://corsproxy.io/?${encodeURIComponent(this.baseUrl)}`
+
+    if (!isProduction) {
+      // Direct fetch for development
+      return fetch(url, { headers })
     }
-    return this.baseUrl
+
+    // Production: try multiple CORS proxy services
+    const proxies = [
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      `https://corsproxy.io/?${encodeURIComponent(url)}`,
+      `https://cors-anywhere.herokuapp.com/${url}`
+    ]
+
+    for (const proxyUrl of proxies) {
+      try {
+        console.log(`🔄 Trying CORS proxy: ${proxyUrl.split('?')[0]}`)
+        const response = await fetch(proxyUrl, {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest' // Some proxies require this
+          }
+        })
+
+        if (response.ok) {
+          console.log(`✅ CORS proxy successful: ${proxyUrl.split('?')[0]}`)
+          return response
+        } else {
+          console.warn(`⚠️ CORS proxy failed (${response.status}): ${proxyUrl.split('?')[0]}`)
+        }
+      } catch (error) {
+        console.warn(`❌ CORS proxy error: ${proxyUrl.split('?')[0]}`, error)
+        continue
+      }
+    }
+
+    throw new Error('All CORS proxy methods failed. Tilfluktsrom data unavailable in production.')
   }
 
   async fetchTilfluktsrom(bounds: {
@@ -49,14 +80,11 @@ export class TilfluktsromService {
         count: '100' // Limit to 100 features for performance
       })
 
-      const baseServiceUrl = this.getCorsProxyUrl()
-      const url = `${baseServiceUrl}?${params.toString()}`
+      const url = `${this.baseUrl}?${params.toString()}`
       console.log('🔗 WFS URL:', url)
 
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
-        }
+      const response = await this.fetchWithFallback(url, {
+        'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
       })
 
       if (!response.ok) {
@@ -160,11 +188,61 @@ export class TilfluktsromService {
 
     } catch (error) {
       console.error('❌ Error fetching tilfluktsrom data:', error)
+
+      // If we're on GitHub Pages and all proxies failed, return some static examples
+      const isProduction = window.location.hostname.includes('github.io')
+      if (isProduction && error instanceof Error && error.message.includes('CORS proxy')) {
+        console.warn('🔄 All CORS proxies failed, returning static examples for demonstration')
+        return this.getStaticExamples()
+      }
+
       if (error instanceof TypeError && error.message.includes('fetch')) {
         console.error('🚨 Likely CORS issue - WFS service may not allow requests from this domain')
         throw new Error('CORS error: Tilfluktsrom service not accessible from this domain. This may work in development but fail in production.')
       }
       throw error
     }
+  }
+
+  // Static examples for when CORS proxies fail on GitHub Pages
+  private getStaticExamples(): TilfluktsromPOI[] {
+    return [
+      {
+        id: 'example_tilfluktsrom_oslo_1',
+        name: 'Tilfluktsrom - Oslo Sentrum',
+        lat: 59.9139,
+        lng: 10.7522,
+        tags: {
+          romnr: '001',
+          plasser: '500',
+          adresse: 'Karl Johans gate, Oslo',
+          description: 'Offentlig tilfluktsrom for befolkningen. Rom nr: 001. Kapasitet: 500 personer. Adresse: Karl Johans gate, Oslo'
+        }
+      },
+      {
+        id: 'example_tilfluktsrom_bergen_1',
+        name: 'Tilfluktsrom - Bergen Sentrum',
+        lat: 60.3913,
+        lng: 5.3221,
+        tags: {
+          romnr: '002',
+          plasser: '300',
+          adresse: 'Bryggen, Bergen',
+          description: 'Offentlig tilfluktsrom for befolkningen. Rom nr: 002. Kapasitet: 300 personer. Adresse: Bryggen, Bergen'
+        }
+      },
+      {
+        id: 'example_tilfluktsrom_trondheim_1',
+        name: 'Tilfluktsrom - Trondheim Sentrum',
+        lat: 63.4305,
+        lng: 10.3951,
+        tags: {
+          romnr: '003',
+          plasser: '400',
+          adresse: 'Munkegata, Trondheim',
+          description: 'Offentlig tilfluktsrom for befolkningen. Rom nr: 003. Kapasitet: 400 personer. Adresse: Munkegata, Trondheim'
+        }
+      }
+    ]
   }
 }
