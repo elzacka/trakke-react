@@ -215,12 +215,19 @@ sources: {
 ## 🚀 Development Environment Best Practices
 
 ### Development Server Management
-**ROBUST APPROACH**: Ensure reliable server access
+**PERMANENT SOLUTION**: Reliable server startup (September 17, 2025)
 
-1. **Primary startup**: `npm run dev` (configured with host: true for network access)
-2. **If app not accessible**: Restart with fresh process: `pkill -f "npm run dev" && npm run dev`
-3. **Vite config optimized**: strictPort: false, HMR on separate port, host: true
-4. **Backup ports**: Vite will auto-use 3000, 3001, 3002, etc. if conflicts occur
+**ROOT CAUSE IDENTIFIED**: `host: true` in Vite config caused binding issues on macOS
+**SOLUTION IMPLEMENTED**: Explicit localhost binding with enhanced stability
+
+1. **Primary startup**: `npm run dev` (configured with explicit localhost binding)
+2. **Robust alternative**: `./dev-server.sh` (automated cleanup and diagnostics)
+3. **Vite config optimized**:
+   - `host: 'localhost'` (explicit binding prevents network issues)
+   - `strictPort: false` (automatic port fallbacks)
+   - `force: true` (dependency re-optimization)
+   - Separate HMR port (3001) with explicit localhost binding
+4. **Automatic fallbacks**: Vite uses ports 3000, 3001, 3002, etc. if conflicts occur
 
 ### Environment Maintenance
 - **Clear Vite cache**: `rm -rf node_modules/.vite` - If experiencing build issues
@@ -229,18 +236,23 @@ sources: {
 - **Dependencies**: Keep `npm install` up to date for latest package versions
 
 ### Troubleshooting Development Server
-**Only use these if you encounter actual errors:**
+**Permanent solution implemented - these should rarely be needed:**
 
 ```bash
-# If specific port issues occur
-lsof -i:3000
+# For automated diagnosis and cleanup
+./dev-server.sh
 
-# If server appears stuck (rare)
-pkill -f "npm run dev"
-
-# Then restart normally
-npm run dev
+# Manual troubleshooting (if needed)
+lsof -i:3000                    # Check port usage
+pkill -f "vite"                 # Kill Vite processes
+rm -rf node_modules/.vite       # Clear cache
+npm run dev                     # Restart
 ```
+
+**Known Issues Resolved**:
+- ✅ **"Dette nettstedet er ikke tilgjengelig"**: Fixed with localhost binding
+- ✅ **Recurring server accessibility**: Solved with explicit host configuration
+- ✅ **Port conflicts**: Handled with strictPort: false
 
 ### Performance Optimization
 - Run only necessary browser tabs when developing

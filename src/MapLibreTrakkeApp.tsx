@@ -7,6 +7,8 @@ import { OverpassService, OverpassPOI } from './services/overpassService'
 import { KartverketTrailService } from './services/kartverketTrailService'
 import { SearchResult, SearchService } from './services/searchService'
 import { poiDataService } from './services/poiDataService'
+import { TilfluktsromService, TilfluktsromPOI } from './services/tilfluktsromService'
+import { krigsminneEnhancementService } from './services/krigsminneEnhancementService'
 import { useUIStore } from './state/uiStore'
 import { UIProvider } from './state/UIProvider'
 import { HurtigtasterModal } from './features/shortcuts/HurtigtasterModal'
@@ -51,6 +53,7 @@ function MapLibreTrakkeAppInner() {
   // Ref for search input to enable keyboard shortcut focus
   const searchInputRef = useRef<SearchBoxRef>(null)
   const _searchService = useRef(new SearchService())
+  const _tilfluktsromService = useRef(new TilfluktsromService())
   const mapRef = useRef<MapLibreMapRef>(null)
 
   console.log(`🎯 MapLibre App: ${pois.length} POIs loaded`)
@@ -58,9 +61,13 @@ function MapLibreTrakkeAppInner() {
 
   // Handle search result selection
   const handleSearchResultClick = useCallback((result: SearchResult) => {
-    setSearchResult(result)
-    // Focus map on result
-    console.log('📍 Navigerer til:', result.displayName)
+    // Clear any previous search result first
+    setSearchResult(null)
+    // Set new search result after a brief delay to ensure cleanup
+    setTimeout(() => {
+      setSearchResult(result)
+      console.log('📍 Navigerer til:', result.displayName)
+    }, 50)
   }, [])
 
   // Handle location button click
@@ -265,14 +272,14 @@ function MapLibreTrakkeAppInner() {
             
             // Load Krigsminne from OpenStreetMap if krigsminne category is active
             if (activeCategories.includes('krigsminne')) {
-              console.log('🏰 Loading Krigsminne from OpenStreetMap with viewport:', currentViewport)
+              console.log('🏰 Loading enhanced Krigsminne from OpenStreetMap with viewport:', currentViewport)
               const overpassPOIs = await OverpassService.fetchKrigsminnePOIs(currentViewport)
               console.log('📊 Raw Overpass POIs received:', overpassPOIs.length, overpassPOIs)
-              
-              const transformedOverpassPOIs = transformOverpassPOIs(overpassPOIs)
+
+              const transformedOverpassPOIs = await transformOverpassPOIs(overpassPOIs)
               allPOIs = [...allPOIs, ...transformedOverpassPOIs]
-              
-              console.log(`🏰 Loaded ${transformedOverpassPOIs.length} Krigsminne POIs from OpenStreetMap`)
+
+              console.log(`🏰 Loaded ${transformedOverpassPOIs.length} enhanced Krigsminne POIs from OpenStreetMap`)
             }
             
             // Load cave entrances from OpenStreetMap if hule category is active
@@ -326,11 +333,28 @@ function MapLibreTrakkeAppInner() {
               console.log('🏠 Loading shelters from OpenStreetMap with viewport:', currentViewport)
               const shelterPOIs = await OverpassService.fetchShelterPOIs(currentViewport)
               console.log('📊 Raw Shelter POIs received:', shelterPOIs.length, shelterPOIs)
-              
+
               const transformedShelterPOIs = transformShelterPOIs(shelterPOIs)
               allPOIs = [...allPOIs, ...transformedShelterPOIs]
-              
+
               console.log(`🏠 Loaded ${transformedShelterPOIs.length} shelter POIs from OpenStreetMap`)
+            }
+
+            // Load tilfluktsrom from Geonorge WFS if tilfluktsrom category is active
+            if (activeCategories.includes('tilfluktsrom')) {
+              console.log('🛡️ Loading tilfluktsrom from Geonorge WFS with viewport:', currentViewport)
+              try {
+                const tilfluktsromPOIs = await _tilfluktsromService.current.fetchTilfluktsrom(currentViewport)
+                console.log('📊 Raw Tilfluktsrom POIs received:', tilfluktsromPOIs.length, tilfluktsromPOIs)
+
+                const transformedTilfluktsromPOIs = transformTilfluktsromPOIs(tilfluktsromPOIs)
+                allPOIs = [...allPOIs, ...transformedTilfluktsromPOIs]
+
+                console.log(`🛡️ Loaded ${transformedTilfluktsromPOIs.length} tilfluktsrom POIs from Geonorge WFS`)
+              } catch (tilfluktsromError) {
+                console.error('❌ Error loading tilfluktsrom data:', tilfluktsromError)
+                setError(`Feil ved lasting av tilfluktsrom: ${tilfluktsromError instanceof Error ? tilfluktsromError.message : 'Ukjent feil'}`)
+              }
             }
 
             // Load hiking trails from Kartverket if turløype category is active
@@ -440,6 +464,8 @@ function MapLibreTrakkeAppInner() {
           activeCategories.push('bålplass')
         } else if (node.id === 'gapahuk_vindskjul') {
           activeCategories.push('gapahuk_vindskjul')
+        } else if (node.id === 'tilfluktsrom') {
+          activeCategories.push('tilfluktsrom')
         }
       }
       if (node.children) {
@@ -452,19 +478,45 @@ function MapLibreTrakkeAppInner() {
   }
 
 
-  // Transform Overpass POIs to our POI interface
-  const transformOverpassPOIs = (overpassPOIs: OverpassPOI[]): POI[] => {
-    const transformedPOIs = overpassPOIs.map(poi => ({
-      id: poi.id,
-      name: ensureUTF8(poi.name),
-      description: ensureUTF8(poi.tags.description) || 'Krigsminne', // Use exact category name
-      type: 'war_memorials' as POIType, // All Overpass POIs are categorized as war memorials
-      color: '#7c3aed', // På eventyr category color (purple) - war memorials
-      lat: poi.lat,
-      lng: poi.lng
-    }))
-    
-    console.log('🔄 Transformed POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+  // Transform Overpass POIs to our POI interface with enhanced data
+  const transformOverpassPOIs = async (overpassPOIs: OverpassPOI[]): Promise<POI[]> => {
+    console.log('🎨 Enhancing POIs with historical data and media...')
+
+    const transformedPOIs = await Promise.all(
+      overpassPOIs.map(async poi => {
+        const basePOI: POI = {
+          id: poi.id,
+          name: ensureUTF8(poi.name),
+          description: ensureUTF8(poi.tags.description) || 'Krigsminne',
+          type: 'war_memorials' as POIType,
+          color: '#7c3aed', // På eventyr category color (purple) - war memorials
+          lat: poi.lat,
+          lng: poi.lng
+        }
+
+        // Enhance with additional data for Krigsminne POIs
+        try {
+          const enhancedData = await krigsminneEnhancementService.enhancePOI(
+            poi.lat,
+            poi.lng,
+            poi.name
+          )
+
+          if (enhancedData && Object.keys(enhancedData).length > 0) {
+            basePOI.enhancedData = enhancedData
+            console.log(`✨ Enhanced ${poi.name} with rich data`)
+          }
+        } catch (enhancementError) {
+          console.warn(`⚠️ Could not enhance ${poi.name}:`, enhancementError)
+        }
+
+        return basePOI
+      })
+    )
+
+    console.log('🔄 Transformed enhanced POIs:', transformedPOIs.map(p =>
+      `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}${p.enhancedData ? ' (ENHANCED)' : ''}`
+    ))
     return transformedPOIs
   }
 
@@ -613,6 +665,22 @@ function MapLibreTrakkeAppInner() {
     })
     
     console.log('🔄 Transformed Shelter POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform tilfluktsrom POIs to our POI interface
+  const transformTilfluktsromPOIs = (tilfluktsromPOIs: TilfluktsromPOI[]): POI[] => {
+    const transformedPOIs = tilfluktsromPOIs.map(poi => ({
+      id: poi.id,
+      name: ensureUTF8(poi.name),
+      description: ensureUTF8(poi.tags.description || 'Offentlig tilfluktsrom'),
+      type: 'emergency_shelters' as POIType,
+      lat: poi.lat,
+      lng: poi.lng,
+      color: '#ea580c' // Use "Service" category color (orange)
+    }))
+
+    console.log('🔄 Transformed Tilfluktsrom POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 

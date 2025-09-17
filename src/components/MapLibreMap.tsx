@@ -420,32 +420,49 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     const map = mapRef.current
     console.log(`🗺️ Switching map type to: ${mapType}`)
 
+    // Preserve current map position and zoom before style change
+    const currentCenter = map.getCenter()
+    const currentZoom = map.getZoom()
+    const currentBearing = map.getBearing()
+    const currentPitch = map.getPitch()
+
     // Update map style based on mapType
     const newStyle = createMapStyle(mapType)
     map.setStyle(newStyle)
 
-    // Update zoom limits based on map type
-    const newMaxZoom = mapType === 'topo' ? 17 : 16
-    map.setMaxZoom(newMaxZoom)
+    // Restore map position after style loads
+    map.once('styledata', () => {
+      // Update zoom limits based on map type
+      const newMaxZoom = mapType === 'topo' ? 17 : 16
+      map.setMaxZoom(newMaxZoom)
 
-    // If current zoom exceeds new limit, zoom out
-    if (map.getZoom() > newMaxZoom) {
-      map.setZoom(newMaxZoom)
-    }
+      // If current zoom exceeds new limit, use the limit, otherwise preserve zoom
+      const targetZoom = currentZoom > newMaxZoom ? newMaxZoom : currentZoom
 
-    // Re-emit viewport bounds after style change
-    setTimeout(() => {
-      if (onViewportChangeRef.current) {
-        const bounds = map.getBounds()
-        onViewportChangeRef.current({
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest(),
-          zoom: map.getZoom()
-        })
-      }
-    }, 100)
+      // Restore the exact position
+      map.jumpTo({
+        center: currentCenter,
+        zoom: targetZoom,
+        bearing: currentBearing,
+        pitch: currentPitch
+      })
+
+      console.log(`✅ Map type switched to ${mapType}, position preserved`)
+
+      // Re-emit viewport bounds after position is restored
+      setTimeout(() => {
+        if (onViewportChangeRef.current) {
+          const bounds = map.getBounds()
+          onViewportChangeRef.current({
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest(),
+            zoom: map.getZoom()
+          })
+        }
+      }, 100)
+    })
   }, [mapType, mapLoaded])
 
   // API-BASED POI RENDERING - Using Custom DOM Overlays (not MapLibre markers)
@@ -524,6 +541,119 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         markerElement.style.zIndex = '100'
       })
 
+      // Enhanced popup creation for Krigsminne POIs
+      const createEnhancedPopup = (poi: POI, point: maplibregl.Point): HTMLElement => {
+        const popup = document.createElement('div')
+        popup.className = 'custom-poi-popup enhanced-popup'
+        popup.style.cssText = `
+          position: absolute;
+          left: ${point.x}px;
+          top: ${point.y}px;
+          transform: translate(-50%, -100%);
+          margin-top: -15px;
+          z-index: 1000;
+          pointer-events: auto;
+        `
+
+        const hasEnhancedData = poi.enhancedData && (
+          poi.enhancedData.media?.thumbnails?.length ||
+          poi.enhancedData.media?.wikipediaData?.extract
+        )
+
+        const createImageCarousel = () => {
+          if (!poi.enhancedData?.media?.thumbnails?.length) return ''
+
+          return `
+            <div style="margin: 12px 0; overflow-x: auto;">
+              <div style="display: flex; gap: 8px; padding-bottom: 8px;">
+                ${poi.enhancedData.media.thumbnails.map(img => `
+                  <div style="flex-shrink: 0; position: relative;">
+                    <img src="${img.url}" alt="${img.title || 'Historisk bilde'}"
+                         style="width: 80px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;"
+                         onclick="window.open('${img.url}', '_blank')" />
+                    <div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white;
+                                font-size: 10px; padding: 1px 3px; border-radius: 2px;">${img.source}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `
+        }
+
+        const createWikipediaSection = () => {
+          if (!poi.enhancedData?.media?.wikipediaData?.extract) return ''
+
+          const extract = poi.enhancedData.media.wikipediaData.extract
+          const truncatedExtract = extract.length > 150 ? extract.substring(0, 150) + '...' : extract
+
+          return `
+            <div style="margin: 12px 0; padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #7c3aed;">
+              <div style="font-size: 13px; color: #4B5563; line-height: 1.4; margin-bottom: 8px;">
+                ${truncatedExtract}
+              </div>
+              ${poi.enhancedData.media.wikipediaData.fullUrl ? `
+                <a href="${poi.enhancedData.media.wikipediaData.fullUrl}" target="_blank"
+                   style="color: #7c3aed; text-decoration: none; font-size: 12px; font-weight: 500;">
+                  📖 Les mer på Wikipedia →
+                </a>
+              ` : ''}
+            </div>
+          `
+        }
+
+        popup.innerHTML = `
+          <div style="background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+                      max-width: ${hasEnhancedData ? '380px' : '320px'}; min-width: 280px;
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2);">
+
+            <button onclick="this.closest('.custom-poi-popup').remove()" style="position: absolute; top: 8px; right: 8px;
+                    width: 24px; height: 24px; border: none; background: rgba(0,0,0,0.1); border-radius: 50%;
+                    color: #666; cursor: pointer; display: flex; align-items: center; justify-content: center;
+                    font-size: 14px; transition: all 0.2s ease;">×</button>
+
+            <div style="padding: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+                          padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.08);">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: ${poi.color || '#7c3aed'};
+                            border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0;
+                            display: flex; align-items: center; justify-content: center;">
+                  <span style="color: white; font-size: 12px;">🏰</span>
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1F2937; line-height: 1.3;">
+                    ${poi.name}
+                  </h3>
+                  ${hasEnhancedData ? '<span style="font-size: 11px; color: #7c3aed; font-weight: 500;">ENHANCED</span>' : ''}
+                </div>
+              </div>
+
+              <div style="font-size: 13px; color: #4B5563; line-height: 1.5; margin-bottom: 8px;">
+                ${poi.description}
+              </div>
+
+              ${createImageCarousel()}
+              ${createWikipediaSection()}
+
+              ${poi.enhancedData?.media?.wikipediaData?.relatedArticles?.length ? `
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.08);">
+                  <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Relaterte artikler:</div>
+                  ${poi.enhancedData.media.wikipediaData.relatedArticles.slice(0, 2).map(article => `
+                    <a href="${article.url}" target="_blank" style="display: block; color: #7c3aed; text-decoration: none;
+                       font-size: 12px; margin: 2px 0; line-height: 1.3;">• ${article.title}</a>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <div style="margin-left: 50%; width: 0; height: 0; border-left: 8px solid transparent;
+                        border-right: 8px solid transparent; border-top: 8px solid white;"></div>
+          </div>
+        `
+
+        return popup
+      }
+
       // Add click handler for custom popup
       markerElement.addEventListener('click', (e) => {
         e.preventDefault()
@@ -553,18 +683,23 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         const _mapRect = mapContainer.getBoundingClientRect()
         const point = map.project([poi.lng, poi.lat])
 
-        // Create custom popup
-        const popup = document.createElement('div')
-        popup.className = 'custom-poi-popup'
-        popup.style.cssText = `
-          position: absolute;
-          left: ${point.x}px;
-          top: ${point.y}px;
-          transform: translate(-50%, -100%);
-          margin-top: -15px;
-          z-index: 1000;
-          pointer-events: auto;
-        `
+        // Create enhanced popup for Krigsminne POIs, or standard popup for others
+        let popup: HTMLElement
+        if (poi.type === 'war_memorials' && poi.enhancedData) {
+          popup = createEnhancedPopup(poi, point)
+        } else {
+          // Create standard popup for non-enhanced POIs
+          popup = document.createElement('div')
+          popup.className = 'custom-poi-popup'
+          popup.style.cssText = `
+            position: absolute;
+            left: ${point.x}px;
+            top: ${point.y}px;
+            transform: translate(-50%, -100%);
+            margin-top: -15px;
+            z-index: 1000;
+            pointer-events: auto;
+          `
 
         popup.innerHTML = `
           <div style="
@@ -648,6 +783,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
             "></div>
           </div>
         `
+        }
 
         // Add popup to map container so it moves with the map
         mapContainer.appendChild(popup)
@@ -755,17 +891,26 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
   // Handle search result centering
   useEffect(() => {
-    if (!mapRef.current || !searchResult) return
+    if (!mapRef.current) return
 
     const map = mapRef.current
+
+    // Always clean up existing search marker first
+    if (searchMarkerRef.current) {
+      console.log('🧹 Removing previous search marker')
+      searchMarkerRef.current.remove()
+      searchMarkerRef.current = null
+    }
+
+    // If no search result, just cleanup and return
+    if (!searchResult) {
+      console.log('🔍 No search result, cleanup completed')
+      return
+    }
+
     console.log(`🔍 Centering map on search result: ${searchResult.displayName}`)
     console.log('🔍 Creating search marker at coordinates:', searchResult.lat, searchResult.lng)
-    
-    // Remove existing search marker if it exists
-    if (searchMarkerRef.current) {
-      searchMarkerRef.current.remove()
-    }
-    
+
     // Create modern search marker
     const searchElement = document.createElement('div')
     searchElement.className = 'search-marker'
@@ -782,14 +927,14 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       pointer-events: auto !important;
     `
     searchElement.innerHTML = '<div style="width: 100%; height: 100%; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">S</div>'
-    
+
     const searchMarker = new maplibregl.Marker(searchElement)
       .setLngLat([searchResult.lng, searchResult.lat])
       .addTo(map)
 
     searchMarkerRef.current = searchMarker
     console.log('✅ Search marker added to map successfully')
-    
+
     // Center map on search result
     map.flyTo({
       center: [searchResult.lng, searchResult.lat],

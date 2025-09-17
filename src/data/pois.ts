@@ -135,6 +135,39 @@ export interface POI {
   metadata?: POIMetadata
   api_source?: 'ut_no' | 'osm' | 'kartverket' | 'manual' | 'riksantikvaren'
   last_updated?: string
+  // Enhanced data for rich POI experiences (Krigsminne, etc.)
+  enhancedData?: {
+    historicalData?: {
+      period?: string
+      significance?: string
+      description?: string
+      sources?: string[]
+    }
+    media?: {
+      thumbnails?: Array<{
+        url: string
+        title?: string
+        source: 'flickr' | 'wikipedia' | 'mapillary'
+        caption?: string
+        year?: number
+        photographer?: string
+      }>
+      wikipediaData?: {
+        extract?: string
+        fullUrl?: string
+        relatedArticles?: Array<{
+          title: string
+          url: string
+          extract: string
+        }>
+      }
+    }
+    visitInfo?: {
+      accessibility?: string
+      nearbyParking?: boolean
+      seasonalAccess?: string
+    }
+  }
 }
 
 export interface CategoryConfig {
