@@ -14,7 +14,12 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true, // Listen on all network interfaces
     open: true,
+    strictPort: false, // Allow Vite to use alternative ports if 3000 is busy
+    hmr: {
+      port: 3001 // Use separate port for HMR to avoid conflicts
+    }
   },
   optimizeDeps: {
     include: ['maplibre-gl']

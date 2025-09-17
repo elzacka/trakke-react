@@ -159,7 +159,7 @@ export const AdminLoginModal: React.FC = () => {
                   outline: 'none'
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#0d9488'
+                  e.currentTarget.style.borderColor = '#7a8471'
                   e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.1)'
                 }}
                 onBlur={(e) => {
@@ -287,8 +287,8 @@ export const AdminLoginModal: React.FC = () => {
                 fontSize: '14px',
                 fontWeight: '500',
                 color: '#ffffff',
-                backgroundColor: '#0d9488',
-                border: '1px solid #0d9488',
+                backgroundColor: '#7a8471',
+                border: '1px solid #7a8471',
                 borderRadius: '6px',
                 cursor: password.trim() && !isLoading ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease',
@@ -301,19 +301,19 @@ export const AdminLoginModal: React.FC = () => {
               }}
               onMouseEnter={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.backgroundColor = '#0f766e'
-                  e.currentTarget.style.borderColor = '#0f766e'
+                  e.currentTarget.style.backgroundColor = '#6b7465'
+                  e.currentTarget.style.borderColor = '#6b7465'
                 }
               }}
               onMouseLeave={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.backgroundColor = '#0d9488'
-                  e.currentTarget.style.borderColor = '#0d9488'
+                  e.currentTarget.style.backgroundColor = '#7a8471'
+                  e.currentTarget.style.borderColor = '#7a8471'
                 }
               }}
               onFocus={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(13, 148, 136, 0.2)'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(122, 132, 113, 0.2)'
                 }
               }}
               onBlur={(e) => {
@@ -328,8 +328,8 @@ export const AdminLoginModal: React.FC = () => {
               }}
               onMouseUp={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.backgroundColor = '#0f766e'
-                  e.currentTarget.style.borderColor = '#0f766e'
+                  e.currentTarget.style.backgroundColor = '#6b7465'
+                  e.currentTarget.style.borderColor = '#6b7465'
                   e.currentTarget.style.transform = 'none'
                 }
               }}

@@ -75,9 +75,8 @@ npx vite --version
    - Ensure clean dev environment ✅
 
 2. **Pre-Development**:
-   - Kill duplicate servers: `lsof -i:3000 && pkill -f "npm run dev"`
-   - Start clean server: `npm run dev`
-   - Verify single instance: `lsof -i:3000`
+   - Simply run: `npm run dev` (Vite handles port conflicts gracefully)
+   - Only troubleshoot if actual errors occur
 
 3. **During Development**:
    - Follow architectural safeguards (no GeoJSON, use API-based POI rendering)
@@ -154,7 +153,7 @@ npx vite --version
 ### 🎯 Efficiency & Mistake Prevention
 
 **Common Mistakes to Avoid** (update as discovered):
-- Multiple dev servers running simultaneously
+- **CRITICAL**: Being overly cautious with dev server management - just run `npm run dev` immediately when asked
 - Committing without running lint/build checks
 - Using prohibited patterns (GeoJSON layers)
 - Forgetting to update zoom limits based on real-world services
@@ -215,13 +214,13 @@ sources: {
 
 ## 🚀 Development Environment Best Practices
 
-### Single Server Instance Management
-To ensure optimal development performance and avoid conflicts:
+### Development Server Management
+**ROBUST APPROACH**: Ensure reliable server access
 
-1. **Check for running servers**: `lsof -i:3000` - Verify only one process uses port 3000
-2. **Clean shutdown**: `pkill -f "npm run dev"` or `lsof -ti:3000 | xargs kill -9` - Stop all dev servers
-3. **Single instance start**: Always run only one `npm run dev` command at a time
-4. **Port verification**: Default port 3000 should be used exclusively for this project
+1. **Primary startup**: `npm run dev` (configured with host: true for network access)
+2. **If app not accessible**: Restart with fresh process: `pkill -f "npm run dev" && npm run dev`
+3. **Vite config optimized**: strictPort: false, HMR on separate port, host: true
+4. **Backup ports**: Vite will auto-use 3000, 3001, 3002, etc. if conflicts occur
 
 ### Environment Maintenance
 - **Clear Vite cache**: `rm -rf node_modules/.vite` - If experiencing build issues
@@ -229,16 +228,17 @@ To ensure optimal development performance and avoid conflicts:
 - **Force restart**: `npm run dev -- --force` - Bypass cache on problematic restarts
 - **Dependencies**: Keep `npm install` up to date for latest package versions
 
-### Troubleshooting Multiple Servers
-If multiple dev servers are accidentally running:
+### Troubleshooting Development Server
+**Only use these if you encounter actual errors:**
+
 ```bash
-# Kill all npm dev processes
+# If specific port issues occur
+lsof -i:3000
+
+# If server appears stuck (rare)
 pkill -f "npm run dev"
 
-# Kill all processes on port 3000
-lsof -ti:3000 | xargs kill -9
-
-# Clean start
+# Then restart normally
 npm run dev
 ```
 

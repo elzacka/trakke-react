@@ -728,7 +728,7 @@ function MapLibreTrakkeAppInner() {
                 margin: '0 0 8px 0',
                 fontSize: '24px',
                 fontWeight: '600',
-                color: '#0d9488',
+                color: '#3e4533',
                 fontFamily: 'Exo 2, sans-serif',
                 display: 'flex',
                 alignItems: 'center',
@@ -737,7 +737,7 @@ function MapLibreTrakkeAppInner() {
                 <span style={{
                   fontFamily: 'Material Symbols Outlined',
                   fontSize: '26px',
-                  color: '#0d9488',
+                  color: '#3e4533',
                   fontWeight: '400',
                   fontVariationSettings: '"wght" 400'
                 }}>
@@ -809,7 +809,7 @@ function MapLibreTrakkeAppInner() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 15. sept 2025
+                  Under utvikling • Sist oppdatert 17. sept 2025
                 </p>
               </div>
             </div>
@@ -925,7 +925,7 @@ function MapLibreTrakkeAppInner() {
           style={{
             width: '44px',
             height: '44px',
-            background: userLocation ? 'rgba(13, 148, 136, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+            background: userLocation ? 'rgba(122, 132, 113, 0.9)' : 'rgba(255, 255, 255, 0.9)',
             borderRadius: '8px',
             border: 'none',
             boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
@@ -939,14 +939,14 @@ function MapLibreTrakkeAppInner() {
           onMouseEnter={(e) => {
             if (!locationLoading) {
               e.currentTarget.style.transform = 'scale(1.05)'
-              e.currentTarget.style.background = userLocation ? 'rgba(13, 148, 136, 1)' : '#ffffff'
+              e.currentTarget.style.background = userLocation ? 'rgba(122, 132, 113, 1)' : '#ffffff'
               e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
             }
           }}
           onMouseLeave={(e) => {
             if (!locationLoading) {
               e.currentTarget.style.transform = 'scale(1.0)'
-              e.currentTarget.style.background = userLocation ? 'rgba(13, 148, 136, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+              e.currentTarget.style.background = userLocation ? 'rgba(122, 132, 113, 0.9)' : 'rgba(255, 255, 255, 0.9)'
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
             }
           }}

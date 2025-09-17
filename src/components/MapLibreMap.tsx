@@ -818,9 +818,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #0d9488, #0891b2);
+      background: linear-gradient(135deg, #7a8471, #0891b2);
       border: 3px solid white;
-      box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1);
       animation: locationPulse 2s infinite;
       position: relative;
     `
@@ -999,7 +999,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                 // Styling adapts based on sidebar state as specified
                 ...(sidebarCollapsed ? {
                   // On Map styling
-                  background: coordinatesCopied ? 'rgba(13,148,136,0.9)' : 'rgba(255,255,255,0.8)',
+                  background: coordinatesCopied ? 'rgba(122,132,113,0.9)' : 'rgba(255,255,255,0.8)',
                   borderRadius: '4px',
                   padding: '4px 6px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
@@ -1007,7 +1007,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                   color: coordinatesCopied ? '#ffffff' : '#374151'
                 } : {
                   // On Sidebar Overlay styling
-                  background: coordinatesCopied ? '#0d9488' : '#ffffff',
+                  background: coordinatesCopied ? '#7a8471' : '#ffffff',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
                   padding: '4px 6px',
@@ -1158,13 +1158,13 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         /* User location marker animation */
         @keyframes locationPulse {
           0% {
-            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(13, 148, 136, 0.7);
+            box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(122, 132, 113, 0.7);
           }
           70% {
-            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 10px rgba(13, 148, 136, 0);
+            box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 10px rgba(122, 132, 113, 0);
           }
           100% {
-            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(13, 148, 136, 0);
+            box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(122, 132, 113, 0);
           }
         }
 
