@@ -392,7 +392,7 @@ POI popups are custom HTML elements positioned above markers with:
 - **Icons**: Material Symbols Outlined font for consistency
 - **Norwegian UI**: All interface text in Norwegian (bokmål)
 - **Responsive**: Mobile-first design with collapsible sidebar
-- **Color System**: Consistent color palette across categories, POIs, and UI elements
+- **Color System**: Unified brand color (`#0d9488` teal green) with consistent palette across categories, POIs, and UI elements
 - **Typography**: System fonts (-apple-system, BlinkMacSystemFont, Segoe UI, Roboto)
 - **Animations**: Smooth transitions for sidebar, markers, and popups
 
@@ -531,7 +531,7 @@ src/
 
 Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and pushes the `dist` folder to the `gh-pages` branch. GitHub Actions automatically run lint and build checks on every push.
 
-## 🧩 Recent Major Features (September 15, 2025)
+## 🧩 Recent Major Features (September 2025)
 
 ### Tegnforklaring (Map Legend) Implementation
 - Complete legend modal with 79+ official Kartverket symbols using exact RGB values from PDF specifications
@@ -558,7 +558,20 @@ Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and p
 - Enhanced search prioritization (places over addresses)
 - Removed duplicate information and icons from search results
 
-### UI/UX Improvements
+### UI/UX Design System & Color Scheme (September 2025)
+- **Unified Brand Color**: Implemented consistent teal green (`#0d9488`) across:
+  - Tråkke logo icon and app name for cohesive branding
+  - Admin login button and all interactive states (hover, focus, active)
+  - Coordinate copy confirmation feedback
+  - Position button active state (maintains existing functionality)
+- **Enhanced Modal Design**: AdminLoginModal resized and optimized for better visual balance
+- **Consistent Button Interactions**: Standardized hover, focus, and active states across all components:
+  - CategoryPanel buttons with proper accessibility focus rings
+  - HierarchicalCategoryFilter expand/collapse buttons
+  - Modal close buttons with unified interaction patterns
+  - Enhanced keyboard navigation and screen reader support
+
+### Previous UI/UX Improvements
 - Added click-to-copy functionality for coordinate display
 - Implemented position marker for location button clicks
 - Fixed chevron toggle behavior for all sidebar interaction methods
@@ -566,11 +579,13 @@ Built for GitHub Pages with `gh-pages` package. The `deploy` script builds and p
 - Improved mobile responsiveness and touch interactions
 
 ### Technical Improvements
+- **TypeScript Enhancement**: Fixed `any` type warnings in MapLibre event handlers with proper type definitions
+- **CI/CD Pipeline**: Achieved zero ESLint warnings for clean GitHub Actions builds
 - Fixed MapLibre marker visibility issues (removed conflicting CSS)
 - Corrected POI category colors (caves now properly purple in "På eventyr")
 - Enhanced error handling and loading states
 - Improved TypeScript export patterns for better build compatibility
-- Fixed all ESLint unused variable warnings for clean CI/CD
+- Comprehensive accessibility improvements with WCAG-compliant focus states
 
 ## 🥾 Trail Implementation Status (ON HOLD - September 15, 2025)
 
@@ -706,6 +721,29 @@ export { SearchBox, SearchBoxRef } from './SearchBox'
 export { SearchBox } from './SearchBox'
 export type { SearchBoxRef } from './SearchBox'
 ```
+
+### TypeScript Any Types in CI/CD
+
+**Problem**: GitHub Actions CI/CD fails with "Unexpected any. Specify a different type" ESLint warnings
+**Symptoms**: Local development works, but remote builds fail with TypeScript/ESLint errors
+
+**Investigation Method**:
+1. Run `npm run lint` locally to reproduce the issue
+2. Check specific line numbers mentioned in CI/CD error logs
+3. Look for `any` types in MapLibre GL JS integrations
+
+**Solution**: Replace `any` types with proper MapLibre type definitions:
+```typescript
+// PROBLEMATIC:
+sources: {} as Record<string, any>,
+layers: [] as any[]
+
+// WORKING:
+sources: {} as Record<string, maplibregl.SourceSpecification>,
+layers: [] as maplibregl.LayerSpecification[]
+```
+
+**Prevention**: Always use proper type definitions from libraries, especially for MapLibre GL JS integrations.
 
 ### POI Category Color Mismatches
 
