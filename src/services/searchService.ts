@@ -129,6 +129,23 @@ function formatProperName(text: string): string {
   return text.split(' ').map(word => capitalizeFirstLetter(word.toLowerCase())).join(' ')
 }
 
+// Kartverket place name API response interfaces
+interface KartverketPlaceName {
+  skrivemåte?: string
+  stedsnavn?: string
+  navn?: string
+  navneobjekttype?: string
+  stedtype?: string
+  kommuner?: Array<{
+    kommunenavn: string
+    kommunenummer: string
+  }>
+}
+
+interface KartverketPlaceNameResponse {
+  navn?: KartverketPlaceName[]
+}
+
 // Reverse geocoding - get place name from coordinates
 async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   try {
@@ -144,7 +161,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
       return null
     }
 
-    const data = await response.json()
+    const data: KartverketPlaceNameResponse = await response.json()
     const places = data.navn || []
 
     if (places.length > 0) {
@@ -153,7 +170,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
 
       let bestPlace = places[0] // fallback to first result
       for (const priorityType of priorityOrder) {
-        const priorityPlace = places.find((p: any) =>
+        const priorityPlace = places.find((p: KartverketPlaceName) =>
           p.navneobjekttype?.toLowerCase().includes(priorityType) ||
           p.stedtype?.toLowerCase().includes(priorityType)
         )
@@ -166,6 +183,10 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
       const placeName = bestPlace.skrivemåte || bestPlace.stedsnavn || bestPlace.navn
       const placeType = bestPlace.navneobjekttype || bestPlace.stedtype || 'sted'
       const municipality = bestPlace.kommuner?.[0]?.kommunenavn
+
+      if (!placeName) {
+        return null // No valid place name found
+      }
 
       let locationDescription = placeName
       if (municipality && municipality !== placeName) {
