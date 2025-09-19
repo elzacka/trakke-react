@@ -472,7 +472,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       const existingOverlays = document.querySelectorAll('.custom-poi-overlay')
       existingOverlays.forEach(overlay => overlay.remove())
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Initialize map only once - style changes handled by separate effect
+  // mapType intentionally excluded to prevent map re-initialization on type changes
 
   // Handle map type changes - dynamically update map style
   useEffect(() => {
