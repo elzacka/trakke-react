@@ -102,7 +102,7 @@ function MapLibreTrakkeAppInner() {
           setUserLocation({ lat: latitude, lng: longitude })
           console.log('✅ Location set within Norway bounds:', { lat: latitude, lng: longitude })
         } else {
-          console.warn('⚠️ Location outside Norway bounds, but setting anyway')
+          console.warn('⚠️ Location outside Norway bounds, but setting regardless')
           setUserLocation({ lat: latitude, lng: longitude })
           console.log('✅ Location set outside Norway bounds:', { lat: latitude, lng: longitude })
         }

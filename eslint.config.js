@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config([
-  { ignores: ['dist', 'node_modules', '.github', '*.config.js'] },
+  { ignores: ['dist', 'node_modules', '.github', '*.config.js', '*.config.ts'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -15,6 +15,10 @@ export default tseslint.config([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        project: './tsconfig.app.json',
+        tsconfigRootDir: '.',
+      },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -34,8 +38,12 @@ export default tseslint.config([
           varsIgnorePattern: '^_'
         }
       ],
-      // Mindre strenge regler for utvikling
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // 🔒 TYPE SAFETY ENFORCEMENT - Prevent TypeScript/ESLint errors
+      '@typescript-eslint/no-explicit-any': 'error', // Critical: Upgraded from warn to error
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn', // Helpful but not critical
+      '@typescript-eslint/prefer-optional-chain': 'warn', // Helpful but not critical
+      '@typescript-eslint/no-unused-expressions': 'warn', // Helpful but not critical
+      '@typescript-eslint/no-floating-promises': 'error', // Critical: Catch unhandled promises
       
       // 🚨 ARCHITECTURAL SAFEGUARDS - Prevent regression to forbidden patterns
       'no-restricted-properties': [
@@ -51,8 +59,16 @@ export default tseslint.config([
         {
           selector: 'Literal[value="geojson"]',
           message: '❌ GeoJSON sources are FORBIDDEN. Use API-based POI rendering only. See ARCHITECTURE.md'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="console"][callee.property.name=/^(log|warn|error)$/] > Literal[value=/.*any.*/]',
+          message: '🔍 Avoid logging "any" types - use proper TypeScript interfaces instead'
         }
-      ]
+      ],
+
+      // 🔒 REACT HOOKS SAFEGUARDS - Prevent useEffect dependency issues
+      'react-hooks/exhaustive-deps': 'error',
+      'react-hooks/rules-of-hooks': 'error'
     },
   },
 ])

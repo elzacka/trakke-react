@@ -12,14 +12,14 @@ export const HURTIGTASTER: ShortcutItem[] = [
   { action: "Naviger søkeresultater", tokens: ["↑", "↓"] },
   { action: "Velg søkeresultat",      tokens: ["Enter"] },
   { action: "Fullfør søk",            tokens: ["Tab"] },
-  { action: "Panorér kart",           tokens: ["Dra"],              isGesture: true },
+  { action: "Panorér kart",           tokens: ["Skyv"],              isGesture: true },
   { action: "Zoom inn/ut",            tokens: ["Rullehjul"],        isGesture: true },
-  { action: "Zoom til område",        tokens: ["Shift + dra"],      isGesture: true },
-  { action: "Vipp og roter kart",     tokens: ["Ctrl + dra"],       isGesture: true },
+  { action: "Zoom til område",        tokens: ["Shift + skyv"],      isGesture: true },
+  { action: "Vipp og roter kart",     tokens: ["Ctrl + skyv"],       isGesture: true },
   { action: "Zoom til punkt",         tokens: ["Dobbeltklikk"],     isGesture: true },
   { action: "Kopier koordinater fra kart", tokens: ["Ctrl + klikk"], isGesture: true },
   { action: "Kopier koordinater fra kart", tokens: ["Høyreklikk"], isGesture: true },
-  { action: "Kopier koordinater",     tokens: ["Klikk koordinater"], isGesture: true },
+  { action: "Kopier koordinater",     tokens: ["Ctrl + klikk"], isGesture: true },
 
   // Mobil/Tablet
   { action: "Panorér kart",       tokens: ["Dra finger"],           isGesture: true },

@@ -96,7 +96,7 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
     }
 
     debounceTimer.current = setTimeout(() => {
-      performSearch(value)
+      void performSearch(value)
     }, 300)
   }
 

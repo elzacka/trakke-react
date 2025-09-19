@@ -496,7 +496,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     map.setStyle(newStyle)
 
     // Restore map position after style loads
-    map.once('styledata', () => {
+    void map.once('styledata', () => {
       console.log(`🎨 Style loaded for ${mapType}, restoring position...`)
 
       // Update zoom limits based on map type
