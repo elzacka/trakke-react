@@ -129,6 +129,60 @@ function formatProperName(text: string): string {
   return text.split(' ').map(word => capitalizeFirstLetter(word.toLowerCase())).join(' ')
 }
 
+// Reverse geocoding - get place name from coordinates
+async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    console.log(`🔍 Reverse geocoding coordinates: ${lat}, ${lng}`)
+
+    // Use Kartverket's place name API to find nearby places
+    const radius = 1000 // 1km radius
+    const url = `https://ws.geonorge.no/stedsnavn/v1/punkt?nord=${lat}&ost=${lng}&radius=${radius}&maxAnt=3`
+
+    const response = await fetch(url)
+    if (!response.ok) {
+      console.warn(`⚠️ Reverse geocoding failed: ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    const places = data.navn || []
+
+    if (places.length > 0) {
+      // Find the best place name (prefer populated places, then natural features)
+      const priorityOrder = ['by', 'bygd', 'tettsted', 'gård', 'naturområde', 'fjell', 'dal', 'ø', 'vatn']
+
+      let bestPlace = places[0] // fallback to first result
+      for (const priorityType of priorityOrder) {
+        const priorityPlace = places.find((p: any) =>
+          p.navneobjekttype?.toLowerCase().includes(priorityType) ||
+          p.stedtype?.toLowerCase().includes(priorityType)
+        )
+        if (priorityPlace) {
+          bestPlace = priorityPlace
+          break
+        }
+      }
+
+      const placeName = bestPlace.skrivemåte || bestPlace.stedsnavn || bestPlace.navn
+      const placeType = bestPlace.navneobjekttype || bestPlace.stedtype || 'sted'
+      const municipality = bestPlace.kommuner?.[0]?.kommunenavn
+
+      let locationDescription = placeName
+      if (municipality && municipality !== placeName) {
+        locationDescription += `, ${municipality}`
+      }
+
+      console.log(`✅ Found place: ${locationDescription} (${placeType})`)
+      return locationDescription
+    }
+
+    return null
+  } catch (error) {
+    console.warn('⚠️ Reverse geocoding error:', error)
+    return null
+  }
+}
+
 // Enhanced coordinate parsing supporting multiple formats
 function parseCoordinates(input: string): CoordinateParseResult | null {
   const trimmed = input.trim()
@@ -684,18 +738,27 @@ export class SearchService {
     const results: SearchResult[] = []
 
     try {
-      // 1. Parse coordinates
+      // 1. Parse coordinates and perform reverse geocoding
       const coordResult = parseCoordinates(cleanQuery)
       if (coordResult) {
+        // Try to get place name for coordinates
+        const placeName = await reverseGeocode(coordResult.lat, coordResult.lng)
+
+        const coordinatesDisplay = `${coordResult.lat.toFixed(5)}°N, ${coordResult.lng.toFixed(5)}°E`
+
         results.push({
           id: `coord_${coordResult.lat}_${coordResult.lng}`,
-          name: 'Koordinater',
-          displayName: `${coordResult.lat.toFixed(5)}, ${coordResult.lng.toFixed(5)}`,
+          name: placeName || 'Koordinater',
+          displayName: placeName
+            ? `${placeName} • ${coordinatesDisplay}`
+            : coordinatesDisplay,
           lat: coordResult.lat,
           lng: coordResult.lng,
           type: 'coordinates',
           source: 'koordinater',
-          description: capitalizeFirstLetter(`Koordinater (${coordResult.format})`)
+          description: placeName
+            ? `${placeName} - ${coordinatesDisplay}`
+            : capitalizeFirstLetter(`Koordinater (${coordResult.format})`)
         })
       }
 
