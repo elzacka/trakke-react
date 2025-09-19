@@ -1,9 +1,8 @@
 // Admin Login Modal - Redesigned for 2025 best practices
 // Clean, modern, accessible authentication interface
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAdminStore } from '../../state/adminStore'
-import { Modal } from './Modal'
 
 export const AdminLoginModal: React.FC = () => {
   const {
@@ -27,33 +26,68 @@ export const AdminLoginModal: React.FC = () => {
     }
   }, [showAdminLogin, clearLoginError])
 
+  const handleClose = useCallback(() => setShowAdminLogin(false), [setShowAdminLogin])
+
+  // Handle ESC key
+  useEffect(() => {
+    if (!showAdminLogin) return
+
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscKey)
+    return () => document.removeEventListener('keydown', handleEscKey)
+  }, [showAdminLogin, handleClose])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (password.trim()) {
       await login(password)
     }
   }
-
-  const handleClose = () => setShowAdminLogin(false)
   const isLoading = loginStatus === 'loading'
 
   return (
-    <Modal
-      isOpen={showAdminLogin}
-      onClose={handleClose}
-      ariaLabelledBy="admin-login-heading"
-      showHeader={false}
+    <div
+      className="modal-backdrop"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        backdropFilter: 'blur(2px)',
+        display: showAdminLogin ? 'flex' : 'none',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '16px'
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleClose()
+        }
+      }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-login-heading"
         style={{
-          maxWidth: '320px',
-          margin: '0 auto',
+          width: '100%',
+          maxWidth: '380px',
           backgroundColor: '#ffffff',
           border: '1px solid #e2e8f0',
-          borderRadius: '6px',
-          padding: '20px',
-          position: 'relative'
+          borderRadius: '12px',
+          padding: '24px',
+          position: 'relative',
+          boxShadow: '0 20px 32px rgba(0, 0, 0, 0.15)'
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
@@ -159,8 +193,8 @@ export const AdminLoginModal: React.FC = () => {
                   outline: 'none'
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#7a8471'
-                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.1)'
+                  e.currentTarget.style.borderColor = '#3e4533'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(62, 69, 51, 0.1)'
                 }}
                 onBlur={(e) => {
                   e.currentTarget.style.borderColor = '#e2e8f0'
@@ -280,6 +314,7 @@ export const AdminLoginModal: React.FC = () => {
             <button
               type="submit"
               disabled={!password.trim() || isLoading}
+              className="admin-login-button"
               style={{
                 flex: '1',
                 height: '40px',
@@ -287,8 +322,8 @@ export const AdminLoginModal: React.FC = () => {
                 fontSize: '14px',
                 fontWeight: '500',
                 color: '#ffffff',
-                backgroundColor: '#7a8471',
-                border: '1px solid #7a8471',
+                backgroundColor: !password.trim() || isLoading ? '#8a9085' : 'rgb(62, 69, 51)',
+                border: `1px solid ${!password.trim() || isLoading ? '#8a9085' : 'rgb(62, 69, 51)'}`,
                 borderRadius: '6px',
                 cursor: password.trim() && !isLoading ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease',
@@ -296,24 +331,23 @@ export const AdminLoginModal: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
-                opacity: !password.trim() || isLoading ? '0.6' : '1'
+                gap: '6px'
               }}
               onMouseEnter={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.backgroundColor = '#6b7465'
-                  e.currentTarget.style.borderColor = '#6b7465'
+                  e.currentTarget.style.backgroundColor = 'rgb(45, 51, 39)'
+                  e.currentTarget.style.borderColor = 'rgb(45, 51, 39)'
                 }
               }}
               onMouseLeave={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.backgroundColor = '#7a8471'
-                  e.currentTarget.style.borderColor = '#7a8471'
+                  e.currentTarget.style.backgroundColor = 'rgb(62, 69, 51)'
+                  e.currentTarget.style.borderColor = 'rgb(62, 69, 51)'
                 }
               }}
               onFocus={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(122, 132, 113, 0.2)'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(62, 69, 51, 0.2)'
                 }
               }}
               onBlur={(e) => {
@@ -321,15 +355,15 @@ export const AdminLoginModal: React.FC = () => {
               }}
               onMouseDown={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.backgroundColor = '#0f595e'
-                  e.currentTarget.style.borderColor = '#0f595e'
+                  e.currentTarget.style.backgroundColor = 'rgb(31, 34, 27)'
+                  e.currentTarget.style.borderColor = 'rgb(31, 34, 27)'
                   e.currentTarget.style.transform = 'translateY(1px)'
                 }
               }}
               onMouseUp={(e) => {
                 if (password.trim() && !isLoading) {
-                  e.currentTarget.style.backgroundColor = '#6b7465'
-                  e.currentTarget.style.borderColor = '#6b7465'
+                  e.currentTarget.style.backgroundColor = 'rgb(45, 51, 39)'
+                  e.currentTarget.style.borderColor = 'rgb(45, 51, 39)'
                   e.currentTarget.style.transform = 'none'
                 }
               }}
@@ -358,6 +392,38 @@ export const AdminLoginModal: React.FC = () => {
           </div>
         </form>
       </div>
-    </Modal>
+
+      {/* Force button colors with CSS !important and high specificity */}
+      <style>{`
+        button.admin-login-button:not(:disabled) {
+          background-color: rgb(62, 69, 51) !important;
+          border-color: rgb(62, 69, 51) !important;
+        }
+        button.admin-login-button:not(:disabled):hover {
+          background-color: rgb(45, 51, 39) !important;
+          border-color: rgb(45, 51, 39) !important;
+        }
+        button.admin-login-button:not(:disabled):active {
+          background-color: rgb(31, 34, 27) !important;
+          border-color: rgb(31, 34, 27) !important;
+        }
+        button.admin-login-button:disabled,
+        button.admin-login-button[disabled],
+        button.admin-login-button[disabled="true"] {
+          background-color: #8a9085 !important;
+          border-color: #8a9085 !important;
+          opacity: 1 !important;
+        }
+        /* High specificity override for all states */
+        button.admin-login-button.admin-login-button {
+          background-color: rgb(62, 69, 51) !important;
+          border-color: rgb(62, 69, 51) !important;
+        }
+        button.admin-login-button.admin-login-button:disabled {
+          background-color: #8a9085 !important;
+          border-color: #8a9085 !important;
+        }
+      `}</style>
+    </div>
   )
 }

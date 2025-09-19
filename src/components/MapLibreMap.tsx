@@ -57,6 +57,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   const onViewportChangeRef = useRef(onViewportChange)
   const onBearingChangeRef = useRef(onBearingChange)
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [mapInitialized, setMapInitialized] = useState(false)
+  const [mapInitError, setMapInitError] = useState<string | null>(null)
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null)
   const [currentZoom, setCurrentZoom] = useState<number>(13)
   const [coordinatesCopied, setCoordinatesCopied] = useState(false)
@@ -105,56 +107,54 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   }, [onBearingChange])
 
   // Create map style based on map type - shared function
-  const createMapStyle = (mapType: 'topo' | 'satellite') => {
-    const baseStyle = {
-      version: 8 as const,
-      sources: {} as Record<string, maplibregl.SourceSpecification>,
-      layers: [] as maplibregl.LayerSpecification[]
-    }
+  const createMapStyle = (mapType: 'topo' | 'satellite'): maplibregl.StyleSpecification => {
+    console.log(`🗺️ Creating map style for type: ${mapType}`)
 
     if (mapType === 'topo') {
       // Kartverket Topographic Map
-      baseStyle.sources['kartverket-topo'] = {
-        type: 'raster',
-        tiles: [
-          // Official Kartverket WMTS cache service (2025)
-          'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
-        ],
-        tileSize: 256,
-        attribution: '© Kartverket',
-        minzoom: 0,
-        maxzoom: 20 // Official Geonorge WMTS specification: 21 levels (0-20)
+      return {
+        version: 8,
+        sources: {
+          'kartverket-topo': {
+            type: 'raster',
+            tiles: [
+              'https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png'
+            ],
+            tileSize: 256,
+            attribution: '© Kartverket'
+          }
+        },
+        layers: [
+          {
+            id: 'kartverket-topo-layer',
+            type: 'raster',
+            source: 'kartverket-topo'
+          }
+        ]
       }
-      baseStyle.layers.push({
-        id: 'kartverket-topo-layer',
-        type: 'raster',
-        source: 'kartverket-topo',
-        minzoom: 0,
-        maxzoom: 20
-      })
     } else {
-      // Satellite Map - Using Esri World Imagery (widely available satellite imagery)
-      baseStyle.sources['esri-satellite'] = {
-        type: 'raster',
-        tiles: [
-          // Esri World Imagery - free satellite imagery service
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-        ],
-        tileSize: 256,
-        attribution: '© Esri, Maxar, Earthstar Geographics, CNES/Airbus DS, USDA FSA, USGS, Aerogrid, IGN, IGP, and the GIS User Community',
-        minzoom: 0,
-        maxzoom: 18 // Conservative limit to avoid grey tiles - Esri has reliable coverage up to zoom 18
+      // Simple satellite map using Esri World Imagery
+      return {
+        version: 8,
+        sources: {
+          'esri-satellite': {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
+            tileSize: 256,
+            attribution: '© Esri'
+          }
+        },
+        layers: [
+          {
+            id: 'esri-satellite-layer',
+            type: 'raster',
+            source: 'esri-satellite'
+          }
+        ]
       }
-      baseStyle.layers.push({
-        id: 'esri-satellite-layer',
-        type: 'raster',
-        source: 'esri-satellite',
-        minzoom: 0,
-        maxzoom: 18
-      })
     }
-
-    return baseStyle
   }
 
   // Initialize map only once
@@ -162,35 +162,33 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     if (!containerRef.current || mapRef.current) return
 
     console.log(`🗺️ [DEBUG] Initializing MapLibre with ${mapType} map type...`)
+    console.log(`🗺️ [DEBUG] Container ref exists:`, !!containerRef.current)
+    console.log(`🗺️ [DEBUG] Container dimensions:`, containerRef.current?.offsetWidth, 'x', containerRef.current?.offsetHeight)
 
     // Map initialization function
     const initializeWithLocation = (center: [number, number]) => {
-      const map = new maplibregl.Map({
-        container: containerRef.current!,
-        // Dynamic map style based on mapType prop
-        style: createMapStyle(mapType),
-        center: center,
-        zoom: 13,
-        minZoom: 3, // Prevent zooming out too far (Norway-wide view)
-        maxZoom: mapType === 'topo' ? 17 : 16, // Conservative: Topo 17 (Kartverket), Satellite 16 (Esri reliable coverage)
-        bearing: 0,
-        pitch: 0,
-        interactive: true,
-        dragPan: true,
-        dragRotate: true,
-        scrollZoom: { around: 'center' },
-        boxZoom: true,
-        doubleClickZoom: true,
-        keyboard: true,
-        touchZoomRotate: true,
-        // Disable default attribution control - using custom credits component instead
-        attributionControl: false,
-        // Standard WMTS request handling - no special headers needed
-        transformRequest: (url: string) => {
-          return { url }
-        }
-      })
-      return map
+      console.log(`🗺️ Initializing MapLibre with center: [${center}] and style:`, createMapStyle(mapType))
+
+      try {
+        const map = new maplibregl.Map({
+          container: containerRef.current!,
+          style: createMapStyle(mapType),
+          center: center,
+          zoom: 10,
+          minZoom: 3,
+          maxZoom: 18,
+          attributionControl: false
+        })
+
+        console.log(`🗺️ [DEBUG] Map object created successfully:`, map)
+        setMapInitialized(true)
+        setMapInitError(null)
+        return map
+      } catch (error) {
+        console.error(`❌ [ERROR] Failed to create MapLibre map:`, error)
+        setMapInitError(error instanceof Error ? error.message : 'Unknown map creation error')
+        return null
+      }
     }
 
     // Setup map event handlers
@@ -200,7 +198,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       map.on('load', () => {
         console.log(`✅ MapLibre loaded with ${mapType} map tiles`)
         setMapLoaded(true)
-        
+
         // Emit initial viewport bounds
         setTimeout(() => {
           if (onViewportChangeRef.current) {
@@ -214,6 +212,20 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
             })
           }
         }, 100)
+      })
+
+      // Add error handling for map
+      map.on('error', (e) => {
+        console.error(`❌ [MAP ERROR] MapLibre error:`, e)
+      })
+
+      // Add style load error handling
+      map.on('styledata', () => {
+        console.log(`🎨 [DEBUG] Style data loaded for ${mapType}`)
+      })
+
+      map.on('style.load', () => {
+        console.log(`🎨 [DEBUG] Style fully loaded for ${mapType}`)
       })
 
       // Handle viewport changes
@@ -373,7 +385,23 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         })
       })
 
+      // Add right-click context menu for copying coordinates
+      map.on('contextmenu', (e) => {
+        e.preventDefault()
+        const { lat, lng } = e.lngLat
+        const coordinatesText = `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`
+
+        navigator.clipboard.writeText(coordinatesText).then(() => {
+          console.log(`📋 Copied coordinates: ${coordinatesText}`)
+          setCoordinatesCopied(true)
+          setTimeout(() => setCoordinatesCopied(false), 2000)
+        }).catch(error => {
+          console.error('Failed to copy coordinates:', error)
+        })
+      })
+
       mapRef.current = map
+      console.log(`🗺️ [DEBUG] Map assigned to mapRef.current:`, !!mapRef.current)
     }
 
     // Try geolocation first, fallback to Oslo
@@ -384,13 +412,23 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
           console.log(`📍 Using user location: [${userCenter[1]}, ${userCenter[0]}]`)
           const map = initializeWithLocation(userCenter)
-          setupMapEventHandlers(map)
+          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (user):`, !!map)
+          if (map) {
+            setupMapEventHandlers(map)
+          } else {
+            console.error(`❌ [ERROR] Map initialization failed with user location`)
+          }
         },
         (error) => {
           console.log(`❌ Geolocation failed: ${error.message}, using Oslo fallback`)
           const osloCenter: [number, number] = [10.7522, 59.9139]
           const map = initializeWithLocation(osloCenter)
-          setupMapEventHandlers(map)
+          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (Oslo fallback):`, !!map)
+          if (map) {
+            setupMapEventHandlers(map)
+          } else {
+            console.error(`❌ [ERROR] Map initialization failed with Oslo fallback`)
+          }
         },
         { timeout: 5000, maximumAge: 300000 }
       )
@@ -398,7 +436,12 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       console.log('📍 No geolocation support, using Oslo fallback')
       const osloCenter: [number, number] = [10.7522, 59.9139]
       const map = initializeWithLocation(osloCenter)
-      setupMapEventHandlers(map)
+      console.log(`🗺️ [DEBUG] Map from initializeWithLocation (no geolocation):`, !!map)
+      if (map) {
+        setupMapEventHandlers(map)
+      } else {
+        console.error(`❌ [ERROR] Map initialization failed with no geolocation fallback`)
+      }
     }
 
     // Cleanup
@@ -411,14 +454,14 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       const existingOverlays = document.querySelectorAll('.custom-poi-overlay')
       existingOverlays.forEach(overlay => overlay.remove())
     }
-  }, [mapType]) // Depend on mapType for initial style selection, but prevent re-initialization
+  }, [mapType]) // Include mapType dependency to re-run when map type changes
 
   // Handle map type changes - dynamically update map style
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return
 
     const map = mapRef.current
-    console.log(`🗺️ Switching map type to: ${mapType}`)
+    console.log(`🗺️ Map type switching effect triggered: ${mapType}`)
 
     // Preserve current map position and zoom before style change
     const currentCenter = map.getCenter()
@@ -426,12 +469,16 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     const currentBearing = map.getBearing()
     const currentPitch = map.getPitch()
 
+    console.log(`📍 Current position before switch: center=[${currentCenter.lng.toFixed(4)}, ${currentCenter.lat.toFixed(4)}], zoom=${currentZoom.toFixed(2)}`)
+
     // Update map style based on mapType
     const newStyle = createMapStyle(mapType)
     map.setStyle(newStyle)
 
     // Restore map position after style loads
     map.once('styledata', () => {
+      console.log(`🎨 Style loaded for ${mapType}, restoring position...`)
+
       // Update zoom limits based on map type
       const newMaxZoom = mapType === 'topo' ? 17 : 16
       map.setMaxZoom(newMaxZoom)
@@ -447,7 +494,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         pitch: currentPitch
       })
 
-      console.log(`✅ Map type switched to ${mapType}, position preserved`)
+      console.log(`✅ Map type switched to ${mapType}, position restored to [${currentCenter.lng.toFixed(4)}, ${currentCenter.lat.toFixed(4)}], zoom=${targetZoom.toFixed(2)}`)
 
       // Re-emit viewport bounds after position is restored
       setTimeout(() => {
@@ -487,7 +534,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       overlay.className = 'custom-poi-overlay'
       overlay.style.cssText = `
         position: absolute;
-        z-index: 100;
+        z-index: 10;
         pointer-events: auto;
         transform: translate(-50%, -50%);
       `
@@ -533,46 +580,59 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       markerElement.addEventListener('mouseenter', () => {
         markerElement.style.transform = 'scale(1.15)'
         markerElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)'
-        markerElement.style.zIndex = '101'
+        markerElement.style.zIndex = '15'
       })
       markerElement.addEventListener('mouseleave', () => {
         markerElement.style.transform = 'scale(1.0)'
         markerElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)'
-        markerElement.style.zIndex = '100'
+        markerElement.style.zIndex = '10'
       })
 
-      // Enhanced popup creation for Krigsminne POIs
-      const createEnhancedPopup = (poi: POI, point: maplibregl.Point): HTMLElement => {
-        const popup = document.createElement('div')
-        popup.className = 'custom-poi-popup enhanced-popup'
-        popup.style.cssText = `
-          position: absolute;
-          left: ${point.x}px;
-          top: ${point.y}px;
-          transform: translate(-50%, -100%);
-          margin-top: -15px;
-          z-index: 1000;
-          pointer-events: auto;
-        `
+      // Enhanced popup content creation for Krigsminne POIs
+      const createEnhancedPopupContent = (poi: POI): string => {
+        const hasEnhancedData = poi.enhancedData && poi.enhancedData.media?.thumbnails?.length
 
-        const hasEnhancedData = poi.enhancedData && (
-          poi.enhancedData.media?.thumbnails?.length ||
-          poi.enhancedData.media?.wikipediaData?.extract
-        )
+        // Responsive popup sizing
+        const isMobile = window.innerWidth < 768
+        const popupMaxWidth = hasEnhancedData ? (isMobile ? '90vw' : '380px') : (isMobile ? '85vw' : '320px')
+        const popupMinWidth = isMobile ? '280px' : '280px'
 
         const createImageCarousel = () => {
-          if (!poi.enhancedData?.media?.thumbnails?.length) return ''
+          if (!poi.enhancedData?.media?.thumbnails?.length) {
+            console.log(`📸 No images available for ${poi.name} (enhancement service may be disabled)`)
+            return ''
+          }
+
+          const getSourceDisplayName = (source: string) => {
+            switch (source) {
+              case 'digitalt_museum': return 'Digitalt Museum'
+              case 'flickr': return 'Flickr'
+              case 'nasjonalbiblioteket': return 'Nasjonalbiblioteket'
+              default: return source
+            }
+          }
+
+          // Responsive image sizing
+          const imageSize = isMobile ? '70px' : '80px'
+          const imageHeight = isMobile ? '52px' : '60px'
+          const imageGap = isMobile ? '8px' : '12px'
 
           return `
             <div style="margin: 12px 0; overflow-x: auto;">
-              <div style="display: flex; gap: 8px; padding-bottom: 8px;">
+              <div style="display: flex; gap: ${imageGap}; padding-bottom: 8px; min-width: min-content;">
                 ${poi.enhancedData.media.thumbnails.map(img => `
-                  <div style="flex-shrink: 0; position: relative;">
+                  <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
                     <img src="${img.url}" alt="${img.title || 'Historisk bilde'}"
-                         style="width: 80px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer;"
-                         onclick="window.open('${img.url}', '_blank')" />
-                    <div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white;
-                                font-size: 10px; padding: 1px 3px; border-radius: 2px;">${img.source}</div>
+                         style="width: ${imageSize}; height: ${imageHeight}; object-fit: cover; border-radius: 6px; cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s ease;"
+                         onclick="window.open('${img.url}', '_blank')"
+                         onmouseover="this.style.transform='scale(1.05)'"
+                         onmouseout="this.style.transform='scale(1)'" />
+                    <div style="margin-top: 6px; font-size: ${isMobile ? '9px' : '10px'}; color: #6b7280; text-align: center;
+                                background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;
+                                min-width: 60px; white-space: nowrap;">
+                      ${getSourceDisplayName(img.source)}
+                    </div>
                   </div>
                 `).join('')}
               </div>
@@ -580,45 +640,44 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           `
         }
 
-        const createWikipediaSection = () => {
-          if (!poi.enhancedData?.media?.wikipediaData?.extract) return ''
 
-          const extract = poi.enhancedData.media.wikipediaData.extract
-          const truncatedExtract = extract.length > 150 ? extract.substring(0, 150) + '...' : extract
-
-          return `
-            <div style="margin: 12px 0; padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #7c3aed;">
-              <div style="font-size: 13px; color: #4B5563; line-height: 1.4; margin-bottom: 8px;">
-                ${truncatedExtract}
-              </div>
-              ${poi.enhancedData.media.wikipediaData.fullUrl ? `
-                <a href="${poi.enhancedData.media.wikipediaData.fullUrl}" target="_blank"
-                   style="color: #7c3aed; text-decoration: none; font-size: 12px; font-weight: 500;">
-                  📖 Les mer på Wikipedia →
-                </a>
-              ` : ''}
-            </div>
-          `
-        }
-
-        popup.innerHTML = `
-          <div style="background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
-                      max-width: ${hasEnhancedData ? '380px' : '320px'}; min-width: 280px;
+        const htmlContent = `
+          <div style="background: white; border-radius: ${isMobile ? '8px' : '12px'}; box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+                      max-width: ${popupMaxWidth}; min-width: ${popupMinWidth};
                       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                      backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2);">
+                      backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2);
+                      position: relative;">
 
-            <button onclick="this.closest('.custom-poi-popup').remove()" style="position: absolute; top: 8px; right: 8px;
-                    width: 24px; height: 24px; border: none; background: rgba(0,0,0,0.1); border-radius: 50%;
-                    color: #666; cursor: pointer; display: flex; align-items: center; justify-content: center;
-                    font-size: 14px; transition: all 0.2s ease;">×</button>
+            <!-- Close button for enhanced popups -->
+            <button onclick="this.closest('.maplibregl-popup').remove()" style="
+              position: absolute;
+              top: 12px;
+              right: 12px;
+              width: 32px;
+              height: 32px;
+              border: none;
+              background: rgba(0,0,0,0.06);
+              border-radius: 8px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-family: 'Material Symbols Outlined', Arial, sans-serif;
+              font-size: 18px;
+              color: #6b7280;
+              transition: all 0.2s ease;
+              z-index: 1001;
+            " onmouseover="this.style.background='rgba(0,0,0,0.1)'; this.style.color='#374151'" onmouseout="this.style.background='rgba(0,0,0,0.06)'; this.style.color='#6b7280'">
+              close
+            </button>
 
-            <div style="padding: 16px;">
+            <div style="padding: ${isMobile ? '12px' : '16px'};">
               <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
                           padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.08);">
                 <div style="width: 24px; height: 24px; border-radius: 50%; background: ${poi.color || '#7c3aed'};
                             border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0;
                             display: flex; align-items: center; justify-content: center;">
-                  <span style="color: white; font-size: 12px;">🏰</span>
+                  ${poi.type === 'war_memorials' ? '' : '<span style="color: white; font-size: 12px;">🏰</span>'}
                 </div>
                 <div>
                   <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1F2937; line-height: 1.3;">
@@ -633,25 +692,11 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
               </div>
 
               ${createImageCarousel()}
-              ${createWikipediaSection()}
-
-              ${poi.enhancedData?.media?.wikipediaData?.relatedArticles?.length ? `
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.08);">
-                  <div style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Relaterte artikler:</div>
-                  ${poi.enhancedData.media.wikipediaData.relatedArticles.slice(0, 2).map(article => `
-                    <a href="${article.url}" target="_blank" style="display: block; color: #7c3aed; text-decoration: none;
-                       font-size: 12px; margin: 2px 0; line-height: 1.3;">• ${article.title}</a>
-                  `).join('')}
-                </div>
-              ` : ''}
             </div>
-
-            <div style="margin-left: 50%; width: 0; height: 0; border-left: 8px solid transparent;
-                        border-right: 8px solid transparent; border-top: 8px solid white;"></div>
           </div>
         `
 
-        return popup
+        return htmlContent
       }
 
       // Add click handler for custom popup
@@ -660,8 +705,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         e.stopPropagation()
 
         // Close any existing popups
-        const existingPopups = document.querySelectorAll('.custom-poi-popup')
-        existingPopups.forEach(popup => popup.remove())
+        document.querySelectorAll('.maplibregl-popup').forEach(popup => popup.remove())
 
         // Parse description for popup content
         const parts = poi.description ? poi.description.split('. ') : []
@@ -678,30 +722,13 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                       .replace(/📖 Wikidata: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Se på Wikidata →</a>')
           : 'Ingen tilleggsinformasjon'
 
-        // Get marker position relative to viewport
-        const mapContainer = map.getContainer()
-        const _mapRect = mapContainer.getBoundingClientRect()
-        const point = map.project([poi.lng, poi.lat])
-
-        // Create enhanced popup for Krigsminne POIs, or standard popup for others
-        let popup: HTMLElement
+        // Create popup content based on POI type
+        let popupContent: string
         if (poi.type === 'war_memorials' && poi.enhancedData) {
-          popup = createEnhancedPopup(poi, point)
+          popupContent = createEnhancedPopupContent(poi)
         } else {
-          // Create standard popup for non-enhanced POIs
-          popup = document.createElement('div')
-          popup.className = 'custom-poi-popup'
-          popup.style.cssText = `
-            position: absolute;
-            left: ${point.x}px;
-            top: ${point.y}px;
-            transform: translate(-50%, -100%);
-            margin-top: -15px;
-            z-index: 1000;
-            pointer-events: auto;
-          `
-
-        popup.innerHTML = `
+          // Create standard popup content for non-enhanced POIs
+          popupContent = `
           <div style="
             background: white;
             border-radius: 12px;
@@ -712,27 +739,27 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255,255,255,0.2);
           ">
-            <!-- Close button -->
-            <button onclick="this.closest('.custom-poi-popup').remove()" style="
+            <!-- Close button - positioned following 2025 UI best practices -->
+            <button onclick="this.closest('.maplibregl-popup').remove()" style="
               position: absolute;
-              top: 8px;
-              right: 8px;
-              width: 24px;
-              height: 24px;
+              top: 12px;
+              right: 12px;
+              width: 32px;
+              height: 32px;
               border: none;
-              background: rgba(0,0,0,0.1);
-              border-radius: 50%;
+              background: rgba(0,0,0,0.06);
+              border-radius: 8px;
               cursor: pointer;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-family: Arial, sans-serif;
-              font-size: 14px;
-              color: #666;
-              transition: background 0.2s ease;
+              font-family: 'Material Symbols Outlined', Arial, sans-serif;
+              font-size: 18px;
+              color: #6b7280;
+              transition: all 0.2s ease;
               z-index: 1001;
-            " onmouseover="this.style.background='rgba(0,0,0,0.2)'" onmouseout="this.style.background='rgba(0,0,0,0.1)'">
-              ×
+            " onmouseover="this.style.background='rgba(0,0,0,0.1)'; this.style.color='#374151'" onmouseout="this.style.background='rgba(0,0,0,0.06)'; this.style.color='#6b7280'">
+              close
             </button>
 
             <!-- Header -->
@@ -768,34 +795,19 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
             ">
               ${formattedDetailText}
             </div>
-
-            <!-- Arrow pointing to marker -->
-            <div style="
-              position: absolute;
-              top: 100%;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 0;
-              height: 0;
-              border-left: 8px solid transparent;
-              border-right: 8px solid transparent;
-              border-top: 8px solid white;
-            "></div>
           </div>
         `
         }
 
-        // Add popup to map container so it moves with the map
-        mapContainer.appendChild(popup)
-
-        // Close popup when clicking outside
-        const closeOnClickOutside = (e: Event) => {
-          if (!popup.contains(e.target as Node) && !overlay.contains(e.target as Node)) {
-            popup.remove()
-            document.removeEventListener('click', closeOnClickOutside)
-          }
-        }
-        setTimeout(() => document.addEventListener('click', closeOnClickOutside), 100)
+        // Create MapLibre popup that follows the marker
+        new maplibregl.Popup({
+          closeButton: false, // Disable default close button since we have custom ones
+          closeOnClick: false,
+          offset: [0, -15] // Offset above the marker
+        })
+          .setLngLat([poi.lng, poi.lat])
+          .setHTML(popupContent)
+          .addTo(map)
       })
     })
 
@@ -963,9 +975,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #7a8471, #0891b2);
+      background: linear-gradient(135deg, #3e4533, #0891b2);
       border: 3px solid white;
-      box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 16px rgba(62, 69, 51, 0.4), 0 2px 8px rgba(0,0,0,0.1);
       animation: locationPulse 2s infinite;
       position: relative;
     `
@@ -1029,11 +1041,54 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
   return (
     <div className="map-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div 
+      <div
         ref={containerRef}
-        style={{ width: '100%', height: '100%' }}
+        style={{
+          width: '100%',
+          height: '100%',
+          background: '#f0f0f0' // Temporary background to verify container visibility
+        }}
       />
-      
+
+      {/* Debug status indicator */}
+      {mapInitError && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(255, 0, 0, 0.9)',
+          color: 'white',
+          padding: '20px',
+          borderRadius: '8px',
+          fontFamily: 'monospace',
+          fontSize: '14px',
+          zIndex: 1000,
+          maxWidth: '80%',
+          textAlign: 'center'
+        }}>
+          ❌ Map initialization failed:<br />
+          {mapInitError}
+        </div>
+      )}
+
+      {!mapInitialized && !mapInitError && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(0, 0, 0, 0.7)',
+          color: 'white',
+          padding: '20px',
+          borderRadius: '8px',
+          fontSize: '16px',
+          zIndex: 1000
+        }}>
+          🗺️ Initializing map...
+        </div>
+      )}
+
       {/* Scale and Coordinate Display - Bottom Center */}
       {coordinates && (() => {
         // Calculate map scale based on zoom level and latitude - Kartverket WMTS compatible
@@ -1080,14 +1135,13 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
               alignItems: 'center',
               gap: '8px',
               fontSize: '12px',
-              color: '#374151',
-              opacity: 0.6,
+              color: 'rgba(255, 255, 255, 0.9)',
               pointerEvents: 'none'
             }}>
               <span style={{
                 fontFamily: 'Material Symbols Outlined',
                 fontSize: '14px',
-                color: '#374151'
+                color: 'rgba(255, 255, 255, 0.9)'
               }}>
                 straighten
               </span>
@@ -1101,7 +1155,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                 <div style={{
                   width: '60px',
                   height: '3px',
-                  background: '#374151',
+                  background: 'rgba(255, 255, 255, 0.9)',
                   borderRadius: '1px',
                   position: 'relative'
                 }}>
@@ -1112,7 +1166,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                     top: '-2px',
                     width: '1px',
                     height: '7px',
-                    background: '#374151'
+                    background: 'rgba(255, 255, 255, 0.9)'
                   }} />
                   <div style={{
                     position: 'absolute',
@@ -1120,7 +1174,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                     top: '-2px',
                     width: '1px',
                     height: '7px',
-                    background: '#374151'
+                    background: 'rgba(255, 255, 255, 0.9)'
                   }} />
                 </div>
                 {/* Scale text */}
@@ -1128,7 +1182,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                   fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
                   fontSize: '10px',
                   fontWeight: '600',
-                  color: '#374151'
+                  color: 'rgba(255, 255, 255, 0.9)'
                 }}>
                   {scaleText}
                 </span>
@@ -1144,7 +1198,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                 // Styling adapts based on sidebar state as specified
                 ...(sidebarCollapsed ? {
                   // On Map styling
-                  background: coordinatesCopied ? 'rgba(122,132,113,0.9)' : 'rgba(255,255,255,0.8)',
+                  background: coordinatesCopied ? 'rgba(62, 69, 51, 0.9)' : 'rgba(255,255,255,0.8)',
                   borderRadius: '4px',
                   padding: '4px 6px',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
@@ -1152,7 +1206,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                   color: coordinatesCopied ? '#ffffff' : '#374151'
                 } : {
                   // On Sidebar Overlay styling
-                  background: coordinatesCopied ? '#7a8471' : '#ffffff',
+                  background: coordinatesCopied ? '#3e4533' : '#ffffff',
                   border: '1px solid #d1d5db',
                   borderRadius: '4px',
                   padding: '4px 6px',
@@ -1303,13 +1357,13 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         /* User location marker animation */
         @keyframes locationPulse {
           0% {
-            box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(122, 132, 113, 0.7);
+            box-shadow: 0 4px 16px rgba(62, 69, 51, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(122, 132, 113, 0.7);
           }
           70% {
-            box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 10px rgba(122, 132, 113, 0);
+            box-shadow: 0 4px 16px rgba(62, 69, 51, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 10px rgba(122, 132, 113, 0);
           }
           100% {
-            box-shadow: 0 4px 16px rgba(122, 132, 113, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(122, 132, 113, 0);
+            box-shadow: 0 4px 16px rgba(62, 69, 51, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(122, 132, 113, 0);
           }
         }
 
@@ -1329,10 +1383,33 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         /* Aggressive POI marker overrides */
         .custom-poi-marker {
           transition: all 0.2s ease !important;
+          z-index: 10 !important;
+          position: relative !important;
         }
 
         .custom-poi-marker:hover {
           transform: scale(1.15) !important;
+          z-index: 15 !important;
+        }
+
+        /* Ensure consistent POI overlay z-index across all map types */
+        .custom-poi-overlay {
+          z-index: 1 !important;
+          position: absolute !important;
+        }
+
+        /* Force all POI markers to stay below popups with maximum specificity */
+        div.custom-poi-overlay div.custom-poi-marker {
+          z-index: 1 !important;
+          position: relative !important;
+        }
+
+        div.custom-poi-overlay div.custom-poi-marker:hover {
+          z-index: 2 !important;
+        }
+
+        /* CRITICAL FIX: Ensure MapLibre popups have higher z-index than POI markers */
+        .maplibregl-popup {
           z-index: 1000 !important;
         }
 

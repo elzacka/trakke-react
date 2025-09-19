@@ -72,6 +72,10 @@ function MapLibreTrakkeAppInner() {
 
   // Handle location button click
   const handleLocationClick = useCallback(() => {
+    console.log('🔘 Position button clicked!')
+    console.log('🔘 Current userLocation state:', userLocation)
+    console.log('🔘 Current locationLoading state:', locationLoading)
+
     if (!navigator.geolocation) {
       console.error('Geolocation is not supported by this browser')
       return
@@ -82,8 +86,9 @@ function MapLibreTrakkeAppInner() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
-        console.log('📍 User location:', latitude, longitude)
-        
+        console.log('📍 User location obtained:', latitude, longitude)
+        console.log('📍 Setting userLocation state...')
+
         // Check if location is within Norwegian bounds
         const norwegianBounds = {
           north: 72.0,
@@ -91,17 +96,19 @@ function MapLibreTrakkeAppInner() {
           east: 32.0,
           west: 4.0
         }
-        
+
         if (latitude >= norwegianBounds.south && latitude <= norwegianBounds.north &&
             longitude >= norwegianBounds.west && longitude <= norwegianBounds.east) {
           setUserLocation({ lat: latitude, lng: longitude })
-          console.log('✅ Location set within Norway bounds')
+          console.log('✅ Location set within Norway bounds:', { lat: latitude, lng: longitude })
         } else {
           console.warn('⚠️ Location outside Norway bounds, but setting anyway')
           setUserLocation({ lat: latitude, lng: longitude })
+          console.log('✅ Location set outside Norway bounds:', { lat: latitude, lng: longitude })
         }
-        
+
         setLocationLoading(false)
+        console.log('📍 Location loading set to false')
       },
       (error) => {
         console.error('Error getting location:', error.message)
@@ -126,7 +133,7 @@ function MapLibreTrakkeAppInner() {
         maximumAge: 300000 // 5 minutes
       }
     )
-  }, [])
+  }, [locationLoading, userLocation])
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev)
@@ -877,7 +884,7 @@ function MapLibreTrakkeAppInner() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 17. sept 2025
+                  Under utvikling • Sist oppdatert 18. sept 2025
                 </p>
               </div>
             </div>
@@ -993,7 +1000,7 @@ function MapLibreTrakkeAppInner() {
           style={{
             width: '44px',
             height: '44px',
-            background: userLocation ? 'rgba(122, 132, 113, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+            background: (userLocation || locationLoading) ? '#3e4533' : 'rgba(255, 255, 255, 0.9)',
             borderRadius: '8px',
             border: 'none',
             boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
@@ -1007,14 +1014,14 @@ function MapLibreTrakkeAppInner() {
           onMouseEnter={(e) => {
             if (!locationLoading) {
               e.currentTarget.style.transform = 'scale(1.05)'
-              e.currentTarget.style.background = userLocation ? 'rgba(122, 132, 113, 1)' : '#ffffff'
+              e.currentTarget.style.background = (userLocation || locationLoading) ? '#2d3327' : '#ffffff'
               e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
             }
           }}
           onMouseLeave={(e) => {
             if (!locationLoading) {
               e.currentTarget.style.transform = 'scale(1.0)'
-              e.currentTarget.style.background = userLocation ? 'rgba(122, 132, 113, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+              e.currentTarget.style.background = (userLocation || locationLoading) ? '#3e4533' : 'rgba(255, 255, 255, 0.9)'
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
             }
           }}
@@ -1023,7 +1030,7 @@ function MapLibreTrakkeAppInner() {
           <span style={{
             fontFamily: 'Material Symbols Outlined',
             fontSize: '20px',
-            color: userLocation ? 'white' : '#111827',
+            color: (userLocation || locationLoading) ? 'white' : '#111827',
             animation: locationLoading ? 'spin 1s linear infinite' : 'none'
           }}>
             {locationLoading ? 'sync' : 'my_location'}
@@ -1128,7 +1135,10 @@ function MapLibreTrakkeAppInner() {
           pointerEvents: 'none' // Credits should not be interactive
         }}
       >
-        © Kartverket | © OpenStreetMap-bidragsytere
+        {mapType === 'topo'
+          ? '© Kartverket | © OpenStreetMap-bidragsytere'
+          : '© Esri | © OpenStreetMap-bidragsytere'
+        }
       </div>
 
 

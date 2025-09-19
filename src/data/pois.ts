@@ -147,20 +147,11 @@ export interface POI {
       thumbnails?: Array<{
         url: string
         title?: string
-        source: 'flickr' | 'wikipedia' | 'mapillary'
+        source: 'flickr' | 'digitalt_museum' | 'nasjonalbiblioteket'
         caption?: string
         year?: number
         photographer?: string
       }>
-      wikipediaData?: {
-        extract?: string
-        fullUrl?: string
-        relatedArticles?: Array<{
-          title: string
-          url: string
-          extract: string
-        }>
-      }
     }
     visitInfo?: {
       accessibility?: string
