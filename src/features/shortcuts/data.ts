@@ -17,6 +17,8 @@ export const HURTIGTASTER: ShortcutItem[] = [
   { action: "Zoom til område",        tokens: ["Shift + dra"],      isGesture: true },
   { action: "Vipp og roter kart",     tokens: ["Ctrl + dra"],       isGesture: true },
   { action: "Zoom til punkt",         tokens: ["Dobbeltklikk"],     isGesture: true },
+  { action: "Kopier koordinater fra kart", tokens: ["Ctrl + klikk"], isGesture: true },
+  { action: "Kopier koordinater fra kart", tokens: ["Høyreklikk"], isGesture: true },
   { action: "Kopier koordinater",     tokens: ["Klikk koordinater"], isGesture: true },
 
   // Mobil/Tablet
@@ -25,5 +27,6 @@ export const HURTIGTASTER: ShortcutItem[] = [
   { action: "Roter kart",         tokens: ["To fingre + vri"],      isGesture: true },
   { action: "Vipp kart",          tokens: ["To fingre + skyv opp/ned"], isGesture: true },
   { action: "Zoom til punkt",     tokens: ["Dobbelttrykk"],         isGesture: true },
+  { action: "Kopier koordinater fra kart", tokens: ["Langt trykk"], isGesture: true },
   { action: "Kopier koordinater", tokens: ["Trykk koordinater"],    isGesture: true },
 ]

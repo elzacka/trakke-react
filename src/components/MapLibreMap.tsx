@@ -400,6 +400,24 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         })
       })
 
+      // Add Ctrl+click for copying coordinates (alternative to right-click)
+      map.on('click', (e) => {
+        // Check if Ctrl key is pressed (or Cmd on Mac)
+        if (e.originalEvent.ctrlKey || e.originalEvent.metaKey) {
+          e.preventDefault()
+          const { lat, lng } = e.lngLat
+          const coordinatesText = `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`
+
+          navigator.clipboard.writeText(coordinatesText).then(() => {
+            console.log(`📋 Copied coordinates with Ctrl+click: ${coordinatesText}`)
+            setCoordinatesCopied(true)
+            setTimeout(() => setCoordinatesCopied(false), 2000)
+          }).catch(error => {
+            console.error('Failed to copy coordinates:', error)
+          })
+        }
+      })
+
       mapRef.current = map
       console.log(`🗺️ [DEBUG] Map assigned to mapRef.current:`, !!mapRef.current)
     }
