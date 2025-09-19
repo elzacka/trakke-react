@@ -129,33 +129,72 @@ function formatProperName(text: string): string {
   return text.split(' ').map(word => capitalizeFirstLetter(word.toLowerCase())).join(' ')
 }
 
-// Coordinate parsing (kept from original implementation)
+// Enhanced coordinate parsing supporting multiple formats
 function parseCoordinates(input: string): CoordinateParseResult | null {
-  const cleaned = input.replace(/[°'"′″\s]/g, ' ').trim()
+  const trimmed = input.trim()
 
-  // Decimal format: "59.123, 7.456" or "59.123 7.456"
-  const decimalMatch = cleaned.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/)
-  if (decimalMatch) {
-    const lat = parseFloat(decimalMatch[1])
-    const lng = parseFloat(decimalMatch[2])
-    
+  // Format 1: "59.90391°N, 10.89720°E" (PRIORITY - most important format)
+  const degreeDirectionPattern = /^(\d+\.?\d*)°?\s*([NS])\s*,?\s*(\d+\.?\d*)°?\s*([EW])$/i
+  const degreeDirectionMatch = trimmed.match(degreeDirectionPattern)
+  if (degreeDirectionMatch) {
+    let lat = parseFloat(degreeDirectionMatch[1])
+    const latDir = degreeDirectionMatch[2].toUpperCase()
+    let lng = parseFloat(degreeDirectionMatch[3])
+    const lngDir = degreeDirectionMatch[4].toUpperCase()
+
+    if (latDir === 'S') lat = -lat
+    if (lngDir === 'W') lng = -lng
+
     if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
+      console.log(`📍 Parsed coordinates (degree-direction): ${lat}, ${lng}`)
       return { lat, lng, format: 'decimal' }
     }
   }
 
-  // DMS format: "59 12 34.5 N 7 25 42.1 E"
-  const dmsPattern = /(\d+)\s*(\d+)\s*(\d+\.?\d*)\s*([NS])\s+(\d+)\s*(\d+)\s*(\d+\.?\d*)\s*([EW])/i
+  // Clean input for other formats (remove various symbols but preserve structure)
+  const cleaned = input.replace(/['"′″]/g, '').trim()
+
+  // Format 2: Simple decimal "59.123, 7.456" or "59.123 7.456"
+  const decimalMatch = cleaned.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/)
+  if (decimalMatch) {
+    const lat = parseFloat(decimalMatch[1])
+    const lng = parseFloat(decimalMatch[2])
+
+    if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
+      console.log(`📍 Parsed coordinates (decimal): ${lat}, ${lng}`)
+      return { lat, lng, format: 'decimal' }
+    }
+  }
+
+  // Format 3: "N59.123, E7.456" (direction prefix)
+  const prefixDirectionMatch = cleaned.match(/^([NS])\s*(\d+\.?\d*)[,\s]+([EW])\s*(\d+\.?\d*)$/i)
+  if (prefixDirectionMatch) {
+    const latDir = prefixDirectionMatch[1].toUpperCase()
+    let lat = parseFloat(prefixDirectionMatch[2])
+    const lngDir = prefixDirectionMatch[3].toUpperCase()
+    let lng = parseFloat(prefixDirectionMatch[4])
+
+    if (latDir === 'S') lat = -lat
+    if (lngDir === 'W') lng = -lng
+
+    if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
+      console.log(`📍 Parsed coordinates (prefix-direction): ${lat}, ${lng}`)
+      return { lat, lng, format: 'decimal' }
+    }
+  }
+
+  // Format 4: DMS format "59°12'34.5\"N 7°25'42.1\"E" or "59 12 34.5 N 7 25 42.1 E"
+  const dmsPattern = /(\d+)[°\s]*(\d+)?['\s]*(\d+\.?\d*)?["\s]*([NS])\s*[,\s]*(\d+)[°\s]*(\d+)?['\s]*(\d+\.?\d*)?["\s]*([EW])/i
   const dmsMatch = cleaned.match(dmsPattern)
   if (dmsMatch) {
     const latDeg = parseInt(dmsMatch[1], 10)
-    const latMin = parseInt(dmsMatch[2], 10) 
-    const latSec = parseFloat(dmsMatch[3])
+    const latMin = parseInt(dmsMatch[2] || '0', 10)
+    const latSec = parseFloat(dmsMatch[3] || '0')
     const latDir = dmsMatch[4].toUpperCase()
-    
+
     const lngDeg = parseInt(dmsMatch[5], 10)
-    const lngMin = parseInt(dmsMatch[6], 10)
-    const lngSec = parseFloat(dmsMatch[7])
+    const lngMin = parseInt(dmsMatch[6] || '0', 10)
+    const lngSec = parseFloat(dmsMatch[7] || '0')
     const lngDir = dmsMatch[8].toUpperCase()
 
     let lat = latDeg + latMin/60 + latSec/3600
@@ -165,6 +204,7 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
     if (lngDir === 'W') lng = -lng
 
     if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
+      console.log(`📍 Parsed coordinates (DMS): ${lat}, ${lng}`)
       return { lat, lng, format: 'dms' }
     }
   }
