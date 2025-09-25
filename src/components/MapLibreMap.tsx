@@ -4,6 +4,14 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { POI, CategoryState, CategoryNode } from '../data/pois'
 import { SearchResult } from '../services/searchService'
 import { KartverketTrailService } from '../services/kartverketTrailService'
+import {
+  DistanceMeasurement,
+  Coordinate,
+  calculatePolylineDistance,
+  calculateHaversineDistance,
+  formatDistance,
+  generateMeasurementId
+} from '../services/distanceService'
 
 // ARCHITECTURAL SAFEGUARDS - PREVENT REGRESSION TO OLD APPROACHES
 // ================================================================
@@ -17,6 +25,8 @@ import { KartverketTrailService } from '../services/kartverketTrailService'
 export interface MapLibreMapRef {
   resetBearing: () => void
   getMap: () => maplibregl.Map | null
+  toggleDistanceMeasurement: () => void
+  clearDistanceMeasurements: () => void
 }
 
 export interface MapLibreMapProps {
@@ -37,8 +47,13 @@ export interface MapLibreMapProps {
   onBearingChange?: (bearing: number) => void
   sidebarCollapsed?: boolean // Add sidebar state for overlay behavior
   mapType?: 'topo' | 'satellite' // Map type selection
+  distanceMeasurements?: DistanceMeasurement[]
+  onDistanceMeasurementUpdate?: (measurements: DistanceMeasurement[]) => void
+  isDistanceMeasuring?: boolean
+  onDistanceMeasuringChange?: (measuring: boolean) => void
 }
 
+// Distance measurement enabled
 export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   pois,
   categoryState,
@@ -50,7 +65,11 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   onViewportChange,
   onBearingChange,
   sidebarCollapsed = true,
-  mapType = 'topo'
+  mapType = 'topo',
+  distanceMeasurements = [],
+  onDistanceMeasurementUpdate,
+  isDistanceMeasuring = false,
+  onDistanceMeasuringChange
 }, ref) => {
   const mapRef = useRef<maplibregl.Map | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -66,6 +85,164 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   const searchMarkerRef = useRef<maplibregl.Marker | null>(null)
   const positionMarkerRef = useRef<maplibregl.Marker | null>(null)
 
+  // Distance measurement state
+  const [currentMeasurement, setCurrentMeasurement] = useState<Coordinate[]>([])
+  const distanceMarkersRef = useRef<maplibregl.Marker[]>([])
+  const distanceLinesRef = useRef<HTMLElement[]>([])
+
+  // Distance measurement functions
+  const toggleDistanceMeasurement = () => {
+    const newMeasuring = !isDistanceMeasuring
+    if (onDistanceMeasuringChange) {
+      onDistanceMeasuringChange(newMeasuring)
+    }
+
+    if (isDistanceMeasuring) {
+      // Finish current measurement if any
+      finishCurrentMeasurement()
+    } else {
+      // Clear any previous measurement
+      setCurrentMeasurement([])
+    }
+  }
+
+  const clearDistanceMeasurements = () => {
+    // Clear all markers and lines
+    distanceMarkersRef.current.forEach(marker => marker.remove())
+    distanceMarkersRef.current = []
+    distanceLinesRef.current.forEach(line => line.remove())
+    distanceLinesRef.current = []
+
+    // Clear current measurement
+    setCurrentMeasurement([])
+    if (onDistanceMeasuringChange) {
+      onDistanceMeasuringChange(false)
+    }
+
+    // Clear from parent state
+    if (onDistanceMeasurementUpdate) {
+      onDistanceMeasurementUpdate([])
+    }
+  }
+
+  const finishCurrentMeasurement = () => {
+    if (currentMeasurement.length >= 2) {
+      const { totalDistance, segments } = calculatePolylineDistance(currentMeasurement)
+      const measurement: DistanceMeasurement = {
+        id: generateMeasurementId(),
+        points: [...currentMeasurement],
+        totalDistance,
+        segments,
+        created: new Date()
+      }
+
+      if (onDistanceMeasurementUpdate) {
+        onDistanceMeasurementUpdate([...distanceMeasurements, measurement])
+      }
+    }
+    setCurrentMeasurement([])
+  }
+
+  const addDistanceMeasurementPoint = (coordinate: Coordinate) => {
+    if (!mapRef.current) return
+
+    const newPoints = [...currentMeasurement, coordinate]
+    setCurrentMeasurement(newPoints)
+
+    // Create marker for this point
+    const markerElement = document.createElement('div')
+    markerElement.className = 'distance-marker'
+    markerElement.style.cssText = `
+      width: 12px;
+      height: 12px;
+      background-color: #ff4444;
+      border: 2px solid white;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    `
+
+    const marker = new maplibregl.Marker(markerElement)
+      .setLngLat([coordinate.lng, coordinate.lat])
+      .addTo(mapRef.current)
+
+    distanceMarkersRef.current.push(marker)
+
+    // If this is the second or later point, draw line from previous point
+    if (newPoints.length >= 2) {
+      const prevPoint = newPoints[newPoints.length - 2]
+      const currentPoint = coordinate
+      drawDistanceLine(prevPoint, currentPoint, newPoints.length - 1)
+    }
+
+    console.log(`📏 Added distance measurement point ${newPoints.length}: [${coordinate.lat.toFixed(5)}, ${coordinate.lng.toFixed(5)}]`)
+  }
+
+  const drawDistanceLine = (start: Coordinate, end: Coordinate, _segmentIndex: number) => {
+    if (!mapRef.current) return
+
+    // Calculate distance for this segment
+    const distance = calculateHaversineDistance(start, end)
+
+    // Create line element
+    const lineContainer = document.createElement('div')
+    lineContainer.className = 'distance-line-container'
+    lineContainer.style.position = 'absolute'
+    lineContainer.style.pointerEvents = 'none'
+    lineContainer.style.zIndex = '1'
+
+    // Calculate line position and rotation
+    const startPixel = mapRef.current.project([start.lng, start.lat])
+    const endPixel = mapRef.current.project([end.lng, end.lat])
+
+    const deltaX = endPixel.x - startPixel.x
+    const deltaY = endPixel.y - startPixel.y
+    const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI
+
+    // Create line
+    const line = document.createElement('div')
+    line.style.cssText = `
+      position: absolute;
+      left: ${startPixel.x}px;
+      top: ${startPixel.y}px;
+      width: ${length}px;
+      height: 2px;
+      background-color: #ff4444;
+      transform-origin: 0 50%;
+      transform: rotate(${angle}deg);
+      z-index: 1;
+    `
+
+    // Create distance label
+    const label = document.createElement('div')
+    label.style.cssText = `
+      position: absolute;
+      left: ${startPixel.x + deltaX / 2}px;
+      top: ${startPixel.y + deltaY / 2 - 12}px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #333;
+      white-space: nowrap;
+      z-index: 2;
+      pointer-events: none;
+    `
+    label.textContent = formatDistance(distance)
+
+    lineContainer.appendChild(line)
+    lineContainer.appendChild(label)
+
+    // Add to map container
+    const mapContainer = mapRef.current.getContainer()
+    mapContainer.appendChild(lineContainer)
+
+    distanceLinesRef.current.push(lineContainer)
+  }
+
   // Expose map methods to parent component
   useImperativeHandle(ref, () => ({
     resetBearing: () => {
@@ -76,7 +253,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         })
       }
     },
-    getMap: () => mapRef.current
+    getMap: () => mapRef.current,
+    toggleDistanceMeasurement,
+    clearDistanceMeasurements
   }))
 
   // Copy coordinates to clipboard
@@ -400,12 +579,13 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         })
       })
 
-      // Add Ctrl+click for copying coordinates (alternative to right-click)
+      // Add Ctrl+click for copying coordinates and regular click for distance measurement
       map.on('click', (e) => {
-        // Check if Ctrl key is pressed (or Cmd on Mac)
+        const { lat, lng } = e.lngLat
+
+        // Check if Ctrl key is pressed (or Cmd on Mac) for coordinate copying
         if (e.originalEvent.ctrlKey || e.originalEvent.metaKey) {
           e.preventDefault()
-          const { lat, lng } = e.lngLat
           const coordinatesText = `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`
 
           navigator.clipboard.writeText(coordinatesText).then(() => {
@@ -415,6 +595,10 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           }).catch(error => {
             console.error('Failed to copy coordinates:', error)
           })
+        } else if (isDistanceMeasuring) {
+          // Handle distance measurement clicks
+          e.preventDefault()
+          addDistanceMeasurementPoint({ lat, lng })
         }
       })
 

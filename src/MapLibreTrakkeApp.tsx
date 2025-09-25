@@ -9,6 +9,7 @@ import { SearchResult, SearchService } from './services/searchService'
 import { poiDataService } from './services/poiDataService'
 import { TilfluktsromService, TilfluktsromPOI } from './services/tilfluktsromService'
 import { krigsminneEnhancementService } from './services/krigsminneEnhancementService'
+import { DistanceMeasurement } from './services/distanceService'
 import { useUIStore } from './state/uiStore'
 import { UIProvider } from './state/UIProvider'
 import { HurtigtasterModal } from './features/shortcuts/HurtigtasterModal'
@@ -44,6 +45,10 @@ function MapLibreTrakkeAppInner() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
   const [locationLoading, setLocationLoading] = useState(false)
   const [mapBearing, setMapBearing] = useState(0) // Track current map bearing for compass
+
+  // Distance measurement state
+  const [distanceMeasurements, setDistanceMeasurements] = useState<DistanceMeasurement[]>([])
+  const [isDistanceMeasuring, setIsDistanceMeasuring] = useState(false)
 
   // POI data state (currently only Krigsminne from OpenStreetMap)
   const [pois, setPois] = useState<POI[]>([])
@@ -771,6 +776,10 @@ function MapLibreTrakkeAppInner() {
           userLocation={userLocation}
           sidebarCollapsed={sidebarCollapsed}
           mapType={mapType}
+          distanceMeasurements={distanceMeasurements}
+          onDistanceMeasurementUpdate={setDistanceMeasurements}
+          isDistanceMeasuring={isDistanceMeasuring}
+          onDistanceMeasuringChange={setIsDistanceMeasuring}
         />
       </div>
 
@@ -1120,6 +1129,92 @@ function MapLibreTrakkeAppInner() {
         >
           −
         </button>
+
+        {/* 5. Distance Measurement */}
+        <button
+          aria-label={mapRef.current?.getMap() ? (isDistanceMeasuring ? "Finish distance measurement" : "Start distance measurement") : "Distance measurement"}
+          tabIndex={7}
+          style={{
+            width: '44px',
+            height: '44px',
+            background: isDistanceMeasuring ? '#0d9488' : 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '8px',
+            border: 'none',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05)'
+            e.currentTarget.style.background = isDistanceMeasuring ? '#0a756e' : '#ffffff'
+            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1.0)'
+            e.currentTarget.style.background = isDistanceMeasuring ? '#0d9488' : 'rgba(255, 255, 255, 0.9)'
+            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
+          }}
+          onClick={() => {
+            if (mapRef.current) {
+              mapRef.current.toggleDistanceMeasurement()
+            }
+          }}
+        >
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '20px',
+            color: isDistanceMeasuring ? 'white' : '#111827'
+          }}>
+            straighten
+          </span>
+        </button>
+
+        {/* 6. Clear Distance Measurements */}
+        {distanceMeasurements.length > 0 && (
+          <button
+            aria-label="Clear all distance measurements"
+            tabIndex={8}
+            style={{
+              width: '44px',
+              height: '44px',
+              background: 'rgba(255, 255, 255, 0.9)',
+              borderRadius: '8px',
+              border: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)'
+              e.currentTarget.style.background = '#ffffff'
+              e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1.0)'
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)'
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
+            }}
+            onClick={() => {
+              if (mapRef.current) {
+                mapRef.current.clearDistanceMeasurements()
+              }
+            }}
+          >
+            <span style={{
+              fontFamily: 'Material Symbols Outlined',
+              fontSize: '20px',
+              color: '#111827'
+            }}>
+              clear_all
+            </span>
+          </button>
+        )}
 
       </div>
 

@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# For Claude and app owner/developer
+CLAUDE.md
+Console log in localhost.md
+Github build errors.md
