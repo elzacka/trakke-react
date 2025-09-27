@@ -50,6 +50,9 @@ function MapLibreTrakkeAppInner() {
   const [distanceMeasurements, setDistanceMeasurements] = useState<DistanceMeasurement[]>([])
   const [isDistanceMeasuring, setIsDistanceMeasuring] = useState(false)
 
+  // Attribution modal state
+  const [isAttributionOpen, setIsAttributionOpen] = useState(false)
+
   // POI data state (currently only Krigsminne from OpenStreetMap)
   const [pois, setPois] = useState<POI[]>([])
   const [loading, setLoading] = useState(false)
@@ -1216,26 +1219,77 @@ function MapLibreTrakkeAppInner() {
           </button>
         )}
 
+        {/* 7. Info/Attribution Button */}
+        <button
+          aria-label="Map information and credits"
+          tabIndex={9}
+          style={{
+            width: '44px',
+            height: '44px',
+            background: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '8px',
+            border: 'none',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.05)'
+            e.currentTarget.style.background = '#ffffff'
+            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1.0)'
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)'
+            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
+          }}
+          onClick={() => setIsAttributionOpen(true)}
+        >
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '20px',
+            color: '#111827'
+          }}>
+            info
+          </span>
+        </button>
+
       </div>
 
-      {/* Persistent Attribution Credits - Bottom Right */}
-      <div
-        style={{
+      {/* Distance Measurement Mode Indicator */}
+      {isDistanceMeasuring && (
+        <div style={{
           position: 'absolute',
-          bottom: '16px',
-          right: '16px',
-          zIndex: 50,
-          fontSize: '12px',
-          color: '#6b7280', // Specified color
-          pointerEvents: 'none' // Credits should not be interactive
-        }}
-      >
-        {mapType === 'topo'
-          ? '© Kartverket | © OpenStreetMap-bidragsytere'
-          : '© Esri | © OpenStreetMap-bidragsytere'
-        }
-      </div>
-
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100,
+          backgroundColor: '#0d9488',
+          color: 'white',
+          padding: window.innerWidth < 768 ? '10px 16px' : '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          fontSize: window.innerWidth < 768 ? '13px' : '14px',
+          fontWeight: '500',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '18px'
+          }}>
+            touch_app
+          </span>
+          <span>
+            {window.innerWidth < 768 ? 'Trykk på kartet for å måle' : 'Klikk på kartet for å måle avstand'}
+          </span>
+        </div>
+      )}
 
       {/* Legacy compass container (keeping for styling but now empty) */}
       <div
@@ -1296,6 +1350,18 @@ function MapLibreTrakkeAppInner() {
 
       {/* Responsive and Accessibility Styles */}
       <style>{`
+        /* Animations */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+
         /* Mobile Responsive Styles */
         @media (max-width: 767px) {
           .map-controls {
@@ -1346,6 +1412,155 @@ function MapLibreTrakkeAppInner() {
       `}</style>
 
       {/* Modal components */}
+      {/* Attribution Modal */}
+      {isAttributionOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '16px'
+          }}
+          onClick={() => setIsAttributionOpen(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: window.innerWidth < 768 ? '20px' : '28px',
+              maxWidth: '500px',
+              width: '100%',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+              maxHeight: '80vh',
+              overflowY: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#111827' }}>
+                Om kartet
+              </h2>
+              <button
+                onClick={() => setIsAttributionOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <span style={{
+                  fontFamily: 'Material Symbols Outlined',
+                  fontSize: '24px',
+                  color: '#6b7280'
+                }}>
+                  close
+                </span>
+              </button>
+            </div>
+
+            <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>
+              <p style={{ marginTop: 0 }}>
+                <strong>Karttype:</strong> {mapType === 'topo' ? 'Topografisk kart' : 'Satellittkart'}
+              </p>
+
+              {mapType === 'topo' ? (
+                <>
+                  <p>
+                    <strong>Kartdata fra Kartverket:</strong><br />
+                    Topografiske kartdata leveres av Kartverket via WMTS-tjenesten.
+                    Kartverket er Norges offisielle kartmyndighet.
+                  </p>
+                  <p>
+                    <strong>© Kartverket</strong><br />
+                    <a
+                      href="https://www.kartverket.no"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#0d9488', textDecoration: 'none' }}
+                    >
+                      www.kartverket.no
+                    </a>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p>
+                    <strong>Satellittbilder fra Esri:</strong><br />
+                    Satellittbildene leveres av Esri World Imagery, som kombinerer bilder
+                    fra flere kilder inkludert DigitalGlobe, GeoEye, og NASA.
+                  </p>
+                  <p>
+                    <strong>© Esri</strong><br />
+                    <a
+                      href="https://www.esri.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#0d9488', textDecoration: 'none' }}
+                    >
+                      www.esri.com
+                    </a>
+                  </p>
+                </>
+              )}
+
+              <p>
+                <strong>Kategorier (POI-er):</strong><br />
+                POI-data kommer fra flere kilder:
+              </p>
+              <ul style={{ marginTop: '8px', marginBottom: '12px', paddingLeft: '20px', lineHeight: '1.8' }}>
+                <li>
+                  <strong>OpenStreetMap</strong> – Et brukerstyrt og gratis kartprosjekt som samler geografiske data og gjør dem tilgjengelig for alle
+                  <br />
+                  <a
+                    href="https://www.openstreetmap.org/copyright"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#0d9488', textDecoration: 'none', fontSize: '13px' }}
+                  >
+                    © OpenStreetMap-bidragsytere
+                  </a>
+                </li>
+                <li style={{ marginTop: '8px' }}>
+                  <strong>Tilfluktsrom</strong> – DSBs datasett i Geonorges kartkatalog
+                  <br />
+                  <a
+                    href="https://kartkatalog.geonorge.no/metadata/tilfluktsrom-offentlige/dbae9aae-10e7-4b75-8d67-7f0e8828f3d8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#0d9488', textDecoration: 'none', fontSize: '13px' }}
+                  >
+                    © Geonorge / DSB
+                  </a>
+                </li>
+              </ul>
+
+              <div style={{
+                marginTop: '20px',
+                padding: '12px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0'
+              }}>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+                  <strong>Tråkke</strong> kombinerer åpne datakilder for å gi deg et kartverktøy der du kan utforske og planlegge neste tur.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <HurtigtasterModal
         isOpen={isHurtigtasterOpen}
         onClose={closeHurtigtaster}

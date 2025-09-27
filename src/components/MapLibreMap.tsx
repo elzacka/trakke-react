@@ -89,6 +89,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   const [currentMeasurement, setCurrentMeasurement] = useState<Coordinate[]>([])
   const distanceMarkersRef = useRef<maplibregl.Marker[]>([])
   const distanceLinesRef = useRef<HTMLElement[]>([])
+  const isDistanceMeasuringRef = useRef(isDistanceMeasuring)
 
   // Distance measurement functions
   const toggleDistanceMeasurement = () => {
@@ -100,10 +101,24 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     if (isDistanceMeasuring) {
       // Finish current measurement if any
       finishCurrentMeasurement()
+      // Clear temporary markers and lines after finishing
+      clearTemporaryMeasurements()
     } else {
       // Clear any previous measurement
       setCurrentMeasurement([])
     }
+  }
+
+  const clearTemporaryMeasurements = () => {
+    // Clear all temporary markers
+    distanceMarkersRef.current.forEach(marker => marker.remove())
+    distanceMarkersRef.current = []
+
+    // Clear all temporary lines
+    distanceLinesRef.current.forEach(line => line.remove())
+    distanceLinesRef.current = []
+
+    console.log('🧹 Cleared temporary distance measurements')
   }
 
   const clearDistanceMeasurements = () => {
@@ -144,103 +159,158 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   }
 
   const addDistanceMeasurementPoint = (coordinate: Coordinate) => {
-    if (!mapRef.current) return
-
-    const newPoints = [...currentMeasurement, coordinate]
-    setCurrentMeasurement(newPoints)
-
-    // Create marker for this point
-    const markerElement = document.createElement('div')
-    markerElement.className = 'distance-marker'
-    markerElement.style.cssText = `
-      width: 12px;
-      height: 12px;
-      background-color: #ff4444;
-      border: 2px solid white;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    `
-
-    const marker = new maplibregl.Marker(markerElement)
-      .setLngLat([coordinate.lng, coordinate.lat])
-      .addTo(mapRef.current)
-
-    distanceMarkersRef.current.push(marker)
-
-    // If this is the second or later point, draw line from previous point
-    if (newPoints.length >= 2) {
-      const prevPoint = newPoints[newPoints.length - 2]
-      const currentPoint = coordinate
-      drawDistanceLine(prevPoint, currentPoint, newPoints.length - 1)
+    if (!mapRef.current) {
+      console.warn('⚠️ Cannot add distance point: map not initialized')
+      return
     }
 
-    console.log(`📏 Added distance measurement point ${newPoints.length}: [${coordinate.lat.toFixed(5)}, ${coordinate.lng.toFixed(5)}]`)
+    // Use functional update to get the current state
+    setCurrentMeasurement(prevMeasurement => {
+      const newPoints = [...prevMeasurement, coordinate]
+
+      console.log(`📏 Current measurement had ${prevMeasurement.length} points, now has ${newPoints.length} points`)
+
+      // Create marker for this point
+      const markerElement = document.createElement('div')
+      markerElement.className = 'distance-marker'
+      markerElement.style.cssText = `
+        width: 16px !important;
+        height: 16px !important;
+        background-color: #ff4444 !important;
+        background: #ff4444 !important;
+        border: 3px solid white !important;
+        border-radius: 50% !important;
+        cursor: pointer !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+        z-index: 1000 !important;
+      `
+
+      const marker = new maplibregl.Marker({
+        element: markerElement,
+        anchor: 'center'
+      })
+        .setLngLat([coordinate.lng, coordinate.lat])
+        .addTo(mapRef.current!)
+
+      distanceMarkersRef.current.push(marker)
+      console.log(`✅ Distance marker ${newPoints.length} added at [${coordinate.lat.toFixed(5)}, ${coordinate.lng.toFixed(5)}]`)
+
+      // If this is the second or later point, draw line from previous point
+      if (newPoints.length >= 2) {
+        const prevPoint = newPoints[newPoints.length - 2]
+        const currentPoint = coordinate
+        console.log(`🎯 Drawing line between point ${newPoints.length - 1} and ${newPoints.length}`)
+        drawDistanceLine(prevPoint, currentPoint, newPoints.length - 1)
+      }
+
+      console.log(`📏 Added distance measurement point ${newPoints.length}: [${coordinate.lat.toFixed(5)}, ${coordinate.lng.toFixed(5)}]`)
+
+      return newPoints
+    })
   }
 
   const drawDistanceLine = (start: Coordinate, end: Coordinate, _segmentIndex: number) => {
     if (!mapRef.current) return
 
+    const map = mapRef.current
+
     // Calculate distance for this segment
     const distance = calculateHaversineDistance(start, end)
+    console.log(`📐 Drawing line: ${formatDistance(distance)} between [${start.lat.toFixed(5)}, ${start.lng.toFixed(5)}] and [${end.lat.toFixed(5)}, ${end.lng.toFixed(5)}]`)
 
     // Create line element
     const lineContainer = document.createElement('div')
     lineContainer.className = 'distance-line-container'
     lineContainer.style.position = 'absolute'
     lineContainer.style.pointerEvents = 'none'
-    lineContainer.style.zIndex = '1'
-
-    // Calculate line position and rotation
-    const startPixel = mapRef.current.project([start.lng, start.lat])
-    const endPixel = mapRef.current.project([end.lng, end.lat])
-
-    const deltaX = endPixel.x - startPixel.x
-    const deltaY = endPixel.y - startPixel.y
-    const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI
+    lineContainer.style.zIndex = '1000'
+    lineContainer.style.top = '0'
+    lineContainer.style.left = '0'
+    lineContainer.style.width = '100%'
+    lineContainer.style.height = '100%'
+    lineContainer.style.overflow = 'visible'
 
     // Create line
     const line = document.createElement('div')
-    line.style.cssText = `
-      position: absolute;
-      left: ${startPixel.x}px;
-      top: ${startPixel.y}px;
-      width: ${length}px;
-      height: 2px;
-      background-color: #ff4444;
-      transform-origin: 0 50%;
-      transform: rotate(${angle}deg);
-      z-index: 1;
-    `
+    line.className = 'distance-line'
 
     // Create distance label
     const label = document.createElement('div')
-    label.style.cssText = `
-      position: absolute;
-      left: ${startPixel.x + deltaX / 2}px;
-      top: ${startPixel.y + deltaY / 2 - 12}px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-size: 12px;
-      font-weight: bold;
-      color: #333;
-      white-space: nowrap;
-      z-index: 2;
-      pointer-events: none;
-    `
+    label.className = 'distance-label'
+    label.style.position = 'absolute'
+    label.style.background = 'rgba(255, 255, 255, 0.95)'
+    label.style.border = '2px solid #ff4444'
+    label.style.borderRadius = '6px'
+    label.style.padding = '6px 10px'
+    label.style.fontSize = '13px'
+    label.style.fontWeight = 'bold'
+    label.style.color = '#ff4444'
+    label.style.whiteSpace = 'nowrap'
+    label.style.zIndex = '1001'
+    label.style.pointerEvents = 'none'
+    label.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
+    label.style.fontFamily = 'system-ui, -apple-system, sans-serif'
     label.textContent = formatDistance(distance)
+
+    console.log(`🏷️ Created label with text: "${label.textContent}"`)
 
     lineContainer.appendChild(line)
     lineContainer.appendChild(label)
 
+    // Function to update line and label positions
+    const updateLinePosition = () => {
+      const startPixel = map.project([start.lng, start.lat])
+      const endPixel = map.project([end.lng, end.lat])
+
+      const deltaX = endPixel.x - startPixel.x
+      const deltaY = endPixel.y - startPixel.y
+      const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+      const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI
+
+      console.log(`📐 Updating line: start=[${startPixel.x.toFixed(1)}, ${startPixel.y.toFixed(1)}], end=[${endPixel.x.toFixed(1)}, ${endPixel.y.toFixed(1)}], length=${length.toFixed(1)}px`)
+
+      // Update line position
+      line.style.position = 'absolute'
+      line.style.left = `${startPixel.x}px`
+      line.style.top = `${startPixel.y}px`
+      line.style.width = `${length}px`
+      line.style.height = '3px'
+      line.style.backgroundColor = '#ff4444'
+      line.style.transformOrigin = '0 50%'
+      line.style.transform = `rotate(${angle}deg)`
+      line.style.zIndex = '1000'
+
+      // Update label position (center of line)
+      const labelX = startPixel.x + deltaX / 2
+      const labelY = startPixel.y + deltaY / 2 - 20
+
+      label.style.left = `${labelX}px`
+      label.style.top = `${labelY}px`
+
+      console.log(`📍 Label positioned at [${labelX.toFixed(1)}, ${labelY.toFixed(1)}] with text: "${label.textContent}"`)
+    }
+
+    // Initial position
+    updateLinePosition()
+
+    // Update on map move/zoom
+    map.on('move', updateLinePosition)
+    map.on('zoom', updateLinePosition)
+
     // Add to map container
-    const mapContainer = mapRef.current.getContainer()
+    const mapContainer = map.getContainer()
     mapContainer.appendChild(lineContainer)
 
     distanceLinesRef.current.push(lineContainer)
+
+    // Verify the elements are in the DOM
+    console.log(`✅ Distance line added to map. Line visible: ${line.offsetWidth > 0}, Label visible: ${label.offsetWidth > 0}`)
+    console.log(`✅ Label text: "${label.textContent}", Label styles:`, {
+      left: label.style.left,
+      top: label.style.top,
+      zIndex: label.style.zIndex,
+      background: label.style.background
+    })
   }
 
   // Expose map methods to parent component
@@ -284,6 +354,12 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   useEffect(() => {
     onBearingChangeRef.current = onBearingChange
   }, [onBearingChange])
+
+  // Keep distance measuring ref in sync
+  useEffect(() => {
+    isDistanceMeasuringRef.current = isDistanceMeasuring
+    console.log(`📏 Distance measuring mode: ${isDistanceMeasuring}`)
+  }, [isDistanceMeasuring])
 
   // Create map style based on map type - shared function
   const createMapStyle = (mapType: 'topo' | 'satellite'): maplibregl.StyleSpecification => {
@@ -582,6 +658,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       // Add Ctrl+click for copying coordinates and regular click for distance measurement
       map.on('click', (e) => {
         const { lat, lng } = e.lngLat
+        console.log(`🖱️ Map clicked at [${lat.toFixed(5)}, ${lng.toFixed(5)}], isDistanceMeasuring: ${isDistanceMeasuringRef.current}`)
 
         // Check if Ctrl key is pressed (or Cmd on Mac) for coordinate copying
         if (e.originalEvent.ctrlKey || e.originalEvent.metaKey) {
@@ -595,8 +672,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           }).catch(error => {
             console.error('Failed to copy coordinates:', error)
           })
-        } else if (isDistanceMeasuring) {
+        } else if (isDistanceMeasuringRef.current) {
           // Handle distance measurement clicks
+          console.log(`📏 Adding distance measurement point...`)
           e.preventDefault()
           addDistanceMeasurementPoint({ lat, lng })
         }
@@ -905,6 +983,12 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
       // Add click handler for custom popup
       markerElement.addEventListener('click', (e) => {
+        // If in distance measurement mode, allow click to propagate to map
+        if (isDistanceMeasuringRef.current) {
+          console.log('📏 POI clicked but in measurement mode - allowing propagation')
+          return
+        }
+
         e.preventDefault()
         e.stopPropagation()
 
@@ -1583,7 +1667,43 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
             box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(220, 38, 38, 0);
           }
         }
-        
+
+        /* Distance measurement markers - force red color */
+        .distance-marker {
+          width: 16px !important;
+          height: 16px !important;
+          background: #ff4444 !important;
+          background-color: #ff4444 !important;
+          border: 3px solid white !important;
+          border-radius: 50% !important;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+          z-index: 1000 !important;
+        }
+
+        /* Distance measurement lines */
+        .distance-line-container {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          pointer-events: none !important;
+          z-index: 999 !important;
+        }
+
+        .distance-line {
+          background-color: #ff4444 !important;
+          z-index: 999 !important;
+        }
+
+        .distance-label {
+          background: rgba(255, 255, 255, 0.95) !important;
+          color: #ff4444 !important;
+          border: 1px solid #ff4444 !important;
+          z-index: 1000 !important;
+          font-weight: bold !important;
+        }
+
         /* Aggressive POI marker overrides */
         .custom-poi-marker {
           transition: all 0.2s ease !important;

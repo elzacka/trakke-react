@@ -72,9 +72,9 @@ const ShortcutRow: React.FC<{ shortcut: ShortcutItem }> = ({ shortcut }) => {
 }
 
 export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, onClose }) => {
-  // Split shortcuts into Desktop and Mobile groups
-  const desktopShortcuts = HURTIGTASTER.slice(0, 12) // First 12 are desktop
-  const mobileShortcuts = HURTIGTASTER.slice(12)     // Rest are mobile
+  // Split shortcuts into Mobile and Desktop groups
+  const mobileShortcuts = HURTIGTASTER.slice(0, 6)  // First 6 are mobile
+  const desktopShortcuts = HURTIGTASTER.slice(6)    // Rest are desktop
 
   const renderShortcutGroup = (shortcuts: ShortcutItem[], title: string) => (
     <div style={{ flex: 1 }}>
@@ -126,14 +126,14 @@ export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, on
           gap: window.innerWidth < 768 ? '0' : '24px',
           flexDirection: window.innerWidth < 768 ? 'column' : 'row'
         }}>
-          {renderShortcutGroup(desktopShortcuts, 'Desktop')}
-          {window.innerWidth >= 768 && renderShortcutGroup(mobileShortcuts, 'Mobil')}
+          {renderShortcutGroup(mobileShortcuts, 'Mobil')}
+          {window.innerWidth >= 768 && renderShortcutGroup(desktopShortcuts, 'Desktop')}
         </div>
 
-        {/* On mobile, show mobile shortcuts below desktop */}
+        {/* On mobile, show desktop shortcuts below mobile */}
         {window.innerWidth < 768 && (
           <div style={{ marginTop: '24px' }}>
-            {renderShortcutGroup(mobileShortcuts, 'Mobil')}
+            {renderShortcutGroup(desktopShortcuts, 'Desktop')}
           </div>
         )}
       </div>
