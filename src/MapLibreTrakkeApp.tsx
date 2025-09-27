@@ -914,8 +914,8 @@ function MapLibreTrakkeAppInner() {
         style={{
           position: 'absolute',
           left: sidebarCollapsed ? '0' : '340px',
-          top: '50%',
-          transform: 'translateY(-50%)',
+          top: window.innerWidth < 768 ? '20px' : '50%',
+          transform: window.innerWidth < 768 ? 'translateY(0)' : 'translateY(-50%)',
           zIndex: 90,
           width: '32px',
           height: '48px',
@@ -953,8 +953,8 @@ function MapLibreTrakkeAppInner() {
       {/* Unified Map Controls - Right Side (Order: Compass, Location, Zoom In, Zoom Out) */}
       <div className="map-controls" style={{
         position: 'absolute',
-        bottom: '52px', // 16px (attribution bottom) + 24px (attribution height) + 12px (gap) = 52px
-        right: '24px',
+        bottom: window.innerWidth < 768 ? '80px' : '52px', // More space on mobile to avoid sidebar toggle
+        right: window.innerWidth < 768 ? '16px' : '24px',
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
@@ -1366,11 +1366,14 @@ function MapLibreTrakkeAppInner() {
         @media (max-width: 767px) {
           .map-controls {
             right: 16px !important;
+            bottom: 80px !important;
           }
 
           .sidebar-toggle {
             width: 40px !important;
             height: 56px !important;
+            top: 20px !important;
+            transform: translateY(0) !important;
           }
 
           .coordinate-display {
