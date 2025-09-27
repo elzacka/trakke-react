@@ -1293,12 +1293,26 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
   // Handle user location centering and marker
   useEffect(() => {
-    if (!mapRef.current || !userLocation) return
+    if (!mapRef.current) return
+
+    // If userLocation is null, remove markers and return
+    if (!userLocation) {
+      console.log('📍 User location cleared - removing markers')
+      if (userLocationMarkerRef.current) {
+        userLocationMarkerRef.current.remove()
+        userLocationMarkerRef.current = null
+      }
+      if (positionMarkerRef.current) {
+        positionMarkerRef.current.remove()
+        positionMarkerRef.current = null
+      }
+      return
+    }
 
     const map = mapRef.current
     console.log(`📍 Centering map on user location: ${userLocation.lat}, ${userLocation.lng}`)
     console.log('📍 Creating position marker at coordinates:', userLocation.lat, userLocation.lng)
-    
+
     // Remove existing user location marker if it exists
     if (userLocationMarkerRef.current) {
       userLocationMarkerRef.current.remove()
@@ -1457,7 +1471,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         return (
           <div style={{
             position: 'absolute',
-            bottom: '16px',
+            bottom: '24px',
             left: '16px',
             zIndex: 100,
             display: 'flex',

@@ -78,11 +78,18 @@ function MapLibreTrakkeAppInner() {
     }, 50)
   }, [])
 
-  // Handle location button click
+  // Handle location button click - with toggle functionality
   const handleLocationClick = useCallback(() => {
     console.log('🔘 Position button clicked!')
     console.log('🔘 Current userLocation state:', userLocation)
     console.log('🔘 Current locationLoading state:', locationLoading)
+
+    // Toggle off: If location is already active, clear it
+    if (userLocation && !locationLoading) {
+      console.log('🔘 Toggling off - clearing user location')
+      setUserLocation(null)
+      return
+    }
 
     if (!navigator.geolocation) {
       console.error('Geolocation is not supported by this browser')
@@ -90,7 +97,7 @@ function MapLibreTrakkeAppInner() {
     }
 
     setLocationLoading(true)
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
@@ -121,7 +128,7 @@ function MapLibreTrakkeAppInner() {
       (error) => {
         console.error('Error getting location:', error.message)
         setLocationLoading(false)
-        
+
         // Provide user-friendly error messages
         switch (error.code) {
           case error.PERMISSION_DENIED:
@@ -964,7 +971,7 @@ function MapLibreTrakkeAppInner() {
       {/* Unified Map Controls - Right Side (Order: Zoom group, Location, Ruler, Info) */}
       <div className="map-controls" style={{
         position: 'absolute',
-        bottom: '50px',
+        bottom: '24px',
         right: window.innerWidth < 768 ? '16px' : '24px',
         zIndex: 100,
         display: 'flex',
@@ -1341,7 +1348,7 @@ function MapLibreTrakkeAppInner() {
         @media (max-width: 767px) {
           .map-controls {
             right: 16px !important;
-            bottom: 50px !important;
+            bottom: 24px !important;
           }
 
           .sidebar-toggle {
@@ -1352,9 +1359,7 @@ function MapLibreTrakkeAppInner() {
           }
 
           .coordinate-display {
-            bottom: 12px !important;
-            font-size: 11px !important;
-            padding: 6px 12px !important;
+            bottom: 24px !important;
             left: 12px !important;
           }
         }
