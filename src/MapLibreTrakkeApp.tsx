@@ -869,8 +869,7 @@ function MapLibreTrakkeAppInner() {
               padding: '0 20px 0px',
               display: 'flex',
               flexDirection: 'column',
-              position: 'relative',
-              paddingBottom: '80px'
+              position: 'relative'
             }}>
               <div style={{ flex: 1, paddingBottom: '150px' }}>
                 <CategoryPanel
