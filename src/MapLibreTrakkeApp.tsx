@@ -872,7 +872,7 @@ function MapLibreTrakkeAppInner() {
               position: 'relative',
               paddingBottom: '80px'
             }}>
-              <div style={{ flex: 1, paddingBottom: '100px' }}>
+              <div style={{ flex: 1, paddingBottom: '150px' }}>
                 <CategoryPanel
                   categoryTree={categoryTree}
                   categoryState={categoryState}
