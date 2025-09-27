@@ -867,49 +867,45 @@ function MapLibreTrakkeAppInner() {
               flex: 1,
               overflow: 'auto',
               padding: '0 20px 0px',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative'
+              paddingBottom: '100px'
             }}>
-              <div style={{ flex: 1, paddingBottom: '150px' }}>
-                <CategoryPanel
-                  categoryTree={categoryTree}
-                  categoryState={categoryState}
-                  onCategoryToggle={handleCategoryToggle}
-                  onExpandToggle={handleExpandToggle}
-                  pois={pois}
-                  loading={loading}
-                  error={error}
-                  mapType={mapType}
-                  onMapTypeChange={handleMapTypeChange}
-                />
-              </div>
+              <CategoryPanel
+                categoryTree={categoryTree}
+                categoryState={categoryState}
+                onCategoryToggle={handleCategoryToggle}
+                onExpandToggle={handleExpandToggle}
+                pois={pois}
+                loading={loading}
+                error={error}
+                mapType={mapType}
+                onMapTypeChange={handleMapTypeChange}
+              />
+            </div>
 
-              {/* Last updated text at bottom */}
-              <div style={{
-                position: 'absolute',
-                bottom: '50px',
-                left: '0',
-                right: '0',
-                padding: '16px 20px 20px',
-                textAlign: 'center',
-                borderTop: '1px solid rgba(241, 245, 249, 0.6)',
-                background: 'rgba(248, 250, 252, 0.8)',
-                backdropFilter: 'blur(8px)'
+            {/* Last updated text at bottom */}
+            <div style={{
+              position: 'absolute',
+              bottom: '50px',
+              left: '0',
+              right: '0',
+              padding: '16px 20px 20px',
+              textAlign: 'center',
+              borderTop: '1px solid rgba(241, 245, 249, 0.6)',
+              background: 'rgba(248, 250, 252, 0.8)',
+              backdropFilter: 'blur(8px)'
+            }}>
+              <p style={{
+                margin: '0',
+                fontSize: '10px',
+                color: '#94a3b8',
+                fontWeight: '400',
+                lineHeight: '1.5',
+                letterSpacing: '0.2px',
+                textTransform: 'uppercase',
+                opacity: 0.8
               }}>
-                <p style={{
-                  margin: '0',
-                  fontSize: '10px',
-                  color: '#94a3b8',
-                  fontWeight: '400',
-                  lineHeight: '1.5',
-                  letterSpacing: '0.2px',
-                  textTransform: 'uppercase',
-                  opacity: 0.8
-                }}>
-                  Under utvikling • Sist oppdatert 27. sept 2025
-                </p>
-              </div>
+                Under utvikling • Sist oppdatert 27. sept 2025
+              </p>
             </div>
           </>
         )}
