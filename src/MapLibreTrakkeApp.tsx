@@ -872,7 +872,7 @@ function MapLibreTrakkeAppInner() {
               position: 'relative',
               paddingBottom: '80px'
             }}>
-              <div style={{ flex: 1, paddingBottom: '20px' }}>
+              <div style={{ flex: 1, paddingBottom: '100px' }}>
                 <CategoryPanel
                   categoryTree={categoryTree}
                   categoryState={categoryState}
@@ -889,7 +889,7 @@ function MapLibreTrakkeAppInner() {
               {/* Last updated text at bottom */}
               <div style={{
                 position: 'absolute',
-                bottom: '80px',
+                bottom: '50px',
                 left: '0',
                 right: '0',
                 padding: '16px 20px 20px',
