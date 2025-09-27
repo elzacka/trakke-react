@@ -919,8 +919,8 @@ function MapLibreTrakkeAppInner() {
         style={{
           position: 'absolute',
           left: sidebarCollapsed ? '0' : '340px',
-          top: window.innerWidth < 768 ? '20px' : '50%',
-          transform: window.innerWidth < 768 ? 'translateY(0)' : 'translateY(-50%)',
+          top: '50%',
+          transform: 'translateY(-50%)',
           zIndex: 90,
           width: '32px',
           height: '48px',
@@ -1242,19 +1242,21 @@ function MapLibreTrakkeAppInner() {
           zIndex: 100,
           backgroundColor: '#3e4533',
           color: 'white',
-          padding: window.innerWidth < 768 ? '10px 16px' : '12px 20px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          fontSize: window.innerWidth < 768 ? '13px' : '14px',
+          padding: '4px 6px',
+          borderRadius: '4px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+          fontSize: '12px',
           fontWeight: '500',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          animation: 'fadeIn 0.3s ease'
+          animation: 'fadeIn 0.3s ease',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          whiteSpace: 'nowrap'
         }}>
           <span style={{
             fontFamily: 'Material Symbols Outlined',
-            fontSize: '18px'
+            fontSize: '14px'
           }}>
             touch_app
           </span>
@@ -1339,14 +1341,14 @@ function MapLibreTrakkeAppInner() {
         @media (max-width: 767px) {
           .map-controls {
             right: 16px !important;
-            bottom: 100px !important;
+            bottom: 50px !important;
           }
 
           .sidebar-toggle {
             width: 40px !important;
             height: 56px !important;
-            top: 20px !important;
-            transform: translateY(0) !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
           }
 
           .coordinate-display {

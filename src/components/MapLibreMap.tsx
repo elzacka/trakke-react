@@ -640,6 +640,54 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         })
       })
 
+      // Long press detection for mobile coordinate copying
+      let longPressTimer: NodeJS.Timeout | null = null
+      let longPressCoords: { lat: number; lng: number } | null = null
+
+      map.on('touchstart', (e) => {
+        if (e.lngLat) {
+          longPressCoords = { lat: e.lngLat.lat, lng: e.lngLat.lng }
+          longPressTimer = setTimeout(() => {
+            if (longPressCoords) {
+              const coordinatesText = `${longPressCoords.lat.toFixed(5)}°N, ${longPressCoords.lng.toFixed(5)}°E`
+              navigator.clipboard.writeText(coordinatesText).then(() => {
+                console.log(`📋 Copied coordinates with long press: ${coordinatesText}`)
+                setCoordinatesCopied(true)
+                setTimeout(() => setCoordinatesCopied(false), 2000)
+              }).catch(error => {
+                console.error('Failed to copy coordinates:', error)
+              })
+            }
+          }, 500) // 500ms long press threshold
+        }
+      })
+
+      map.on('touchend', () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer)
+          longPressTimer = null
+        }
+        longPressCoords = null
+      })
+
+      // Track touch coordinates and cancel long press on move
+      map.on('touchmove', (e) => {
+        // Update coordinates for mobile
+        if (e.lngLat) {
+          setCoordinates({
+            lat: e.lngLat.lat,
+            lng: e.lngLat.lng
+          })
+        }
+
+        // Cancel long press if finger moves
+        if (longPressTimer) {
+          clearTimeout(longPressTimer)
+          longPressTimer = null
+        }
+        longPressCoords = null
+      })
+
       // Add right-click context menu for copying coordinates
       map.on('contextmenu', (e) => {
         e.preventDefault()
