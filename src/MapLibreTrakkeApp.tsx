@@ -862,12 +862,13 @@ function MapLibreTrakkeAppInner() {
               />
             </div>
 
-            {/* Categories */}
+            {/* Categories and Footer */}
             <div style={{
               flex: 1,
               overflow: 'auto',
               padding: '0 20px 0px',
-              paddingBottom: '100px'
+              display: 'flex',
+              flexDirection: 'column'
             }}>
               <CategoryPanel
                 categoryTree={categoryTree}
@@ -880,32 +881,30 @@ function MapLibreTrakkeAppInner() {
                 mapType={mapType}
                 onMapTypeChange={handleMapTypeChange}
               />
-            </div>
 
-            {/* Last updated text at bottom */}
-            <div style={{
-              position: 'absolute',
-              bottom: '50px',
-              left: '0',
-              right: '0',
-              padding: '16px 20px 20px',
-              textAlign: 'center',
-              borderTop: '1px solid rgba(241, 245, 249, 0.6)',
-              background: 'rgba(248, 250, 252, 0.8)',
-              backdropFilter: 'blur(8px)'
-            }}>
-              <p style={{
-                margin: '0',
-                fontSize: '10px',
-                color: '#94a3b8',
-                fontWeight: '400',
-                lineHeight: '1.5',
-                letterSpacing: '0.2px',
-                textTransform: 'uppercase',
-                opacity: 0.8
+              {/* Last updated text - flows with content */}
+              <div style={{
+                marginTop: 'auto',
+                marginBottom: '24px',
+                padding: '16px 0 20px',
+                textAlign: 'left',
+                borderTop: '1px solid rgba(241, 245, 249, 0.6)',
+                background: 'rgba(248, 250, 252, 0.8)',
+                backdropFilter: 'blur(8px)'
               }}>
-                Under utvikling • Sist oppdatert 27. sept 2025
-              </p>
+                <p style={{
+                  margin: '0',
+                  fontSize: '10px',
+                  color: '#94a3b8',
+                  fontWeight: '400',
+                  lineHeight: '1.5',
+                  letterSpacing: '0.2px',
+                  textTransform: 'uppercase',
+                  opacity: 0.8
+                }}>
+                  Under utvikling • Sist oppdatert 27. sept 2025
+                </p>
+              </div>
             </div>
           </>
         )}
