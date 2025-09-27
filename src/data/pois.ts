@@ -442,7 +442,7 @@ export const categoryTree: CategoryNode[] = [
     id: 'aktivitet',
     name: 'Aktivitet',
     icon: 'sentiment_satisfied',
-    color: '#0d9488',
+    color: '#3e4533',
     children: [
       {
         id: 'badeplass',

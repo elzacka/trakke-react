@@ -292,6 +292,7 @@ export function CategoryPanel({
             style={{
               width: '100%',
               padding: '12px',
+              marginTop: '16px',
               backgroundColor: '#f0fdf4',
               border: '1px solid #bbf7d0',
               borderRadius: '6px',
@@ -334,6 +335,7 @@ export function CategoryPanel({
             style={{
               width: '100%',
               padding: '12px',
+              marginTop: '16px',
               backgroundColor: '#ffffff',
               border: '1px solid #e2e8f0',
               borderRadius: '6px',

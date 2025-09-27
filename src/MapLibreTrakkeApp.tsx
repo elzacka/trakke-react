@@ -635,7 +635,7 @@ function MapLibreTrakkeAppInner() {
         type: 'fire_places' as POIType,
         lat: poi.lat,
         lng: poi.lng,
-        color: '#0d9488' // Use "Aktivitet" category color (teal)
+        color: '#3e4533' // Use "Aktivitet" category color (green)
       }
     })
     
@@ -861,7 +861,9 @@ function MapLibreTrakkeAppInner() {
               overflow: 'auto',
               padding: '0 20px 0px',
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              position: 'relative',
+              paddingBottom: '80px'
             }}>
               <div style={{ flex: 1, paddingBottom: '20px' }}>
                 <CategoryPanel
@@ -876,13 +878,16 @@ function MapLibreTrakkeAppInner() {
                   onMapTypeChange={handleMapTypeChange}
                 />
               </div>
-              
+
               {/* Last updated text at bottom */}
               <div style={{
+                position: 'absolute',
+                bottom: '50px',
+                left: '0',
+                right: '0',
                 padding: '16px 20px 20px',
                 textAlign: 'center',
                 borderTop: '1px solid rgba(241, 245, 249, 0.6)',
-                marginTop: 'auto',
                 background: 'rgba(248, 250, 252, 0.8)',
                 backdropFilter: 'blur(8px)'
               }}>
@@ -956,64 +961,103 @@ function MapLibreTrakkeAppInner() {
 
       {/* UI Overlay Components */}
 
-      {/* Unified Map Controls - Right Side (Order: Compass, Location, Zoom In, Zoom Out) */}
+      {/* Unified Map Controls - Right Side (Order: Zoom group, Location, Ruler, Info) */}
       <div className="map-controls" style={{
         position: 'absolute',
-        bottom: window.innerWidth < 768 ? '100px' : '100px', // Moved down for better positioning
+        bottom: '50px',
         right: window.innerWidth < 768 ? '16px' : '24px',
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px' // Equal 12px spacing between buttons as specified
+        gap: '8px'
       }}>
-        {/* 1. Compass (reset map to north) */}
-        <button
-          aria-label="Reset map orientation to north"
-          tabIndex={3}
-          style={{
-            width: '44px', // 44x44px as specified
-            height: '44px',
-            background: 'rgba(255, 255, 255, 0.9)', // Specified background
-            borderRadius: '8px', // Specified border-radius
-            border: 'none',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.15)', // Specified shadow
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)' // Specified hover effect
-            e.currentTarget.style.background = '#ffffff'
-            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1.0)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)'
-            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
-          }}
-          onClick={() => {
-            if (mapRef.current) {
-              mapRef.current.resetBearing()
-            }
-          }}
-        >
-          <span style={{
-            fontFamily: 'Material Symbols Outlined',
-            fontSize: '20px',
-            color: '#111827', // Specified icon color
-            transform: `rotate(${-mapBearing}deg)`,
-            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}>
-            navigation
-          </span>
-        </button>
+        {/* 1. Zoom Button Group (connected vertically) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'rgba(255, 255, 255, 0.9)',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+        }}>
+          {/* Zoom In (+) */}
+          <button
+            aria-label="Zoom in"
+            tabIndex={3}
+            style={{
+              width: '44px',
+              height: '44px',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s ease',
+              fontSize: '20px',
+              fontWeight: '500',
+              color: '#111827'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+            }}
+            onClick={() => {
+              if (mapRef.current) {
+                const map = mapRef.current.getMap()
+                if (map) {
+                  map.zoomIn()
+                }
+              }
+            }}
+          >
+            +
+          </button>
 
-        {/* 2. Location (center on user's position) */}
+          {/* Zoom Out (–) */}
+          <button
+            aria-label="Zoom out"
+            tabIndex={4}
+            style={{
+              width: '44px',
+              height: '44px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s ease',
+              fontSize: '20px',
+              fontWeight: '500',
+              color: '#111827'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+            }}
+            onClick={() => {
+              if (mapRef.current) {
+                const map = mapRef.current.getMap()
+                if (map) {
+                  map.zoomOut()
+                }
+              }
+            }}
+          >
+            −
+          </button>
+        </div>
+
+        {/* 2. Location/Navigation Combined (reset bearing + go to location) */}
         <button
-          aria-label={locationLoading ? "Getting location..." : "Center map on my location"}
-          tabIndex={4}
+          aria-label={locationLoading ? "Getting location..." : "Reset orientation and center on my location"}
+          tabIndex={5}
           disabled={locationLoading}
           style={{
             width: '44px',
@@ -1043,110 +1087,33 @@ function MapLibreTrakkeAppInner() {
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
             }
           }}
-          onClick={handleLocationClick}
+          onClick={() => {
+            if (mapRef.current) {
+              mapRef.current.resetBearing()
+            }
+            handleLocationClick()
+          }}
         >
           <span style={{
             fontFamily: 'Material Symbols Outlined',
             fontSize: '20px',
             color: (userLocation || locationLoading) ? 'white' : '#111827',
+            transform: `rotate(${-mapBearing}deg)`,
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             animation: locationLoading ? 'spin 1s linear infinite' : 'none'
           }}>
-            {locationLoading ? 'sync' : 'my_location'}
+            {locationLoading ? 'sync' : 'navigation'}
           </span>
         </button>
 
-        {/* 3. Zoom In (+) */}
+        {/* 3. Distance Measurement */}
         <button
-          aria-label="Zoom in"
-          tabIndex={5}
-          style={{
-            width: '44px',
-            height: '44px',
-            background: 'rgba(255, 255, 255, 0.9)',
-            borderRadius: '8px',
-            border: 'none',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            fontSize: '20px',
-            fontWeight: '500',
-            color: '#111827'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)'
-            e.currentTarget.style.background = '#ffffff'
-            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1.0)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)'
-            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
-          }}
-          onClick={() => {
-            if (mapRef.current) {
-              const map = mapRef.current.getMap()
-              if (map) {
-                map.zoomIn()
-              }
-            }
-          }}
-        >
-          +
-        </button>
-
-        {/* 4. Zoom Out (–) */}
-        <button
-          aria-label="Zoom out"
+          aria-label={mapRef.current?.getMap() ? (isDistanceMeasuring ? "Finish distance measurement" : "Start distance measurement") : "Distance measurement"}
           tabIndex={6}
           style={{
             width: '44px',
             height: '44px',
-            background: 'rgba(255, 255, 255, 0.9)',
-            borderRadius: '8px',
-            border: 'none',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-            fontSize: '20px',
-            fontWeight: '500',
-            color: '#111827'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)'
-            e.currentTarget.style.background = '#ffffff'
-            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1.0)'
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)'
-            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
-          }}
-          onClick={() => {
-            if (mapRef.current) {
-              const map = mapRef.current.getMap()
-              if (map) {
-                map.zoomOut()
-              }
-            }
-          }}
-        >
-          −
-        </button>
-
-        {/* 5. Distance Measurement */}
-        <button
-          aria-label={mapRef.current?.getMap() ? (isDistanceMeasuring ? "Finish distance measurement" : "Start distance measurement") : "Distance measurement"}
-          tabIndex={7}
-          style={{
-            width: '44px',
-            height: '44px',
-            background: isDistanceMeasuring ? '#0d9488' : 'rgba(255, 255, 255, 0.9)',
+            background: isDistanceMeasuring ? '#3e4533' : 'rgba(255, 255, 255, 0.9)',
             borderRadius: '8px',
             border: 'none',
             boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
@@ -1158,12 +1125,12 @@ function MapLibreTrakkeAppInner() {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'scale(1.05)'
-            e.currentTarget.style.background = isDistanceMeasuring ? '#0a756e' : '#ffffff'
+            e.currentTarget.style.background = isDistanceMeasuring ? '#2d3327' : '#ffffff'
             e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.25)'
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'scale(1.0)'
-            e.currentTarget.style.background = isDistanceMeasuring ? '#0d9488' : 'rgba(255, 255, 255, 0.9)'
+            e.currentTarget.style.background = isDistanceMeasuring ? '#3e4533' : 'rgba(255, 255, 255, 0.9)'
             e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'
           }}
           onClick={() => {
@@ -1181,11 +1148,11 @@ function MapLibreTrakkeAppInner() {
           </span>
         </button>
 
-        {/* 6. Clear Distance Measurements */}
+        {/* 4. Clear Distance Measurements */}
         {distanceMeasurements.length > 0 && (
           <button
             aria-label="Clear all distance measurements"
-            tabIndex={8}
+            tabIndex={7}
             style={{
               width: '44px',
               height: '44px',
@@ -1225,10 +1192,10 @@ function MapLibreTrakkeAppInner() {
           </button>
         )}
 
-        {/* 7. Info/Attribution Button */}
+        {/* 5. Info/Attribution Button */}
         <button
           aria-label="Map information and credits"
-          tabIndex={9}
+          tabIndex={8}
           style={{
             width: '44px',
             height: '44px',
@@ -1273,7 +1240,7 @@ function MapLibreTrakkeAppInner() {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 100,
-          backgroundColor: '#0d9488',
+          backgroundColor: '#3e4533',
           color: 'white',
           padding: window.innerWidth < 768 ? '10px 16px' : '12px 20px',
           borderRadius: '8px',
@@ -1496,7 +1463,7 @@ function MapLibreTrakkeAppInner() {
                       href="https://www.kartverket.no"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#0d9488', textDecoration: 'none' }}
+                      style={{ color: '#667154', textDecoration: 'none' }}
                     >
                       www.kartverket.no
                     </a>
@@ -1515,7 +1482,7 @@ function MapLibreTrakkeAppInner() {
                       href="https://www.esri.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#0d9488', textDecoration: 'none' }}
+                      style={{ color: '#667154', textDecoration: 'none' }}
                     >
                       www.esri.com
                     </a>
@@ -1535,7 +1502,7 @@ function MapLibreTrakkeAppInner() {
                     href="https://www.openstreetmap.org/copyright"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#0d9488', textDecoration: 'none', fontSize: '13px' }}
+                    style={{ color: '#667154', textDecoration: 'none', fontSize: '13px' }}
                   >
                     © OpenStreetMap-bidragsytere
                   </a>
@@ -1547,7 +1514,7 @@ function MapLibreTrakkeAppInner() {
                     href="https://kartkatalog.geonorge.no/metadata/tilfluktsrom-offentlige/dbae9aae-10e7-4b75-8d67-7f0e8828f3d8"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#0d9488', textDecoration: 'none', fontSize: '13px' }}
+                    style={{ color: '#667154', textDecoration: 'none', fontSize: '13px' }}
                   >
                     © Geonorge / DSB
                   </a>

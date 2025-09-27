@@ -322,8 +322,8 @@ export const AdminLoginModal: React.FC = () => {
                 fontSize: '14px',
                 fontWeight: '500',
                 color: '#ffffff',
-                backgroundColor: !password.trim() || isLoading ? '#8a9085' : 'rgb(62, 69, 51)',
-                border: `1px solid ${!password.trim() || isLoading ? '#8a9085' : 'rgb(62, 69, 51)'}`,
+                backgroundColor: !password.trim() || isLoading ? '#3e4533' : 'rgb(62, 69, 51)',
+                border: `1px solid ${!password.trim() || isLoading ? '#3e4533' : 'rgb(62, 69, 51)'}`,
                 borderRadius: '6px',
                 cursor: password.trim() && !isLoading ? 'pointer' : 'not-allowed',
                 transition: 'all 0.2s ease',
@@ -410,8 +410,8 @@ export const AdminLoginModal: React.FC = () => {
         button.admin-login-button:disabled,
         button.admin-login-button[disabled],
         button.admin-login-button[disabled="true"] {
-          background-color: #8a9085 !important;
-          border-color: #8a9085 !important;
+          background-color: #3e4533 !important;
+          border-color: #3e4533 !important;
           opacity: 1 !important;
         }
         /* High specificity override for all states */
@@ -420,8 +420,8 @@ export const AdminLoginModal: React.FC = () => {
           border-color: rgb(62, 69, 51) !important;
         }
         button.admin-login-button.admin-login-button:disabled {
-          background-color: #8a9085 !important;
-          border-color: #8a9085 !important;
+          background-color: #3e4533 !important;
+          border-color: #3e4533 !important;
         }
       `}</style>
     </div>

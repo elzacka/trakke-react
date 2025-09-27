@@ -172,7 +172,7 @@ npm run deploy
 
 ### Distance Measurement
 
-1. Click the ruler button (turns teal when active)
+1. Click the ruler button (turns green when active)
 2. Click points on the map to measure distances
 3. Red markers appear with connecting lines
 4. Distance labels show between each point
