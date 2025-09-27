@@ -889,7 +889,7 @@ function MapLibreTrakkeAppInner() {
               {/* Last updated text at bottom */}
               <div style={{
                 position: 'absolute',
-                bottom: '50px',
+                bottom: '80px',
                 left: '0',
                 right: '0',
                 padding: '16px 20px 20px',
