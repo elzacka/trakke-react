@@ -919,19 +919,25 @@ function MapLibreTrakkeAppInner() {
           zIndex: 90,
           width: '32px',
           height: '48px',
-          background: 'rgba(255, 255, 255, 0.95)',
+          background: sidebarCollapsed ? 'rgba(255, 255, 255, 0.95)' : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
           borderRadius: '0 8px 8px 0',
           border: 'none',
-          boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)',
+          borderLeft: sidebarCollapsed ? 'none' : '1px solid #e2e8f0',
+          boxShadow: sidebarCollapsed ? '2px 0 8px rgba(0, 0, 0, 0.1)' : 'none',
           backdropFilter: 'blur(8px)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'background 0.2s ease'
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          marginLeft: sidebarCollapsed ? '0' : '-1px'
         }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 1.0)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)'}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = sidebarCollapsed ? 'rgba(255, 255, 255, 1.0)' : '#ffffff'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = sidebarCollapsed ? 'rgba(255, 255, 255, 0.95)' : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)'
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
@@ -953,7 +959,7 @@ function MapLibreTrakkeAppInner() {
       {/* Unified Map Controls - Right Side (Order: Compass, Location, Zoom In, Zoom Out) */}
       <div className="map-controls" style={{
         position: 'absolute',
-        bottom: window.innerWidth < 768 ? '80px' : '52px', // More space on mobile to avoid sidebar toggle
+        bottom: window.innerWidth < 768 ? '100px' : '100px', // Moved down for better positioning
         right: window.innerWidth < 768 ? '16px' : '24px',
         zIndex: 100,
         display: 'flex',
@@ -1366,7 +1372,7 @@ function MapLibreTrakkeAppInner() {
         @media (max-width: 767px) {
           .map-controls {
             right: 16px !important;
-            bottom: 80px !important;
+            bottom: 100px !important;
           }
 
           .sidebar-toggle {
