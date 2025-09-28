@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { POI, CategoryState, CategoryNode } from '../data/pois'
@@ -1165,115 +1165,139 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     console.log(`✅ Created ${pois.length} API-based POI overlays`)
   }, [mapLoaded, pois])
 
-  // TRAIL VECTOR LAYER MANAGEMENT - Handle Norwegian hiking trails from Turrutebasen
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return
+  // Handle trail click events
+  const handleTrailClick = useCallback((trail: Trail, lngLat: maplibregl.LngLat) => {
+    console.log(`🥾 Trail clicked: ${trail.properties.name}`)
 
-    const map = mapRef.current
+    _setSelectedTrail(trail)
 
-    // Helper function to check if any trail categories are active
-    const _getActiveTrailTypes = (): ('hiking' | 'skiing' | 'cycling' | 'other')[] => {
-      const activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[] = []
-
-      // Check for specific trail subcategories
-      if (categoryState.checked.fotrute) activeTypes.push('hiking')
-      if (categoryState.checked.skiloype_trail) activeTypes.push('skiing')
-      if (categoryState.checked.sykkelrute) activeTypes.push('cycling')
-      if (categoryState.checked.andre_turruter) activeTypes.push('other')
-
-      return activeTypes
+    // Call parent handler if provided (this opens the trail details modal)
+    if (onTrailSelect) {
+      onTrailSelect(trail)
     }
 
-    // Use activeTrailTypes prop directly - converting to the expected format
-    const trailTypesForLayer = activeTrailTypes.map(type =>
-      type === 'mixed' ? 'other' : type
-    ) as ('hiking' | 'skiing' | 'cycling' | 'other')[]
+    // Create popup with trail information
+    const _popup = new maplibregl.Popup()
+      .setLngLat(lngLat)
+      .setHTML(`
+        <div style="padding: 12px; min-width: 200px;">
+          <h3 style="margin: 0 0 8px 0; color: #3e4533; font-size: 16px;">${trail.properties.name}</h3>
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #666;">
+            <div><strong>Type:</strong> ${trail.properties.type}</div>
+            <div><strong>Difficulty:</strong> ${trail.properties.difficulty}</div>
+            <div><strong>Distance:</strong> ${(trail.properties.distance / 1000).toFixed(1)} km</div>
+            <div><strong>Municipality:</strong> ${trail.properties.municipality}</div>
+            ${trail.properties.surface ? `<div><strong>Surface:</strong> ${trail.properties.surface}</div>` : ''}
+            ${trail.properties.maintainer ? `<div><strong>Maintainer:</strong> ${trail.properties.maintainer}</div>` : ''}
+          </div>
+          ${trail.properties.description ? `
+            <div style="margin-top: 8px; font-size: 12px; color: #555;">
+              ${trail.properties.description}
+            </div>
+          ` : ''}
+        </div>
+      `)
+      .addTo(mapRef.current!)
 
-    // Remove existing trail layers
-    const existingTrailLayers = [
-      'trails-hiking', 'trails-skiing', 'trails-cycling', 'trails-other',
-      'trails-hiking-glow', 'trails-skiing-glow', 'trails-cycling-glow', 'trails-other-glow'
-    ]
-    existingTrailLayers.forEach(layerId => {
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId)
-      }
-    })
-
-    // Remove existing trail sources
-    const existingTrailSources = ['trails-data']
-    existingTrailSources.forEach(sourceId => {
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId)
-      }
-    })
-
-    // Load and display trails if any categories are active
-    if (trailTypesForLayer.length > 0) {
-      void loadTrailsForCurrentView(trailTypesForLayer)
-    } else {
-      console.log('🚫 No trail categories active - trails cleared')
-      setTrails([])
+    // Optional: Center map on trail
+    const trailBounds = TrailUtils.getTrailBounds(trail)
+    if (trailBounds) {
+      mapRef.current!.fitBounds([
+        [trailBounds.west, trailBounds.south],
+        [trailBounds.east, trailBounds.north]
+      ], { padding: 50 })
     }
-  }, [mapLoaded, categoryState, activeTrailTypes, loadTrailsForCurrentView])
+  }, [onTrailSelect])
 
-  // Load trails for current map view
-  const loadTrailsForCurrentView = useCallback(async (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
+  // Setup trail click and hover interactions
+  const setupTrailInteractions = useCallback(() => {
     if (!mapRef.current) return
 
     const map = mapRef.current
-    const bounds = map.getBounds()
 
-    const trailBounds: BoundingBox = {
-      north: bounds.getNorth(),
-      south: bounds.getSouth(),
-      east: bounds.getEast(),
-      west: bounds.getWest()
-    }
+    // Add click handler for trails
+    Object.keys(TRAIL_STYLES).forEach(trailType => {
+      const layerId = `trails-${trailType}`
 
-    // Skip loading if bounds haven't changed significantly
-    if (lastTrailBounds &&
-        Math.abs(trailBounds.north - lastTrailBounds.north) < 0.01 &&
-        Math.abs(trailBounds.south - lastTrailBounds.south) < 0.01 &&
-        Math.abs(trailBounds.east - lastTrailBounds.east) < 0.01 &&
-        Math.abs(trailBounds.west - lastTrailBounds.west) < 0.01) {
-      return
-    }
+      map.on('click', layerId, (e) => {
+        if (!e.features || e.features.length === 0) return
 
-    setTrailsLoading(true)
-    setLastTrailBounds(trailBounds)
+        const feature = e.features[0]
+        const trailId = feature.properties?.id
 
-    try {
-      console.log(`🥾 Loading trails from Turrutebasen for types:`, activeTypes)
-      console.log(`📍 Bounds:`, trailBounds)
-
-      // Fetch trails from Turrutebasen WFS
-      const fetchedTrails = await TurrutebasenService.fetchTrailsInBounds(trailBounds, {
-        maxFeatures: 200 // Limit for performance
+        if (trailId) {
+          const trail = trails.find(t => t.id === trailId)
+          if (trail) {
+            handleTrailClick(trail, e.lngLat)
+          }
+        }
       })
 
-      // Filter trails by active types
-      const filteredTrails = fetchedTrails.filter(trail =>
-        activeTypes.includes(trail.properties.type)
-      )
+      // Change cursor on hover
+      map.on('mouseenter', layerId, (e) => {
+        map.getCanvas().style.cursor = 'pointer'
 
-      console.log(`✅ Loaded ${filteredTrails.length} trails from Turrutebasen`)
-      setTrails(filteredTrails)
+        // Highlight trail if callback provided
+        if (onTrailHighlight && e.features && e.features[0]) {
+          const trailId = e.features[0].properties?.id
+          if (trailId) {
+            const trail = trails.find(t => t.id === trailId)
+            if (trail) {
+              onTrailHighlight(trail)
+            }
+          }
+        }
+      })
 
-      // Add trails to map
-      addTrailsToMap(filteredTrails)
+      map.on('mouseleave', layerId, () => {
+        map.getCanvas().style.cursor = ''
 
-    } catch (error) {
-      console.error('❌ Failed to load trails:', error)
+        // Clear trail highlight if callback provided
+        if (onTrailHighlight) {
+          onTrailHighlight(null)
+        }
+      })
+    })
+  }, [onTrailHighlight, handleTrailClick, trails])
 
-      // Fallback to WMS overlay if vector data fails
-      console.log('🔄 Falling back to WMS trail overlay')
-      addWMSTrailFallback(activeTypes)
+  // Fallback to WMS overlay if vector data fails
+  const addWMSTrailFallback = (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
+    if (!mapRef.current) return
 
-    } finally {
-      setTrailsLoading(false)
-    }
-  }, [addTrailsToMap, lastTrailBounds])
+    const map = mapRef.current
+
+    console.log('🔄 Adding WMS trail fallback layers')
+
+    activeTypes.forEach(trailType => {
+      const layerId = `trails-${trailType}-wms`
+      const sourceId = `trails-${trailType}-wms`
+
+      // Map trail types to Kartverket WMS layers
+      const wmsType = trailType === 'other' ? 'all' : trailType as 'hiking' | 'skiing' | 'cycling'
+
+      try {
+        map.addSource(sourceId, {
+          type: 'raster',
+          tiles: [KartverketTrailService.getWMSTileUrl(wmsType)],
+          tileSize: 256,
+          attribution: '© Kartverket (fallback)'
+        })
+
+        map.addLayer({
+          id: layerId,
+          type: 'raster',
+          source: sourceId,
+          paint: {
+            'raster-opacity': 0.7
+          }
+        })
+
+        console.log(`✅ Added WMS fallback layer: ${layerId}`)
+      } catch (error) {
+        console.error(`❌ Failed to add WMS fallback for ${trailType}:`, error)
+      }
+    })
+  }
 
   // Add trail vector data to map
   const addTrailsToMap = useCallback((trailData: Trail[]) => {
@@ -1352,139 +1376,116 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     setupTrailInteractions()
   }, [setupTrailInteractions])
 
-  // Fallback to WMS overlay if vector data fails
-  const addWMSTrailFallback = (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
+  // Load trails for current map view
+  const loadTrailsForCurrentView = useCallback(async (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
     if (!mapRef.current) return
 
     const map = mapRef.current
+    const bounds = map.getBounds()
 
-    console.log('🔄 Adding WMS trail fallback layers')
+    const trailBounds: BoundingBox = {
+      north: bounds.getNorth(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      west: bounds.getWest()
+    }
 
-    activeTypes.forEach(trailType => {
-      const layerId = `trails-${trailType}-wms`
-      const sourceId = `trails-${trailType}-wms`
+    // Skip loading if bounds haven't changed significantly
+    if (lastTrailBounds &&
+        Math.abs(trailBounds.north - lastTrailBounds.north) < 0.01 &&
+        Math.abs(trailBounds.south - lastTrailBounds.south) < 0.01 &&
+        Math.abs(trailBounds.east - lastTrailBounds.east) < 0.01 &&
+        Math.abs(trailBounds.west - lastTrailBounds.west) < 0.01) {
+      return
+    }
 
-      // Map trail types to Kartverket WMS layers
-      const wmsType = trailType === 'other' ? 'all' : trailType as 'hiking' | 'skiing' | 'cycling'
+    _setTrailsLoading(true)
+    setLastTrailBounds(trailBounds)
 
-      try {
-        map.addSource(sourceId, {
-          type: 'raster',
-          tiles: [KartverketTrailService.getWMSTileUrl(wmsType)],
-          tileSize: 256,
-          attribution: '© Kartverket (fallback)'
-        })
+    try {
+      console.log(`🥾 Loading trails from Turrutebasen for types:`, activeTypes)
+      console.log(`📍 Bounds:`, trailBounds)
 
-        map.addLayer({
-          id: layerId,
-          type: 'raster',
-          source: sourceId,
-          paint: {
-            'raster-opacity': 0.7
-          }
-        })
+      // Fetch trails from Turrutebasen WFS
+      const fetchedTrails = await TurrutebasenService.fetchTrailsInBounds(trailBounds, {
+        maxFeatures: 200 // Limit for performance
+      })
 
-        console.log(`✅ Added WMS fallback layer: ${layerId}`)
-      } catch (error) {
-        console.error(`❌ Failed to add WMS fallback for ${trailType}:`, error)
+      // Filter trails by active types
+      const filteredTrails = fetchedTrails.filter(trail => {
+        const trailType = trail.properties.type === 'mixed' ? 'other' : trail.properties.type
+        return activeTypes.includes(trailType as 'hiking' | 'skiing' | 'cycling' | 'other')
+      })
+
+      console.log(`✅ Loaded ${filteredTrails.length} trails from Turrutebasen`)
+      setTrails(filteredTrails)
+
+      // Add trails to map
+      addTrailsToMap(filteredTrails)
+
+    } catch (error) {
+      console.error('❌ Failed to load trails:', error)
+
+      // Fallback to WMS overlay if vector data fails
+      console.log('🔄 Falling back to WMS trail overlay')
+      addWMSTrailFallback(activeTypes)
+
+    } finally {
+      _setTrailsLoading(false)
+    }
+  }, [addTrailsToMap, lastTrailBounds])
+
+  // TRAIL VECTOR LAYER MANAGEMENT - Handle Norwegian hiking trails from Turrutebasen
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+
+    const map = mapRef.current
+
+    // Helper function to check if any trail categories are active
+    const _getActiveTrailTypes = (): ('hiking' | 'skiing' | 'cycling' | 'other')[] => {
+      const activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[] = []
+
+      // Check for specific trail subcategories
+      if (categoryState.checked.fotrute) activeTypes.push('hiking')
+      if (categoryState.checked.skiloype_trail) activeTypes.push('skiing')
+      if (categoryState.checked.sykkelrute) activeTypes.push('cycling')
+      if (categoryState.checked.andre_turruter) activeTypes.push('other')
+
+      return activeTypes
+    }
+
+    // Use activeTrailTypes prop directly - converting to the expected format
+    const trailTypesForLayer = activeTrailTypes.map(type =>
+      type === 'mixed' ? 'other' : type
+    ) as ('hiking' | 'skiing' | 'cycling' | 'other')[]
+
+    // Remove existing trail layers
+    const existingTrailLayers = [
+      'trails-hiking', 'trails-skiing', 'trails-cycling', 'trails-other',
+      'trails-hiking-glow', 'trails-skiing-glow', 'trails-cycling-glow', 'trails-other-glow'
+    ]
+    existingTrailLayers.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId)
       }
     })
-  }
 
-  // Setup trail click and hover interactions
-  const setupTrailInteractions = useCallback(() => {
-    if (!mapRef.current) return
-
-    const map = mapRef.current
-
-    // Add click handler for trails
-    Object.keys(TRAIL_STYLES).forEach(trailType => {
-      const layerId = `trails-${trailType}`
-
-      map.on('click', layerId, (e) => {
-        if (!e.features || e.features.length === 0) return
-
-        const feature = e.features[0]
-        const trailId = feature.properties?.id
-
-        if (trailId) {
-          const trail = trails.find(t => t.id === trailId)
-          if (trail) {
-            handleTrailClick(trail, e.lngLat)
-          }
-        }
-      })
-
-      // Change cursor on hover
-      map.on('mouseenter', layerId, (e) => {
-        map.getCanvas().style.cursor = 'pointer'
-
-        // Highlight trail if callback provided
-        if (onTrailHighlight && e.features && e.features[0]) {
-          const trailId = e.features[0].properties?.id
-          if (trailId) {
-            const trail = trails.find(t => t.id === trailId)
-            if (trail) {
-              onTrailHighlight(trail)
-            }
-          }
-        }
-      })
-
-      map.on('mouseleave', layerId, () => {
-        map.getCanvas().style.cursor = ''
-
-        // Clear trail highlight if callback provided
-        if (onTrailHighlight) {
-          onTrailHighlight(null)
-        }
-      })
+    // Remove existing trail sources
+    const existingTrailSources = ['trails-data']
+    existingTrailSources.forEach(sourceId => {
+      if (map.getSource(sourceId)) {
+        map.removeSource(sourceId)
+      }
     })
-  }, [onTrailHighlight, handleTrailClick, trails])
 
-  // Handle trail click events
-  const handleTrailClick = useCallback((trail: Trail, lngLat: maplibregl.LngLat) => {
-    console.log(`🥾 Trail clicked: ${trail.properties.name}`)
-
-    setSelectedTrail(trail)
-
-    // Call parent handler if provided (this opens the trail details modal)
-    if (onTrailSelect) {
-      onTrailSelect(trail)
+    // Load and display trails if any categories are active
+    if (trailTypesForLayer.length > 0) {
+      void loadTrailsForCurrentView(trailTypesForLayer)
+    } else {
+      console.log('🚫 No trail categories active - trails cleared')
+      setTrails([])
     }
-
-    // Create popup with trail information
-    const _popup = new maplibregl.Popup()
-      .setLngLat(lngLat)
-      .setHTML(`
-        <div style="padding: 12px; min-width: 200px;">
-          <h3 style="margin: 0 0 8px 0; color: #3e4533; font-size: 16px;">${trail.properties.name}</h3>
-          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #666;">
-            <div><strong>Type:</strong> ${trail.properties.type}</div>
-            <div><strong>Difficulty:</strong> ${trail.properties.difficulty}</div>
-            <div><strong>Distance:</strong> ${(trail.properties.distance / 1000).toFixed(1)} km</div>
-            <div><strong>Municipality:</strong> ${trail.properties.municipality}</div>
-            ${trail.properties.surface ? `<div><strong>Surface:</strong> ${trail.properties.surface}</div>` : ''}
-            ${trail.properties.maintainer ? `<div><strong>Maintainer:</strong> ${trail.properties.maintainer}</div>` : ''}
-          </div>
-          ${trail.properties.description ? `
-            <div style="margin-top: 8px; font-size: 12px; color: #555;">
-              ${trail.properties.description}
-            </div>
-          ` : ''}
-        </div>
-      `)
-      .addTo(mapRef.current!)
-
-    // Optional: Center map on trail
-    const trailBounds = TrailUtils.getTrailBounds(trail)
-    if (trailBounds) {
-      mapRef.current!.fitBounds([
-        [trailBounds.west, trailBounds.south],
-        [trailBounds.east, trailBounds.north]
-      ], { padding: 50 })
-    }
-  }, [onTrailSelect])
+  }, [mapLoaded, categoryState, activeTrailTypes, loadTrailsForCurrentView])
 
   // Load trails when map moves (debounced)
   useEffect(() => {

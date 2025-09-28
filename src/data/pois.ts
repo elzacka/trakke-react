@@ -730,7 +730,7 @@ const _removedManualPoisData: POI[] = [
     lat: 58.9866,
     lng: 6.1926,
     description: 'Berømt fjellformasjon og utsiktspunkt i Lysefjorden',
-    type: 'hiking',
+    type: 'mountain_peaks',
     api_source: 'manual'
   },
   {
@@ -739,7 +739,7 @@ const _removedManualPoisData: POI[] = [
     lat: 61.4972,
     lng: 8.6769,
     description: 'Populær fjelltur i Jotunheimen',
-    type: 'hiking',
+    type: 'mountain_peaks',
     api_source: 'manual'
   },
   // Swimming spots

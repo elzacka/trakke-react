@@ -243,7 +243,7 @@ export class TrailUtils {
       geometry: feature.geometry,
       properties: {
         name: props.turrutenavn || `Trail ${feature.id}`,
-        description: props.beskrivelse,
+        description: props.beskrivelse as string | undefined,
         difficulty: this.mapDifficulty(props.vanskelighetgrad),
         type: this.mapTrailType(props.rutetype),
         distance: props.rutelengde || 0,

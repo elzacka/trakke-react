@@ -179,7 +179,7 @@ export class ElevationService {
   // Private helper methods
 
   private static async fetchElevationBatch(points: Array<{ lat: number; lng: number }>): Promise<Array<number | null>> {
-    const punkter = points.map(p => `${p.nord || p.lat},${p.ost || p.lng}`).join(' ')
+    const punkter = points.map(p => `${p.lat},${p.lng}`).join(' ')
 
     const params = new URLSearchParams({
       koordsys: this.COORDINATE_SYSTEM,
