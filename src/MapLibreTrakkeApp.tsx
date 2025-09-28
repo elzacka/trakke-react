@@ -992,7 +992,9 @@ function MapLibreTrakkeAppInner() {
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          marginLeft: sidebarCollapsed ? '0' : '-1px'
+          marginLeft: sidebarCollapsed ? '0' : '-1px',
+          outline: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = sidebarCollapsed ? 'rgba(255, 255, 255, 1.0)' : '#ffffff'
@@ -1022,7 +1024,13 @@ function MapLibreTrakkeAppInner() {
       <div className="map-controls" style={{
         position: 'absolute',
         bottom: '24px',
-        right: window.innerWidth < 768 ? '16px' : '24px',
+        right: (() => {
+          if (window.innerWidth < 768) {
+            // On mobile, add extra margin when sidebar is open to prevent overlap
+            return !sidebarCollapsed ? '80px' : '16px'
+          }
+          return '24px'
+        })(),
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
@@ -1414,12 +1422,17 @@ function MapLibreTrakkeAppInner() {
           }
         }
 
-        /* Focus indicators for accessibility - clean grey styling */
-        
-        .sidebar-toggle:focus,
-        .map-controls button:focus {
+        /* Focus indicators for accessibility - only show on keyboard focus */
+        .sidebar-toggle:focus-visible,
+        .map-controls button:focus-visible {
           outline: 2px solid #9ca3af !important;
           outline-offset: 2px !important;
+        }
+
+        /* Remove focus outline on mouse click but keep for keyboard navigation */
+        .sidebar-toggle:focus:not(:focus-visible),
+        .map-controls button:focus:not(:focus-visible) {
+          outline: none !important;
         }
 
         /* Touch targets - minimum 44px for mobile */

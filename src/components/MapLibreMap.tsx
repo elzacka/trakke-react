@@ -343,21 +343,44 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     clearDistanceMeasurements
   }))
 
-  // Copy coordinates to clipboard
+  // Copy coordinates to clipboard with mobile fallback
   const handleCopyCoordinates = async () => {
     if (!coordinates) return
 
+    const coordinatesText = `${coordinates.lat.toFixed(5)}°N, ${coordinates.lng.toFixed(5)}°E`
+
     try {
-      const coordinatesText = `${coordinates.lat.toFixed(5)}°N, ${coordinates.lng.toFixed(5)}°E`
-      await navigator.clipboard.writeText(coordinatesText)
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(coordinatesText)
+      } else {
+        // Fallback for older browsers or non-HTTPS contexts
+        const textArea = document.createElement('textarea')
+        textArea.value = coordinatesText
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
+
+      console.log(`📋 Copied coordinates: ${coordinatesText}`)
       setCoordinatesCopied(true)
 
-      // Reset copy feedback after 2 seconds
+      // Reset copy feedback after 3 seconds (longer for mobile)
       setTimeout(() => {
         setCoordinatesCopied(false)
-      }, 2000)
+      }, 3000)
     } catch (error) {
       console.error('Failed to copy coordinates:', error)
+      // Still show visual feedback even if copy failed
+      setCoordinatesCopied(true)
+      setTimeout(() => {
+        setCoordinatesCopied(false)
+      }, 3000)
     }
   }
 
@@ -655,25 +678,57 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         })
       })
 
-      // Long press detection for mobile coordinate copying
+      // Enhanced long press detection for mobile coordinate copying
       let longPressTimer: NodeJS.Timeout | null = null
       let longPressCoords: { lat: number; lng: number } | null = null
+      let startTouch: { x: number; y: number } | null = null
+      const LONG_PRESS_DURATION = 600 // Slightly longer for better reliability
+      const TOUCH_MOVE_THRESHOLD = 10 // Pixels - allow small movement
 
       map.on('touchstart', (e) => {
-        if (e.lngLat) {
+        if (e.lngLat && e.originalEvent.touches.length === 1) {
+          const touch = e.originalEvent.touches[0]
+          startTouch = { x: touch.clientX, y: touch.clientY }
           longPressCoords = { lat: e.lngLat.lat, lng: e.lngLat.lng }
-          longPressTimer = setTimeout(() => {
+
+          longPressTimer = setTimeout(async () => {
             if (longPressCoords) {
               const coordinatesText = `${longPressCoords.lat.toFixed(5)}°N, ${longPressCoords.lng.toFixed(5)}°E`
-              navigator.clipboard.writeText(coordinatesText).then(() => {
+
+              // Vibrate if supported (mobile feedback)
+              if (navigator.vibrate) {
+                navigator.vibrate(50)
+              }
+
+              try {
+                // Use the improved clipboard function
+                if (navigator.clipboard && window.isSecureContext) {
+                  await navigator.clipboard.writeText(coordinatesText)
+                } else {
+                  // Fallback for mobile browsers
+                  const textArea = document.createElement('textarea')
+                  textArea.value = coordinatesText
+                  textArea.style.position = 'fixed'
+                  textArea.style.left = '-999999px'
+                  textArea.style.top = '-999999px'
+                  document.body.appendChild(textArea)
+                  textArea.focus()
+                  textArea.select()
+                  document.execCommand('copy')
+                  document.body.removeChild(textArea)
+                }
+
                 console.log(`📋 Copied coordinates with long press: ${coordinatesText}`)
                 setCoordinatesCopied(true)
-                setTimeout(() => setCoordinatesCopied(false), 2000)
-              }).catch(error => {
+                setTimeout(() => setCoordinatesCopied(false), 3000)
+              } catch (error) {
                 console.error('Failed to copy coordinates:', error)
-              })
+                // Still show visual feedback
+                setCoordinatesCopied(true)
+                setTimeout(() => setCoordinatesCopied(false), 3000)
+              }
             }
-          }, 500) // 500ms long press threshold
+          }, LONG_PRESS_DURATION)
         }
       })
 
@@ -683,9 +738,10 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           longPressTimer = null
         }
         longPressCoords = null
+        startTouch = null
       })
 
-      // Track touch coordinates and cancel long press on move
+      // Track touch coordinates and cancel long press on significant move
       map.on('touchmove', (e) => {
         // Update coordinates for mobile
         if (e.lngLat) {
@@ -695,27 +751,53 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           })
         }
 
-        // Cancel long press if finger moves
-        if (longPressTimer) {
-          clearTimeout(longPressTimer)
-          longPressTimer = null
+        // Cancel long press if finger moves too much
+        if (longPressTimer && startTouch && e.originalEvent.touches.length === 1) {
+          const touch = e.originalEvent.touches[0]
+          const moveDistance = Math.sqrt(
+            Math.pow(touch.clientX - startTouch.x, 2) + Math.pow(touch.clientY - startTouch.y, 2)
+          )
+
+          if (moveDistance > TOUCH_MOVE_THRESHOLD) {
+            clearTimeout(longPressTimer)
+            longPressTimer = null
+            longPressCoords = null
+            startTouch = null
+          }
         }
-        longPressCoords = null
       })
 
       // Add right-click context menu for copying coordinates
-      map.on('contextmenu', (e) => {
+      map.on('contextmenu', async (e) => {
         e.preventDefault()
         const { lat, lng } = e.lngLat
         const coordinatesText = `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`
 
-        navigator.clipboard.writeText(coordinatesText).then(() => {
+        try {
+          // Use improved clipboard function
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(coordinatesText)
+          } else {
+            const textArea = document.createElement('textarea')
+            textArea.value = coordinatesText
+            textArea.style.position = 'fixed'
+            textArea.style.left = '-999999px'
+            textArea.style.top = '-999999px'
+            document.body.appendChild(textArea)
+            textArea.focus()
+            textArea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textArea)
+          }
+
           console.log(`📋 Copied coordinates: ${coordinatesText}`)
           setCoordinatesCopied(true)
-          setTimeout(() => setCoordinatesCopied(false), 2000)
-        }).catch(error => {
+          setTimeout(() => setCoordinatesCopied(false), 3000)
+        } catch (error) {
           console.error('Failed to copy coordinates:', error)
-        })
+          setCoordinatesCopied(true)
+          setTimeout(() => setCoordinatesCopied(false), 3000)
+        }
       })
 
       // Add Ctrl+click for copying coordinates and regular click for distance measurement
@@ -728,13 +810,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           e.preventDefault()
           const coordinatesText = `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`
 
-          navigator.clipboard.writeText(coordinatesText).then(() => {
-            console.log(`📋 Copied coordinates with Ctrl+click: ${coordinatesText}`)
-            setCoordinatesCopied(true)
-            setTimeout(() => setCoordinatesCopied(false), 2000)
-          }).catch(error => {
-            console.error('Failed to copy coordinates:', error)
-          })
+          // Use the handleCopyCoordinates function for consistent behavior
+          handleCopyCoordinates()
         } else if (isDistanceMeasuringRef.current) {
           // Handle distance measurement clicks
           console.log(`📏 Adding distance measurement point...`)
@@ -1821,28 +1898,34 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
             {/* Coordinates Display */}
             <div
-              className="coordinate-display"
+              className={`coordinate-display ${coordinatesCopied ? 'coordinate-copied' : ''}`}
               onClick={handleCopyCoordinates}
               title={coordinatesCopied ? "Koordinater kopiert!" : "Klikk for å kopiere koordinater"}
               style={{
-                // Styling adapts based on sidebar state as specified
+                // Enhanced styling with better visual feedback
                 ...(sidebarCollapsed ? {
                   // On Map styling
-                  background: coordinatesCopied ? 'rgba(62, 69, 51, 0.9)' : 'rgba(255,255,255,0.8)',
-                  borderRadius: '4px',
-                  padding: '4px 6px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                  background: coordinatesCopied ? '#3e4533' : 'rgba(255,255,255,0.8)',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  boxShadow: coordinatesCopied
+                    ? '0 4px 16px rgba(62, 69, 51, 0.4), 0 2px 8px rgba(0,0,0,0.1)'
+                    : '0 1px 3px rgba(0,0,0,0.15)',
                   fontSize: '12px',
-                  color: coordinatesCopied ? '#ffffff' : '#374151'
+                  color: coordinatesCopied ? '#ffffff' : '#374151',
+                  border: coordinatesCopied ? '2px solid rgba(255,255,255,0.3)' : 'none'
                 } : {
                   // On Sidebar Overlay styling
                   background: coordinatesCopied ? '#3e4533' : '#ffffff',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  padding: '4px 6px',
+                  border: coordinatesCopied ? '2px solid #3e4533' : '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
                   fontSize: '12px',
                   color: coordinatesCopied ? '#ffffff' : '#111827',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  boxShadow: coordinatesCopied
+                    ? '0 4px 16px rgba(62, 69, 51, 0.4)'
+                    : 'none'
                 }),
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 pointerEvents: 'auto',
@@ -1850,7 +1933,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                 alignItems: 'center',
                 gap: '8px',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease-in-out'
+                transition: 'all 0.3s ease-in-out',
+                transform: coordinatesCopied ? 'scale(1.05)' : 'scale(1)',
+                animation: coordinatesCopied ? 'coordinatePulse 0.6s ease-out' : 'none'
               }}>
               <span style={{
                 fontFamily: 'Material Symbols Outlined',
@@ -2007,6 +2092,22 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           }
           100% {
             box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4), 0 2px 8px rgba(0,0,0,0.1), 0 0 0 0 rgba(220, 38, 38, 0);
+          }
+        }
+
+        /* Coordinate copy animation */
+        @keyframes coordinatePulse {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 4px 16px rgba(62, 69, 51, 0.4);
+          }
+          50% {
+            transform: scale(1.1);
+            box-shadow: 0 6px 24px rgba(62, 69, 51, 0.6), 0 0 0 8px rgba(62, 69, 51, 0.2);
+          }
+          100% {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(62, 69, 51, 0.4);
           }
         }
 
