@@ -808,10 +808,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         // Check if Ctrl key is pressed (or Cmd on Mac) for coordinate copying
         if (e.originalEvent.ctrlKey || e.originalEvent.metaKey) {
           e.preventDefault()
-          const coordinatesText = `${lat.toFixed(5)}°N, ${lng.toFixed(5)}°E`
-
           // Use the handleCopyCoordinates function for consistent behavior
-          handleCopyCoordinates()
+          void handleCopyCoordinates()
         } else if (isDistanceMeasuringRef.current) {
           // Handle distance measurement clicks
           console.log(`📏 Adding distance measurement point...`)
