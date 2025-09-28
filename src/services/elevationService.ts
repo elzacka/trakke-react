@@ -15,7 +15,7 @@ interface ElevationApiResponse {
   }>
 }
 
-interface ElevationQueryPoint {
+interface _ElevationQueryPoint {
   lat: number
   lng: number
   distance?: number
@@ -156,7 +156,7 @@ export class ElevationService {
   /**
    * Get available data sources from Kartverket
    */
-  static async getDataSources(): Promise<any[]> {
+  static async getDataSources(): Promise<Record<string, unknown>[]> {
     try {
       const response = await fetch(`${this.API_BASE_URL}/datakilder`, {
         headers: {

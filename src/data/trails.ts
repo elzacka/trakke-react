@@ -159,7 +159,7 @@ export interface TurrutebasenFeature {
     underlaget?: string              // Surface type
     sesong?: string                  // Season
     tilrettelegging?: string         // Accessibility
-    [key: string]: any              // Additional properties from WFS
+    [key: string]: unknown              // Additional properties from WFS
   }
   bbox?: [number, number, number, number]
 }

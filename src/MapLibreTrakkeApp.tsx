@@ -66,7 +66,7 @@ function MapLibreTrakkeAppInner() {
   const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null)
   const [_highlightedTrail, setHighlightedTrail] = useState<Trail | null>(null)
   const [showTrailDetails, setShowTrailDetails] = useState(false)
-  const [activeTrailTypes, setActiveTrailTypes] = useState<TrailType[]>([])
+  const [_activeTrailTypes, _setActiveTrailTypes] = useState<TrailType[]>([])
 
   // Ref for search input to enable keyboard shortcut focus
   const searchInputRef = useRef<SearchBoxRef>(null)
@@ -835,7 +835,7 @@ function MapLibreTrakkeAppInner() {
           onDistanceMeasurementUpdate={setDistanceMeasurements}
           isDistanceMeasuring={isDistanceMeasuring}
           onDistanceMeasuringChange={setIsDistanceMeasuring}
-          activeTrailTypes={activeTrailTypes}
+          activeTrailTypes={_activeTrailTypes}
           onTrailSelect={handleTrailSelect}
           onTrailHighlight={handleTrailHighlight}
         />

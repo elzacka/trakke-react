@@ -57,7 +57,7 @@ export class TurrutebasenService {
   /**
    * Get service capabilities and metadata
    */
-  static async getServiceCapabilities(): Promise<any> {
+  static async getServiceCapabilities(): Promise<Record<string, unknown>> {
     try {
       const response = await fetch(this.buildGetCapabilitiesURL(), {
         headers: this.getStandardHeaders()

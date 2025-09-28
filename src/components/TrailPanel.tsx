@@ -7,7 +7,7 @@ interface TrailPanelProps {
 
 export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
   const [isTrailsExpanded, setIsTrailsExpanded] = useState(false)
-  const [activeTrailTypes, setActiveTrailTypes] = useState<TrailType[]>([])
+  const [_activeTrailTypes, _setActiveTrailTypes] = useState<TrailType[]>([])
 
   const availableTrailTypes: Array<{ type: TrailType; name: string; icon: string; description: string }> = [
     {
@@ -42,8 +42,8 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
     return
   }, [])
 
-  const clearAllTrails = useCallback(() => {
-    setActiveTrailTypes([])
+  const _clearAllTrails = useCallback(() => {
+    _setActiveTrailTypes([])
     onTrailTypesChange([])
     console.log('🥾 All trail types cleared')
   }, [onTrailTypesChange])

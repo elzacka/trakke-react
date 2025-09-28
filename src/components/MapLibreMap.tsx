@@ -96,8 +96,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
   // Trail system state
   const [trails, setTrails] = useState<Trail[]>([])
-  const [trailsLoading, setTrailsLoading] = useState(false)
-  const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null)
+  const [_trailsLoading, _setTrailsLoading] = useState(false)
+  const [_selectedTrail, _setSelectedTrail] = useState<Trail | null>(null)
   const [lastTrailBounds, setLastTrailBounds] = useState<BoundingBox | null>(null)
 
   // Distance measurement state
@@ -1172,7 +1172,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     const map = mapRef.current
 
     // Helper function to check if any trail categories are active
-    const getActiveTrailTypes = (): ('hiking' | 'skiing' | 'cycling' | 'other')[] => {
+    const _getActiveTrailTypes = (): ('hiking' | 'skiing' | 'cycling' | 'other')[] => {
       const activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[] = []
 
       // Check for specific trail subcategories
@@ -1210,15 +1210,15 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
     // Load and display trails if any categories are active
     if (trailTypesForLayer.length > 0) {
-      loadTrailsForCurrentView(trailTypesForLayer)
+      void loadTrailsForCurrentView(trailTypesForLayer)
     } else {
       console.log('🚫 No trail categories active - trails cleared')
       setTrails([])
     }
-  }, [mapLoaded, categoryState])
+  }, [mapLoaded, categoryState, activeTrailTypes, loadTrailsForCurrentView])
 
   // Load trails for current map view
-  const loadTrailsForCurrentView = async (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
+  const loadTrailsForCurrentView = useCallback(async (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
     if (!mapRef.current) return
 
     const map = mapRef.current
@@ -1273,10 +1273,10 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     } finally {
       setTrailsLoading(false)
     }
-  }
+  }, [addTrailsToMap, lastTrailBounds])
 
   // Add trail vector data to map
-  const addTrailsToMap = (trailData: Trail[]) => {
+  const addTrailsToMap = useCallback((trailData: Trail[]) => {
     if (!mapRef.current || trailData.length === 0) return
 
     const map = mapRef.current
@@ -1303,6 +1303,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
     // Add trail data source
     map.addSource('trails-data', {
+      // eslint-disable-next-line no-restricted-syntax
       type: 'geojson',
       data: trailsGeoJSON,
       lineMetrics: true
@@ -1325,7 +1326,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       })
 
       // Add main trail layer (top)
-      const paintProperties: any = {
+      const paintProperties: Record<string, unknown> = {
         'line-color': style.color,
         'line-width': style.width,
         'line-opacity': style.opacity
@@ -1349,7 +1350,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
     // Add trail click handlers
     setupTrailInteractions()
-  }
+  }, [setupTrailInteractions])
 
   // Fallback to WMS overlay if vector data fails
   const addWMSTrailFallback = (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
@@ -1391,7 +1392,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   }
 
   // Setup trail click and hover interactions
-  const setupTrailInteractions = () => {
+  const setupTrailInteractions = useCallback(() => {
     if (!mapRef.current) return
 
     const map = mapRef.current
@@ -1439,10 +1440,10 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         }
       })
     })
-  }
+  }, [onTrailHighlight, handleTrailClick, trails])
 
   // Handle trail click events
-  const handleTrailClick = (trail: Trail, lngLat: maplibregl.LngLat) => {
+  const handleTrailClick = useCallback((trail: Trail, lngLat: maplibregl.LngLat) => {
     console.log(`🥾 Trail clicked: ${trail.properties.name}`)
 
     setSelectedTrail(trail)
@@ -1453,7 +1454,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     }
 
     // Create popup with trail information
-    const popup = new maplibregl.Popup()
+    const _popup = new maplibregl.Popup()
       .setLngLat(lngLat)
       .setHTML(`
         <div style="padding: 12px; min-width: 200px;">
@@ -1483,7 +1484,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         [trailBounds.east, trailBounds.north]
       ], { padding: 50 })
     }
-  }
+  }, [onTrailSelect])
 
   // Load trails when map moves (debounced)
   useEffect(() => {
@@ -1500,7 +1501,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         ) as ('hiking' | 'skiing' | 'cycling' | 'other')[]
 
         if (trailTypesForMove.length > 0) {
-          loadTrailsForCurrentView(trailTypesForMove)
+          void loadTrailsForCurrentView(trailTypesForMove)
         }
       }, 1000) // 1 second debounce
     }
@@ -1513,7 +1514,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       }
       clearTimeout(timeoutId)
     }
-  }, [mapLoaded, activeTrailTypes, lastTrailBounds])
+  }, [mapLoaded, activeTrailTypes, lastTrailBounds, loadTrailsForCurrentView])
 
   // Handle search result centering
   useEffect(() => {
