@@ -35,14 +35,7 @@ export function HierarchicalCategoryFilter({
       'overnatte': true,          // Contains gapahuk_vindskjul with shelter data
       'service': true,            // Contains tilfluktsrom with real WFS data
       'transport': false,
-      'turløype': true,               // Official Norwegian hiking trails from Kartverket
-      
-      // Active Kartverket trail subcategories  
-      'fotrute': true,                // Hiking trails - Kartverket fotrute
-      'skiloype_trail': true,         // Ski trails - Kartverket skiløype  
-      'sykkelrute': true,             // Bicycle routes - Kartverket sykkelrute
-      'andre_turruter': true,         // Other trails - Kartverket andre turruter
-      
+
       // Newly active subcategories with real POI data
       'bålplass': true,           // Fire pits from leisure=firepit
       'gapahuk_vindskjul': true,  // Shelters from amenity=shelter

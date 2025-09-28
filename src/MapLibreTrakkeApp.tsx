@@ -1,10 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { MapLibreMap, MapLibreMapRef } from './components/MapLibreMap'
 import { CategoryPanel } from './components/CategoryPanel'
+import { TrailPanel } from './components/TrailPanel'
+import { HurtigtasterButton } from './components/HurtigtasterButton'
+import { AdminControls } from './components/AdminControls'
+import { TrailDetails } from './components/TrailDetails'
 import { SearchBox, SearchBoxRef } from './components/SearchBox'
 import { categoryTree, CategoryState, POI, POIType } from './data/pois'
+import type { Trail, TrailType } from './data/trails'
 import { OverpassService, OverpassPOI } from './services/overpassService'
-import { KartverketTrailService } from './services/kartverketTrailService'
 import { SearchResult, SearchService } from './services/searchService'
 import { poiDataService } from './services/poiDataService'
 import { TilfluktsromService, TilfluktsromPOI } from './services/tilfluktsromService'
@@ -57,6 +61,12 @@ function MapLibreTrakkeAppInner() {
   const [pois, setPois] = useState<POI[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Trail data state
+  const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null)
+  const [_highlightedTrail, setHighlightedTrail] = useState<Trail | null>(null)
+  const [showTrailDetails, setShowTrailDetails] = useState(false)
+  const [activeTrailTypes, setActiveTrailTypes] = useState<TrailType[]>([])
 
   // Ref for search input to enable keyboard shortcut focus
   const searchInputRef = useRef<SearchBoxRef>(null)
@@ -379,22 +389,6 @@ function MapLibreTrakkeAppInner() {
               }
             }
 
-            // Load hiking trails from Kartverket if turløype category is active
-            if (activeCategories.includes('turløype')) {
-              console.log('🥾 Loading Norwegian hiking trails from Kartverket with viewport:', currentViewport)
-              
-              // Check if Kartverket trail service is available
-              const serviceAvailable = await KartverketTrailService.checkServiceAvailability()
-              if (serviceAvailable) {
-                console.log('✅ Kartverket trail service is available')
-                // Note: Currently showing trails via WMS layer instead of individual POIs
-                // This provides comprehensive trail coverage across Norway
-                console.log('📍 Norwegian hiking trails will be displayed as map overlay')
-                console.log('🗺️ Trail data source:', KartverketTrailService.getDataSourceInfo().name)
-              } else {
-                console.warn('⚠️ Kartverket trail service unavailable - check network connection')
-              }
-            }
 
             // Load custom POIs from local storage for all active categories
             console.log('🏛️ Loading custom POIs for active categories:', activeCategories)
@@ -467,6 +461,57 @@ function MapLibreTrakkeAppInner() {
 
   const handleBearingChange = useCallback((bearing: number) => {
     setMapBearing(bearing)
+  }, [])
+
+  // Trail interaction handlers
+  const handleTrailSelect = useCallback((trail: Trail) => {
+    console.log('🥾 Trail selected:', trail.properties.name)
+    setSelectedTrail(trail)
+    setShowTrailDetails(true)
+
+    // Focus map on trail bounds
+    if (mapRef.current) {
+      const map = mapRef.current.getMap()
+      if (map && trail.geometry.coordinates.length > 0) {
+        // Calculate trail bounds
+        const coords = trail.geometry.coordinates
+        const bounds = coords.reduce((acc, coord) => {
+          return {
+            north: Math.max(acc.north, coord[1]),
+            south: Math.min(acc.south, coord[1]),
+            east: Math.max(acc.east, coord[0]),
+            west: Math.min(acc.west, coord[0])
+          }
+        }, {
+          north: coords[0][1],
+          south: coords[0][1],
+          east: coords[0][0],
+          west: coords[0][0]
+        })
+
+        // Add some padding to bounds
+        const padding = 0.01
+        map.fitBounds([
+          [bounds.west - padding, bounds.south - padding],
+          [bounds.east + padding, bounds.north + padding]
+        ], { padding: 50, duration: 1000 })
+      }
+    }
+  }, [])
+
+  const handleTrailHighlight = useCallback((trail: Trail | null) => {
+    setHighlightedTrail(trail)
+  }, [])
+
+  const handleCloseTrailDetails = useCallback(() => {
+    setShowTrailDetails(false)
+    setSelectedTrail(null)
+  }, [])
+
+  const handleTrailTypesChange = useCallback((activeTypes: TrailType[]) => {
+    console.log('🚫 Trail types change ignored - service temporarily disabled:', activeTypes)
+    // Temporarily disabled - not setting activeTrailTypes to prevent any trail loading
+    // setActiveTrailTypes(activeTypes)
   }, [])
 
   // Helper function to get active category IDs from category state
@@ -790,6 +835,9 @@ function MapLibreTrakkeAppInner() {
           onDistanceMeasurementUpdate={setDistanceMeasurements}
           isDistanceMeasuring={isDistanceMeasuring}
           onDistanceMeasuringChange={setIsDistanceMeasuring}
+          activeTrailTypes={activeTrailTypes}
+          onTrailSelect={handleTrailSelect}
+          onTrailHighlight={handleTrailHighlight}
         />
       </div>
 
@@ -882,6 +930,14 @@ function MapLibreTrakkeAppInner() {
                 onMapTypeChange={handleMapTypeChange}
               />
 
+              <TrailPanel
+                onTrailTypesChange={handleTrailTypesChange}
+              />
+
+              <HurtigtasterButton />
+
+              <AdminControls />
+
               {/* Last updated text - flows with content */}
               <div style={{
                 marginTop: 'auto',
@@ -902,7 +958,7 @@ function MapLibreTrakkeAppInner() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 27. sept 2025
+                  Under utvikling • Sist oppdatert 28. sept 2025
                 </p>
               </div>
             </div>
@@ -1547,6 +1603,14 @@ function MapLibreTrakkeAppInner() {
         isOpen={isTegnforklaringOpen}
         onClose={closeTegnforklaring}
       />
+
+      {/* Trail Details Modal */}
+      {showTrailDetails && (
+        <TrailDetails
+          trail={selectedTrail}
+          onClose={handleCloseTrailDetails}
+        />
+      )}
 
       {/* Admin Modal components */}
       <AdminLoginModal />

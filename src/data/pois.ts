@@ -59,11 +59,9 @@ interface UtsiktspunkterProps {
   '@id'?: string
 }
 
-export type POIType = 
+export type POIType =
   // Friluftsliv - følger DNT og UT.no standarder
-  | 'hiking'              // Dagstur/vandring
   | 'mountain_peaks'      // Toppturer
-  | 'ski_trails'          // Skiløyper
   | 'swimming'            // Badeplass
   | 'beach'               // Strand
   | 'lakes_rivers'        // Elv/innsjø
@@ -104,9 +102,6 @@ export type POIType =
   | 'drinking_water'      // Drikkevann områder
   | 'fire_places'         // Bål- og grillplasser
   | 'hammock_spots'       // Dedikerte hengekøyeplasser
-  // Trail categories for Kartverket data
-  | 'cycling'             // Sykkelruter
-  | 'other_trails'        // Andre turruter
 
 export interface CampingMetadata {
   terrain: 'flat' | 'sloped' | 'rocky' | 'soft'
@@ -189,23 +184,11 @@ export interface CategoryState {
 // Kategori-konfigurasjon følger norske standarder (DNT, Kartverket, Riksantikvaren)
 export const categoryConfig: CategoryConfigMap = {
   // Friluftsliv kategorier
-  hiking: { 
-    color: '#8B4513', 
-    icon: 'hiking', 
-    name: 'Dagstur',
-    description: 'Dagsturer og vandreruter'
-  },
   mountain_peaks: {
     color: '#4B0082',
     icon: 'terrain',
     name: 'Toppturer',
     description: 'Fjelltopper og høyderygger'
-  },
-  ski_trails: {
-    color: '#00CED1',
-    icon: 'downhill_skiing',
-    name: 'Skiløyper',
-    description: 'Langrennsløyper og skiturer'
   },
   swimming: { 
     color: '#4169E1', 
@@ -421,18 +404,6 @@ export const categoryConfig: CategoryConfigMap = {
     icon: 'weekend',
     name: 'Hengekøyeplasser',
     description: 'Egnede plasser for hengekøye'
-  },
-  cycling: {
-    color: '#228B22',
-    icon: 'directions_bike',
-    name: 'Sykkelruter',
-    description: 'Sykkelruter og sykkeltråkk'
-  },
-  other_trails: {
-    color: '#228B22',
-    icon: 'route',
-    name: 'Andre turruter',
-    description: 'Andre typer turruter og stier'
   }
 }
 
@@ -731,46 +702,6 @@ export const categoryTree: CategoryNode[] = [
         poiTypes: ['train_stations'],
         icon: 'train',
         color: '#0284c7'
-      }
-    ]
-  },
-  {
-    id: 'turløype',
-    name: 'Turløype',
-    icon: 'hiking',
-    color: '#16a34a',
-    children: [
-      {
-        id: 'fotrute',
-        name: 'Fotrute',
-        parent: 'turløype',
-        poiTypes: ['hiking'],
-        icon: 'directions_walk',
-        color: '#16a34a' // Use parent category color (green)
-      },
-      {
-        id: 'skiloype_trail',
-        name: 'Skiløype',
-        parent: 'turløype',
-        poiTypes: ['ski_trails'],
-        icon: 'downhill_skiing',
-        color: '#16a34a' // Use parent category color (green)
-      },
-      {
-        id: 'sykkelrute',
-        name: 'Sykkelrute',
-        parent: 'turløype',
-        poiTypes: ['cycling'],
-        icon: 'directions_bike',
-        color: '#16a34a' // Use parent category color (green)
-      },
-      {
-        id: 'andre_turruter',
-        name: 'Andre turruter',
-        parent: 'turløype',
-        poiTypes: ['other_trails'],
-        icon: 'route',
-        color: '#16a34a' // Use parent category color (green)
       }
     ]
   }

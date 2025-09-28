@@ -7,13 +7,25 @@
 
 🌐 **Live App**: [https://elzacka.github.io/trakke-react/](https://elzacka.github.io/trakke-react/)
 
+## 📍 Current Status
+
+**Fully Functional:**
+- Interactive maps with GPS navigation and distance measurement
+- 6 POI categories with real-time data from government sources
+- Mobile-optimized interface with keyboard shortcuts
+
+**In Development:**
+- Trail system integration with Turrutebasen (Norwegian National Trail Database)
+- Feature temporarily unavailable while resolving API connectivity
+
 ## ✨ Features
 
 - **Interactive Maps** - Topographic (Kartverket) and satellite (Esri) maps with seamless switching
 - **GPS Navigation** - Real-time location tracking with coordinate display and reverse geocoding
 - **Distance Measurement** - Visual distance tool with markers and real-time feedback
 - **Smart Search** - Norwegian place names, addresses, coordinates, and local POI search
-- **7 POI Categories** - Aktivitet, Naturperle, Overnatte, På eventyr, Service, Transport, Turløype
+- **6 POI Categories** - Aktivitet, Naturperle, Overnatte, På eventyr, Service, Transport
+- **Trail System** - ⚠️ Temporarily unavailable (coming soon) - Norwegian trail data integration in development
 - **Mobile Optimized** - Touch-friendly controls, responsive design, keyboard navigation
 - **Keyboard Shortcuts** - Efficient navigation with customizable hotkeys
 
