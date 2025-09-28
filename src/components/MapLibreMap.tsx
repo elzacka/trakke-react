@@ -48,6 +48,8 @@ export interface MapLibreMapProps {
     zoom: number
   }) => void
   onBearingChange?: (bearing: number) => void
+  onCoordinatesChange?: (coordinates: {lat: number, lng: number} | null) => void
+  onCoordinatesCopied?: (copied: boolean) => void
   sidebarCollapsed?: boolean // Add sidebar state for overlay behavior
   mapType?: 'topo' | 'satellite' // Map type selection
   distanceMeasurements?: DistanceMeasurement[]
@@ -70,7 +72,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   userLocation,
   onViewportChange,
   onBearingChange,
-  sidebarCollapsed = true,
+  onCoordinatesChange,
+  onCoordinatesCopied,
+  sidebarCollapsed: _sidebarCollapsed = true,
   mapType = 'topo',
   distanceMeasurements = [],
   onDistanceMeasurementUpdate,
@@ -87,9 +91,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapInitialized, setMapInitialized] = useState(false)
   const [mapInitError, setMapInitError] = useState<string | null>(null)
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null)
   const [currentZoom, setCurrentZoom] = useState<number>(13)
-  const [coordinatesCopied, setCoordinatesCopied] = useState(false)
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null)
   const searchMarkerRef = useRef<maplibregl.Marker | null>(null)
   const positionMarkerRef = useRef<maplibregl.Marker | null>(null)
@@ -343,46 +345,6 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     clearDistanceMeasurements
   }))
 
-  // Copy coordinates to clipboard with mobile fallback
-  const handleCopyCoordinates = async () => {
-    if (!coordinates) return
-
-    const coordinatesText = `${coordinates.lat.toFixed(5)}°N, ${coordinates.lng.toFixed(5)}°E`
-
-    try {
-      // Try modern clipboard API first
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(coordinatesText)
-      } else {
-        // Fallback for older browsers or non-HTTPS contexts
-        const textArea = document.createElement('textarea')
-        textArea.value = coordinatesText
-        textArea.style.position = 'fixed'
-        textArea.style.left = '-999999px'
-        textArea.style.top = '-999999px'
-        document.body.appendChild(textArea)
-        textArea.focus()
-        textArea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textArea)
-      }
-
-      console.log(`📋 Copied coordinates: ${coordinatesText}`)
-      setCoordinatesCopied(true)
-
-      // Reset copy feedback after 3 seconds (longer for mobile)
-      setTimeout(() => {
-        setCoordinatesCopied(false)
-      }, 3000)
-    } catch (error) {
-      console.error('Failed to copy coordinates:', error)
-      // Still show visual feedback even if copy failed
-      setCoordinatesCopied(true)
-      setTimeout(() => {
-        setCoordinatesCopied(false)
-      }, 3000)
-    }
-  }
 
   // Update refs when callbacks change
   useEffect(() => {
@@ -672,7 +634,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
       // Track mouse coordinates
       map.on('mousemove', (e) => {
-        setCoordinates({
+        onCoordinatesChange?.({
           lat: e.lngLat.lat,
           lng: e.lngLat.lng
         })
@@ -682,8 +644,8 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       let longPressTimer: NodeJS.Timeout | null = null
       let longPressCoords: { lat: number; lng: number } | null = null
       let startTouch: { x: number; y: number } | null = null
-      const LONG_PRESS_DURATION = 600 // Slightly longer for better reliability
-      const TOUCH_MOVE_THRESHOLD = 10 // Pixels - allow small movement
+      const LONG_PRESS_DURATION = 800 // Longer duration to reduce sensitivity
+      const TOUCH_MOVE_THRESHOLD = 15 // Larger threshold to prevent accidental triggers
 
       map.on('touchstart', (e) => {
         if (e.lngLat && e.originalEvent.touches.length === 1) {
@@ -719,13 +681,11 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
                 }
 
                 console.log(`📋 Copied coordinates with long press: ${coordinatesText}`)
-                setCoordinatesCopied(true)
-                setTimeout(() => setCoordinatesCopied(false), 3000)
+                onCoordinatesCopied?.(true)
               } catch (error) {
                 console.error('Failed to copy coordinates:', error)
                 // Still show visual feedback
-                setCoordinatesCopied(true)
-                setTimeout(() => setCoordinatesCopied(false), 3000)
+                onCoordinatesCopied?.(true)
               }
             }
           }, LONG_PRESS_DURATION)
@@ -745,7 +705,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       map.on('touchmove', (e) => {
         // Update coordinates for mobile
         if (e.lngLat) {
-          setCoordinates({
+          onCoordinatesChange?.({
             lat: e.lngLat.lat,
             lng: e.lngLat.lng
           })
@@ -791,28 +751,18 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           }
 
           console.log(`📋 Copied coordinates: ${coordinatesText}`)
-          setCoordinatesCopied(true)
-          setTimeout(() => setCoordinatesCopied(false), 3000)
+          onCoordinatesCopied?.(true)
         } catch (error) {
           console.error('Failed to copy coordinates:', error)
-          setCoordinatesCopied(true)
-          setTimeout(() => setCoordinatesCopied(false), 3000)
+          onCoordinatesCopied?.(true)
         }
       })
 
-      // Add Ctrl+click for copying coordinates and regular click for distance measurement
+      // Handle distance measurement clicks
       map.on('click', (e) => {
-        const { lat, lng } = e.lngLat
-        console.log(`🖱️ Map clicked at [${lat.toFixed(5)}, ${lng.toFixed(5)}], isDistanceMeasuring: ${isDistanceMeasuringRef.current}`)
-
-        // Check if Ctrl key is pressed (or Cmd on Mac) for coordinate copying
-        if (e.originalEvent.ctrlKey || e.originalEvent.metaKey) {
-          e.preventDefault()
-          // Use the handleCopyCoordinates function for consistent behavior
-          void handleCopyCoordinates()
-        } else if (isDistanceMeasuringRef.current) {
-          // Handle distance measurement clicks
-          console.log(`📏 Adding distance measurement point...`)
+        if (isDistanceMeasuringRef.current) {
+          const { lat, lng } = e.lngLat
+          console.log(`📏 Adding distance measurement point at [${lat.toFixed(5)}, ${lng.toFixed(5)}]`)
           e.preventDefault()
           addDistanceMeasurementPoint({ lat, lng })
         }
@@ -1894,62 +1844,6 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
               </div>
             </div>
 
-            {/* Coordinates Display */}
-            <div
-              className={`coordinate-display ${coordinatesCopied ? 'coordinate-copied' : ''}`}
-              onClick={handleCopyCoordinates}
-              title={coordinatesCopied ? "Koordinater kopiert!" : "Klikk for å kopiere koordinater"}
-              style={{
-                // Enhanced styling with better visual feedback
-                ...(sidebarCollapsed ? {
-                  // On Map styling
-                  background: coordinatesCopied ? '#3e4533' : 'rgba(255,255,255,0.8)',
-                  borderRadius: '6px',
-                  padding: '6px 8px',
-                  boxShadow: coordinatesCopied
-                    ? '0 4px 16px rgba(62, 69, 51, 0.4), 0 2px 8px rgba(0,0,0,0.1)'
-                    : '0 1px 3px rgba(0,0,0,0.15)',
-                  fontSize: '12px',
-                  color: coordinatesCopied ? '#ffffff' : '#374151',
-                  border: coordinatesCopied ? '2px solid rgba(255,255,255,0.3)' : 'none'
-                } : {
-                  // On Sidebar Overlay styling
-                  background: coordinatesCopied ? '#3e4533' : '#ffffff',
-                  border: coordinatesCopied ? '2px solid #3e4533' : '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  padding: '6px 8px',
-                  fontSize: '12px',
-                  color: coordinatesCopied ? '#ffffff' : '#111827',
-                  fontWeight: '500',
-                  boxShadow: coordinatesCopied
-                    ? '0 4px 16px rgba(62, 69, 51, 0.4)'
-                    : 'none'
-                }),
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                pointerEvents: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease-in-out',
-                transform: coordinatesCopied ? 'scale(1.05)' : 'scale(1)',
-                animation: coordinatesCopied ? 'coordinatePulse 0.6s ease-out' : 'none'
-              }}>
-              <span style={{
-                fontFamily: 'Material Symbols Outlined',
-                fontSize: '14px',
-                color: coordinatesCopied ? '#ffffff' : (sidebarCollapsed ? '#374151' : '#111827')
-              }}>
-                my_location
-              </span>
-              <span style={{
-                fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
-                fontSize: '11px',
-                fontWeight: sidebarCollapsed ? '500' : '500'
-              }}>
-                {coordinates.lat.toFixed(5)}°N, {coordinates.lng.toFixed(5)}°E
-              </span>
-            </div>
           </div>
         )
       })()}

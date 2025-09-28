@@ -49,6 +49,9 @@ function MapLibreTrakkeAppInner() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
   const [locationLoading, setLocationLoading] = useState(false)
   const [mapBearing, setMapBearing] = useState(0) // Track current map bearing for compass
+  const [currentZoom, setCurrentZoom] = useState(8) // Track current zoom level for scale display
+  const [currentCoordinates, setCurrentCoordinates] = useState<{lat: number, lng: number} | null>(null) // Track cursor coordinates
+  const [coordinatesCopied, setCoordinatesCopied] = useState(false) // Track coordinate copy feedback
 
   // Distance measurement state
   const [distanceMeasurements, setDistanceMeasurements] = useState<DistanceMeasurement[]>([])
@@ -452,15 +455,42 @@ function MapLibreTrakkeAppInner() {
 
   const handleViewportChange = useCallback((viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
     setCurrentViewport(viewport)
+    setCurrentZoom(viewport.zoom)
     console.log('🗺️ Viewport changed:', viewport)
-    
+
     // Only reload POIs for significant viewport changes (not during zoom animations)
     // The category toggle handler will load POIs when categories change
     // This prevents the flickering during zoom by avoiding redundant POI loading
   }, [])
 
+  // Calculate scale from zoom level for display
+  const getScaleText = useCallback((zoom: number): string => {
+    // Approximate scale calculation for Norway (latitude ~60°)
+    const scale = 559082264.028 / Math.pow(2, zoom)
+
+    if (scale >= 1000) {
+      const km = Math.round(scale / 1000)
+      return `${km}km`
+    } else {
+      const m = Math.round(scale)
+      return `${m}m`
+    }
+  }, [])
+
   const handleBearingChange = useCallback((bearing: number) => {
     setMapBearing(bearing)
+  }, [])
+
+  const handleCoordinatesChange = useCallback((coordinates: {lat: number, lng: number} | null) => {
+    setCurrentCoordinates(coordinates)
+  }, [])
+
+  const handleCoordinatesCopied = useCallback((copied: boolean) => {
+    setCoordinatesCopied(copied)
+    if (copied) {
+      // Auto-reset after 2 seconds
+      setTimeout(() => setCoordinatesCopied(false), 2000)
+    }
   }, [])
 
   // Trail interaction handlers
@@ -827,6 +857,8 @@ function MapLibreTrakkeAppInner() {
           onExpandToggle={handleExpandToggle}
           onViewportChange={handleViewportChange}
           onBearingChange={handleBearingChange}
+          onCoordinatesChange={handleCoordinatesChange}
+          onCoordinatesCopied={handleCoordinatesCopied}
           searchResult={searchResult}
           userLocation={userLocation}
           sidebarCollapsed={sidebarCollapsed}
@@ -888,7 +920,7 @@ function MapLibreTrakkeAppInner() {
                 Tråkke
               </h1>
               <p style={{
-                margin: '0',
+                margin: '0 0 8px 0',
                 fontSize: '13px',
                 color: '#6b7280', // Lighter text as specified in UI refinements
                 fontWeight: '400',
@@ -898,6 +930,62 @@ function MapLibreTrakkeAppInner() {
               }}>
                 Oppdag Norge med turskoa på
               </p>
+
+              {/* Coordinates Display */}
+              {currentCoordinates && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '11px',
+                    color: coordinatesCopied ? '#ffffff' : '#6b7280',
+                    background: coordinatesCopied ? '#3e4533' : 'rgba(107, 114, 128, 0.1)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    transform: coordinatesCopied ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow: coordinatesCopied ? '0 2px 8px rgba(62, 69, 51, 0.3)' : 'none'
+                  }}
+                  onClick={async () => {
+                    const coordinatesText = `${currentCoordinates.lat.toFixed(5)}°N, ${currentCoordinates.lng.toFixed(5)}°E`
+                    try {
+                      if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(coordinatesText)
+                      } else {
+                        const textArea = document.createElement('textarea')
+                        textArea.value = coordinatesText
+                        textArea.style.position = 'fixed'
+                        textArea.style.left = '-999999px'
+                        textArea.style.top = '-999999px'
+                        document.body.appendChild(textArea)
+                        textArea.focus()
+                        textArea.select()
+                        document.execCommand('copy')
+                        document.body.removeChild(textArea)
+                      }
+                      handleCoordinatesCopied(true)
+                    } catch (error) {
+                      console.error('Failed to copy coordinates:', error)
+                      handleCoordinatesCopied(true)
+                    }
+                  }}
+                  title={coordinatesCopied ? "Koordinater kopiert!" : "Klikk for å kopiere koordinater"}
+                >
+                  <span style={{
+                    fontFamily: 'Material Symbols Outlined',
+                    fontSize: '14px',
+                    fontWeight: '400'
+                  }}>
+                    location_on
+                  </span>
+                  <span>
+                    {currentCoordinates.lat.toFixed(5)}°N, {currentCoordinates.lng.toFixed(5)}°E
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Search */}
@@ -1036,7 +1124,7 @@ function MapLibreTrakkeAppInner() {
         flexDirection: 'column',
         gap: '8px'
       }}>
-        {/* 1. Zoom Button Group (connected vertically) */}
+        {/* 1. Zoom Button Group (connected vertically) with Scale Info */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -1051,18 +1139,20 @@ function MapLibreTrakkeAppInner() {
             tabIndex={3}
             style={{
               width: '44px',
-              height: '44px',
+              height: '52px',
               background: 'transparent',
               border: 'none',
               borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
               cursor: 'pointer',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'background 0.2s ease',
               fontSize: '20px',
               fontWeight: '500',
-              color: '#111827'
+              color: '#111827',
+              gap: '2px'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'
@@ -1079,7 +1169,16 @@ function MapLibreTrakkeAppInner() {
               }
             }}
           >
-            +
+            <span>+</span>
+            <span style={{
+              fontSize: '8px',
+              fontWeight: '400',
+              color: '#6b7280',
+              lineHeight: '1',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            }}>
+              {getScaleText(currentZoom + 1)}
+            </span>
           </button>
 
           {/* Zoom Out (–) */}
@@ -1088,17 +1187,19 @@ function MapLibreTrakkeAppInner() {
             tabIndex={4}
             style={{
               width: '44px',
-              height: '44px',
+              height: '52px',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'background 0.2s ease',
               fontSize: '20px',
               fontWeight: '500',
-              color: '#111827'
+              color: '#111827',
+              gap: '2px'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'
@@ -1115,7 +1216,16 @@ function MapLibreTrakkeAppInner() {
               }
             }}
           >
-            −
+            <span>−</span>
+            <span style={{
+              fontSize: '8px',
+              fontWeight: '400',
+              color: '#6b7280',
+              lineHeight: '1',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            }}>
+              {getScaleText(currentZoom - 1)}
+            </span>
           </button>
         </div>
 
