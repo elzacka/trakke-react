@@ -82,7 +82,6 @@ Embraces **Allemansretten** (Right to Roam), **Friluftsliv** (outdoor life), DNT
 
 **Data**: © Kartverket, © Esri, © OpenStreetMap contributors, Geonorge/DSB
 **License**: MIT - see [LICENSE](LICENSE)
-**Issues**: [GitHub Issues](https://github.com/elzacka/trakke-react/issues)
 
 ---
 
