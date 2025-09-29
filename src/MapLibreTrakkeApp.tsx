@@ -1067,7 +1067,7 @@ function MapLibreTrakkeAppInner() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 28. sept 2025
+                  Under utvikling • Sist oppdatert 29. sept 2025
                 </p>
               </div>
             </div>
