@@ -62,7 +62,7 @@ export interface MapLibreMapProps {
 }
 
 // Distance measurement enabled
-export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
+const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   pois,
   categoryState,
   categoryTree: _categoryTree,
@@ -91,7 +91,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
   const [mapLoaded, setMapLoaded] = useState(false)
   const [mapInitialized, setMapInitialized] = useState(false)
   const [mapInitError, setMapInitError] = useState<string | null>(null)
-  const [currentZoom, setCurrentZoom] = useState<number>(13)
+  const [_currentZoom, _setCurrentZoom] = useState<number>(13)
   const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null)
   const searchMarkerRef = useRef<maplibregl.Marker | null>(null)
   const positionMarkerRef = useRef<maplibregl.Marker | null>(null)
@@ -425,13 +425,16 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       console.log(`🗺️ Initializing MapLibre with center: [${center}] and style:`, createMapStyle(mapType))
 
       try {
+        const initialMaxZoom = mapType === 'topo' ? 18 : 17 // Reduced satellite to 17 to avoid "Map data not yet available" tiles
+
         const map = new maplibregl.Map({
           container: containerRef.current!,
           style: createMapStyle(mapType),
           center: center,
-          zoom: 10,
+          zoom: 7, // Zoom level for 60km scale
+          pitch: 60, // Maximum tilt (60 degrees is MapLibre's maximum)
           minZoom: 3,
-          maxZoom: 18,
+          maxZoom: initialMaxZoom,
           attributionControl: false
         })
 
@@ -772,15 +775,15 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       console.log(`🗺️ [DEBUG] Map assigned to mapRef.current:`, !!mapRef.current)
     }
 
-    // Try geolocation first, fallback to Oslo
+    // Try user location first, fallback to Hardangervidda if disabled/failed
     if (navigator.geolocation) {
       console.log('🌍 Attempting to get user location...')
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
-          console.log(`📍 Using user location: [${userCenter[1]}, ${userCenter[0]}]`)
+          console.log(`📍 Using user location: [${userCenter[1]}, ${userCenter[0]}] with 60km scale and max tilt`)
           const map = initializeWithLocation(userCenter)
-          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (user):`, !!map)
+          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (user location):`, !!map)
           if (map) {
             setupMapEventHandlers(map)
           } else {
@@ -788,27 +791,31 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           }
         },
         (error) => {
-          console.log(`❌ Geolocation failed: ${error.message}, using Oslo fallback`)
-          const osloCenter: [number, number] = [10.7522, 59.9139]
-          const map = initializeWithLocation(osloCenter)
-          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (Oslo fallback):`, !!map)
+          console.log(`❌ Geolocation failed: ${error.message}, using Hardangervidda fallback`)
+          const hardangervidda: [number, number] = [7.47408, 60.13022] // Hardangervidda coordinates
+          const map = initializeWithLocation(hardangervidda)
+          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (Hardangervidda fallback):`, !!map)
           if (map) {
             setupMapEventHandlers(map)
           } else {
-            console.error(`❌ [ERROR] Map initialization failed with Oslo fallback`)
+            console.error(`❌ [ERROR] Map initialization failed with Hardangervidda fallback`)
           }
         },
-        { timeout: 5000, maximumAge: 300000 }
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 300000
+        }
       )
     } else {
-      console.log('📍 No geolocation support, using Oslo fallback')
-      const osloCenter: [number, number] = [10.7522, 59.9139]
-      const map = initializeWithLocation(osloCenter)
+      console.log('📍 No geolocation support, using Hardangervidda as default')
+      const hardangervidda: [number, number] = [7.47408, 60.13022] // Hardangervidda coordinates
+      const map = initializeWithLocation(hardangervidda)
       console.log(`🗺️ [DEBUG] Map from initializeWithLocation (no geolocation):`, !!map)
       if (map) {
         setupMapEventHandlers(map)
       } else {
-        console.error(`❌ [ERROR] Map initialization failed with no geolocation fallback`)
+        console.error(`❌ [ERROR] Map initialization failed with Hardangervidda center`)
       }
     }
 
@@ -850,7 +857,7 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       console.log(`🎨 Style loaded for ${mapType}, restoring position...`)
 
       // Update zoom limits based on map type
-      const newMaxZoom = mapType === 'topo' ? 17 : 16
+      const newMaxZoom = mapType === 'topo' ? 18 : 17 // Reduced satellite to 17 to avoid "Map data not yet available" tiles
       map.setMaxZoom(newMaxZoom)
 
       // If current zoom exceeds new limit, use the limit, otherwise preserve zoom
@@ -1744,109 +1751,6 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         </div>
       )}
 
-      {/* Scale and Coordinate Display - Bottom Center */}
-      {coordinates && (() => {
-        // Calculate map scale based on zoom level and latitude - Kartverket WMTS compatible
-        const calculateMapScale = (zoom: number, latitude: number): string => {
-          // Web Mercator scale factor calculation (EPSG:3857 used by Kartverket WMTS)
-          // Based on official formula: 156543.03392 * Math.cos(latitude) / Math.pow(2, z) meters per pixel
-          const metersPerPixel = 156543.03392 * Math.cos(latitude * Math.PI / 180) / Math.pow(2, zoom)
-          
-          // Calculate scale for a standardized 60px reference line (common cartographic practice)
-          const referencePixels = 60
-          const referenceMeters = metersPerPixel * referencePixels
-          
-          // Round to cartographically appropriate values
-          if (referenceMeters >= 1000) {
-            const km = referenceMeters / 1000
-            if (km >= 50) return `${Math.round(km / 10) * 10}km`      // Round to 10s above 50km
-            else if (km >= 10) return `${Math.round(km / 5) * 5}km`   // Round to 5s between 10-50km
-            else if (km >= 2) return `${Math.round(km)}km`            // Round to 1s between 2-10km
-            else return `${km.toFixed(1)}km`                          // 1 decimal below 2km
-          } else {
-            if (referenceMeters >= 500) return `${Math.round(referenceMeters / 100) * 100}m`      // Round to 100s above 500m
-            else if (referenceMeters >= 100) return `${Math.round(referenceMeters / 50) * 50}m`   // Round to 50s between 100-500m
-            else if (referenceMeters >= 20) return `${Math.round(referenceMeters / 10) * 10}m`    // Round to 10s between 20-100m
-            else return `${Math.round(referenceMeters)}m`                                         // Round to 1s below 20m
-          }
-        }
-        
-        const scaleText = calculateMapScale(currentZoom, coordinates.lat)
-        
-        return (
-          <div style={{
-            position: 'absolute',
-            bottom: '24px',
-            left: '16px',
-            zIndex: 100,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
-          }}>
-            {/* Scale and Coordinates - Bottom Left Corner Grouped */}
-            {/* Scale Line */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.9)',
-              pointerEvents: 'none'
-            }}>
-              <span style={{
-                fontFamily: 'Material Symbols Outlined',
-                fontSize: '14px',
-                color: 'rgba(255, 255, 255, 0.9)'
-              }}>
-                straighten
-              </span>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '2px'
-              }}>
-                {/* Scale bar */}
-                <div style={{
-                  width: '60px',
-                  height: '3px',
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  borderRadius: '1px',
-                  position: 'relative'
-                }}>
-                  {/* Scale bar end caps */}
-                  <div style={{
-                    position: 'absolute',
-                    left: '0',
-                    top: '-2px',
-                    width: '1px',
-                    height: '7px',
-                    background: 'rgba(255, 255, 255, 0.9)'
-                  }} />
-                  <div style={{
-                    position: 'absolute',
-                    right: '0',
-                    top: '-2px',
-                    width: '1px',
-                    height: '7px',
-                    background: 'rgba(255, 255, 255, 0.9)'
-                  }} />
-                </div>
-                {/* Scale text */}
-                <span style={{
-                  fontFamily: 'SF Mono, Monaco, "Cascadia Code", "Roboto Mono", monospace',
-                  fontSize: '10px',
-                  fontWeight: '600',
-                  color: 'rgba(255, 255, 255, 0.9)'
-                }}>
-                  {scaleText}
-                </span>
-              </div>
-            </div>
-
-          </div>
-        )
-      })()}
       
       <style>{`
         /* Clean map styling - no default controls */
@@ -2100,6 +2004,9 @@ export const MapLibreMap = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     </div>
   )
 })
+
+MapLibreMapComponent.displayName = 'MapLibreMap'
+export const MapLibreMap = MapLibreMapComponent
 
 // Extend window for search marker
 declare global {

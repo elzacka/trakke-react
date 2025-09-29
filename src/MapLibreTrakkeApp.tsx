@@ -49,7 +49,7 @@ function MapLibreTrakkeAppInner() {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
   const [locationLoading, setLocationLoading] = useState(false)
   const [mapBearing, setMapBearing] = useState(0) // Track current map bearing for compass
-  const [currentZoom, setCurrentZoom] = useState(8) // Track current zoom level for scale display
+  const [currentZoom, setCurrentZoom] = useState(7) // Track current zoom level for scale display (matches initial map zoom)
   const [currentCoordinates, setCurrentCoordinates] = useState<{lat: number, lng: number} | null>(null) // Track cursor coordinates
   const [coordinatesCopied, setCoordinatesCopied] = useState(false) // Track coordinate copy feedback
 
@@ -463,19 +463,39 @@ function MapLibreTrakkeAppInner() {
     // This prevents the flickering during zoom by avoiding redundant POI loading
   }, [])
 
-  // Calculate scale from zoom level for display
-  const getScaleText = useCallback((zoom: number): string => {
-    // Approximate scale calculation for Norway (latitude ~60°)
-    const scale = 559082264.028 / Math.pow(2, zoom)
+  // Calculate accurate map scale for display
+  const getScaleText = useCallback((zoom: number, latitude: number = 60.13): string => {
+    // Standard Web Mercator scale calculation
+    // At equator: 156543.03392 meters per pixel at zoom 0
+    // Adjusted for latitude using cosine correction
+    const metersPerPixel = 156543.03392 * Math.cos(latitude * Math.PI / 180) / Math.pow(2, zoom)
 
-    if (scale >= 1000) {
-      const km = Math.round(scale / 1000)
-      return `${km}km`
+    // Standard scale bar lengths (in pixels) and corresponding distances
+    const scaleBarPixels = 100 // Standard 100px scale bar
+    const scaleBarMeters = metersPerPixel * scaleBarPixels
+
+    // Round to nice cartographic values
+    if (scaleBarMeters >= 1000) {
+      const km = scaleBarMeters / 1000
+      if (km >= 100) return `${Math.round(km / 50) * 50}km`
+      else if (km >= 10) return `${Math.round(km / 10) * 10}km`
+      else if (km >= 5) return `${Math.round(km / 5) * 5}km`
+      else if (km >= 1) return `${Math.round(km)}km`
+      else return `${(km).toFixed(1)}km`
     } else {
-      const m = Math.round(scale)
-      return `${m}m`
+      if (scaleBarMeters >= 1000) return `${Math.round(scaleBarMeters / 100) * 100}m`
+      else if (scaleBarMeters >= 500) return `${Math.round(scaleBarMeters / 100) * 100}m`
+      else if (scaleBarMeters >= 100) return `${Math.round(scaleBarMeters / 50) * 50}m`
+      else if (scaleBarMeters >= 50) return `${Math.round(scaleBarMeters / 10) * 10}m`
+      else if (scaleBarMeters >= 10) return `${Math.round(scaleBarMeters / 5) * 5}m`
+      else return `${Math.round(scaleBarMeters)}m`
     }
   }, [])
+
+  // Get max zoom level for current map type
+  const _getMaxZoom = useCallback(() => {
+    return mapType === 'topo' ? 18 : 17 // Reduced satellite to 17 to avoid "Map data not yet available" tiles
+  }, [mapType])
 
   const handleBearingChange = useCallback((bearing: number) => {
     setMapBearing(bearing)
@@ -1115,16 +1135,16 @@ function MapLibreTrakkeAppInner() {
         right: (() => {
           if (window.innerWidth < 768) {
             // On mobile, add extra margin when sidebar is open to prevent overlap
-            return !sidebarCollapsed ? '80px' : '16px'
+            return !sidebarCollapsed ? '70px' : '6px'
           }
-          return '24px'
+          return '14px'
         })(),
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
         gap: '8px'
       }}>
-        {/* 1. Zoom Button Group (connected vertically) with Scale Info */}
+        {/* 1. Zoom Button Group (connected vertically) with Current Zoom and Scale Info */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -1139,20 +1159,18 @@ function MapLibreTrakkeAppInner() {
             tabIndex={3}
             style={{
               width: '44px',
-              height: '52px',
+              height: '44px',
               background: 'transparent',
               border: 'none',
               borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
               cursor: 'pointer',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'background 0.2s ease',
               fontSize: '20px',
               fontWeight: '500',
-              color: '#111827',
-              gap: '2px'
+              color: '#111827'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'
@@ -1170,16 +1188,28 @@ function MapLibreTrakkeAppInner() {
             }}
           >
             <span>+</span>
+          </button>
+
+          {/* Current Scale Display */}
+          <div style={{
+            width: '44px',
+            padding: '8px 4px',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0, 0, 0, 0.02)'
+          }}>
             <span style={{
-              fontSize: '8px',
-              fontWeight: '400',
-              color: '#6b7280',
+              fontSize: '9px',
+              fontWeight: '500',
+              color: '#374151',
               lineHeight: '1',
               fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             }}>
-              {getScaleText(currentZoom + 1)}
+              {getScaleText(currentZoom, currentCoordinates?.lat)}
             </span>
-          </button>
+          </div>
 
           {/* Zoom Out (–) */}
           <button
@@ -1187,19 +1217,17 @@ function MapLibreTrakkeAppInner() {
             tabIndex={4}
             style={{
               width: '44px',
-              height: '52px',
+              height: '44px',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'background 0.2s ease',
               fontSize: '20px',
               fontWeight: '500',
-              color: '#111827',
-              gap: '2px'
+              color: '#111827'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'
@@ -1217,15 +1245,6 @@ function MapLibreTrakkeAppInner() {
             }}
           >
             <span>−</span>
-            <span style={{
-              fontSize: '8px',
-              fontWeight: '400',
-              color: '#6b7280',
-              lineHeight: '1',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-            }}>
-              {getScaleText(currentZoom - 1)}
-            </span>
           </button>
         </div>
 
