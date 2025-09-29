@@ -610,7 +610,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           console.warn(`⚠️ [TILE CHECK] At zoom ${currentZoom.toFixed(2)}, requesting tiles that may not exist`)
         }
 
-        setCurrentZoom(currentZoom)
+        _setCurrentZoom(currentZoom)
         // Close any custom popups during zoom for better UX
         const existingPopups = document.querySelectorAll('.custom-poi-popup')
         existingPopups.forEach(popup => popup.remove())
