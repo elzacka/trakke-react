@@ -1137,7 +1137,7 @@ function MapLibreTrakkeAppInner() {
           right: (() => {
             if (window.innerWidth < 768) {
               // On mobile, add extra margin when sidebar is open to prevent overlap
-              return !sidebarCollapsed ? '67px' : '3px'
+              return !sidebarCollapsed ? '62px' : '3px'
             }
             return '11px'
           })(),
@@ -1475,7 +1475,7 @@ function MapLibreTrakkeAppInner() {
             bottom: '24px',
             right: (() => {
               if (window.innerWidth < 768) {
-                return !sidebarCollapsed ? '67px' : '3px'
+                return !sidebarCollapsed ? '62px' : '3px'
               }
               return '11px'
             })(),
