@@ -51,9 +51,22 @@ npm run dev
 
 ## 🎮 Controls
 
-- **Desktop**: `Ctrl+K` search, `Ctrl+B` toggle sidebar, `Ctrl+click` copy coordinates
-- **Mobile**: Long press to copy coordinates, pinch to zoom, two-finger rotate
-- **Distance**: Click ruler button → click map points → click ruler again to finish
+### Desktop Navigation
+- **Search**: `Ctrl+K` to open search panel
+- **Sidebar**: `Ctrl+B` to toggle sidebar
+- **Location**: `Ctrl+L` to toggle GPS tracking
+- **Coordinates**: `Ctrl+click` on map to copy coordinates
+- **Zoom**: Scroll wheel (normal), `Shift+scroll` (precise control - 4.5x finer increments)
+- **Box Zoom**: `Shift+drag` to zoom to selected area
+- **Rotate/Tilt**: `Ctrl+drag` to rotate and tilt the map
+- **Distance**: Click ruler → click map points → click ruler to finish
+
+### Mobile Gestures
+- **Pan**: Single finger drag
+- **Zoom**: Pinch in/out
+- **Rotate**: Two-finger rotate
+- **Coordinates**: Long press (500ms) to copy
+- **POI Details**: Tap markers to view information
 
 ## 🔧 Configuration
 

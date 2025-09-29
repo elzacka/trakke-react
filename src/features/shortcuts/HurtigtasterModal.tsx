@@ -38,7 +38,7 @@ const ShortcutRow: React.FC<{ shortcut: ShortcutItem }> = ({ shortcut }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: window.innerWidth < 768 ? '12px 16px' : '14px 20px',
+        padding: window.innerWidth < 768 ? '8px 12px' : '10px 16px',
         borderBottom: '1px solid #f3f4f6'
       }}
     >
@@ -106,56 +106,13 @@ export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, on
       isOpen={isOpen}
       onClose={onClose}
       title="Handlinger og hurtigtaster"
-      showHeader={false}
+      showHeader={true}
       ariaLabelledBy="hurtigtaster-title"
     >
-      {/* Custom header without border */}
+      {/* Content with reduced spacing */}
       <div style={{
-        padding: isMobile ? '16px 20px 12px' : '20px 24px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <h2 style={{
-          margin: 0,
-          fontSize: isMobile ? '18px' : '20px',
-          fontWeight: '600',
-          color: '#111827'
-        }}>
-          Handlinger og hurtigtaster
-        </h2>
-
-        <button
-          onClick={onClose}
-          style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: 'rgba(0, 0, 0, 0.1)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '16px',
-            color: '#374151',
-            transition: 'background-color 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f3f4f6'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'
-          }}
-          aria-label="Lukk modal"
-        >
-          ×
-        </button>
-      </div>
-
-      {/* Content without additional wrapper */}
-      <div style={{
-        padding: isMobile ? '0 20px 20px' : '0 24px 24px'
+        margin: 0,
+        padding: 0
       }}>
         {/* Show only relevant shortcuts based on device type - no section headers */}
         {isMobile

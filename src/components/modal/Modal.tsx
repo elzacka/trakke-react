@@ -100,10 +100,9 @@ export const Modal: React.FC<ModalProps> = ({
         position: 'fixed',
         top: 0,
         left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(2px)',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -127,21 +126,17 @@ export const Modal: React.FC<ModalProps> = ({
         style={{
           backgroundColor: 'white',
           borderRadius: '12px',
-          boxShadow: '0 20px 32px rgba(0, 0, 0, 0.15)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
           width: '100%',
-          maxWidth: className ? undefined : '760px',
-          maxHeight: '90vh',
+          maxWidth: className ? undefined : (window.innerWidth < 768 ? '340px' : '500px'),
+          maxHeight: window.innerWidth < 768 ? '85vh' : '80vh',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           outline: 'none',
-          // Mobile full-screen on small screens
+          // Mobile responsive sizing but not full-screen
           ...(window.innerWidth < 768 ? {
-            width: '100vw',
-            height: '100vh',
-            maxWidth: 'none',
-            maxHeight: 'none',
-            borderRadius: '0'
+            borderRadius: '12px'
           } : {})
         }}
         onClick={(e) => e.stopPropagation()}
@@ -149,8 +144,8 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Header */}
         {showHeader && (
           <div style={{
-            padding: window.innerWidth < 768 ? '16px 20px' : '24px 32px',
-            borderBottom: '1px solid #e5e7eb',
+            padding: window.innerWidth < 768 ? '16px' : '28px',
+            paddingBottom: window.innerWidth < 768 ? '12px' : '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -160,8 +155,8 @@ export const Modal: React.FC<ModalProps> = ({
               id={titleId}
               style={{
                 margin: 0,
-                fontSize: window.innerWidth < 768 ? '20px' : '24px',
-                fontWeight: 'bold',
+                fontSize: '20px',
+                fontWeight: '600',
                 color: '#111827'
               }}
             >
@@ -207,7 +202,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Content */}
         <div style={{
-          padding: window.innerWidth < 768 ? '16px 20px' : '24px 32px',
+          padding: window.innerWidth < 768 ? '0 16px 16px' : '0 28px 28px',
           overflow: 'auto',
           flex: 1
         }}>

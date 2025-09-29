@@ -437,6 +437,19 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           attributionControl: false
         })
 
+        // Enable scroll zoom with Shift for precise control
+        // Default behavior: normal scroll = regular zoom, Shift + scroll = precise zoom (smaller increments)
+        map.scrollZoom.enable()
+        map.scrollZoom.setZoomRate(1/100) // Default zoom rate for smooth scrolling
+        map.scrollZoom.setWheelZoomRate(1/450) // Slower zoom when using Shift (precise mode)
+
+        // Enable other navigation controls
+        map.boxZoom.enable() // Shift + drag to zoom to area
+        map.dragRotate.enable() // Ctrl/Cmd + drag to rotate
+        map.dragPan.enable() // Drag to pan
+        map.doubleClickZoom.enable() // Double-click to zoom in
+        map.touchZoomRotate.enable() // Pinch to zoom on touch devices
+
         console.log(`🗺️ [DEBUG] Map object created successfully:`, map)
         setMapInitialized(true)
         setMapInitError(null)
