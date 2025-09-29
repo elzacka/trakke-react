@@ -3,7 +3,6 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { POI, CategoryState, CategoryNode } from '../data/pois'
 import { SearchResult } from '../services/searchService'
-import { KartverketTrailService } from '../services/kartverketTrailService'
 import {
   DistanceMeasurement,
   Coordinate,
@@ -1292,44 +1291,67 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     })
   }, [onTrailHighlight, handleTrailClick, trails])
 
-  // Fallback to WMS overlay if vector data fails
-  const addWMSTrailFallback = (activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
+  // Add WMS trail layers (new primary method)
+  const addWMSTrailLayers = useCallback((activeTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[]) => {
     if (!mapRef.current) return
 
     const map = mapRef.current
 
-    console.log('🔄 Adding WMS trail fallback layers')
+    console.log('🔄 Adding WMS trail layers from Turrutebasen')
+
+    // Get all WMS sources from the service
+    const wmsSources = TurrutebasenService.getWMSLayerSources()
 
     activeTypes.forEach(trailType => {
       const layerId = `trails-${trailType}-wms`
-      const sourceId = `trails-${trailType}-wms`
+      const sourceId = `turrutebasen-${trailType}`
 
-      // Map trail types to Kartverket WMS layers
-      const wmsType = trailType === 'other' ? 'all' : trailType as 'hiking' | 'skiing' | 'cycling'
-
-      try {
-        map.addSource(sourceId, {
-          type: 'raster',
-          tiles: [KartverketTrailService.getWMSTileUrl(wmsType)],
-          tileSize: 256,
-          attribution: '© Kartverket (fallback)'
-        })
-
-        map.addLayer({
-          id: layerId,
-          type: 'raster',
-          source: sourceId,
-          paint: {
-            'raster-opacity': 0.7
+      // Check if source exists in our WMS sources
+      if (wmsSources[sourceId]) {
+        try {
+          // Add source if not already added
+          if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, wmsSources[sourceId])
           }
-        })
 
-        console.log(`✅ Added WMS fallback layer: ${layerId}`)
-      } catch (error) {
-        console.error(`❌ Failed to add WMS fallback for ${trailType}:`, error)
+          // Add layer if not already added
+          if (!map.getLayer(layerId)) {
+            map.addLayer({
+              id: layerId,
+              type: 'raster',
+              source: sourceId,
+              paint: {
+                'raster-opacity': 0.8
+              }
+            })
+          }
+
+          console.log(`✅ Added WMS trail layer: ${layerId}`)
+        } catch (error) {
+          console.error(`❌ Failed to add WMS trail layer for ${trailType}:`, error)
+        }
+      } else {
+        console.warn(`⚠️ No WMS source available for trail type: ${trailType}`)
       }
     })
-  }
+  }, [])
+
+  // Toggle WMS trail layer visibility
+  const toggleWMSTrailLayer = useCallback((trailType: 'hiking' | 'skiing' | 'cycling' | 'other', visible: boolean) => {
+    if (!mapRef.current) return
+
+    const map = mapRef.current
+    const layerId = `trails-${trailType}-wms`
+
+    try {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
+        console.log(`🔄 ${visible ? 'Showing' : 'Hiding'} WMS trail layer: ${layerId}`)
+      }
+    } catch (error) {
+      console.error(`❌ Failed to toggle WMS trail layer ${layerId}:`, error)
+    }
+  }, [])
 
   // Add trail vector data to map
   const addTrailsToMap = useCallback((trailData: Trail[]) => {
@@ -1460,12 +1482,12 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
       // Fallback to WMS overlay if vector data fails
       console.log('🔄 Falling back to WMS trail overlay')
-      addWMSTrailFallback(activeTypes)
+      addWMSTrailLayers(activeTypes)
 
     } finally {
       _setTrailsLoading(false)
     }
-  }, [addTrailsToMap, lastTrailBounds])
+  }, [addTrailsToMap, addWMSTrailLayers, lastTrailBounds])
 
   // TRAIL VECTOR LAYER MANAGEMENT - Handle Norwegian hiking trails from Turrutebasen
   useEffect(() => {
@@ -1510,14 +1532,27 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       }
     })
 
-    // Load and display trails if any categories are active
+    // Add WMS trail layers for active categories
     if (trailTypesForLayer.length > 0) {
-      void loadTrailsForCurrentView(trailTypesForLayer)
+      console.log('🥾 Adding WMS trail layers for active types:', trailTypesForLayer)
+      addWMSTrailLayers(trailTypesForLayer)
+
+      // Toggle visibility for all trail types
+      const allTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[] = ['hiking', 'skiing', 'cycling', 'other']
+      allTypes.forEach(type => {
+        const isActive = trailTypesForLayer.includes(type)
+        toggleWMSTrailLayer(type, isActive)
+      })
     } else {
-      console.log('🚫 No trail categories active - trails cleared')
+      console.log('🚫 No trail categories active - hiding all trail layers')
+      // Hide all WMS trail layers
+      const allTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[] = ['hiking', 'skiing', 'cycling', 'other']
+      allTypes.forEach(type => {
+        toggleWMSTrailLayer(type, false)
+      })
       setTrails([])
     }
-  }, [mapLoaded, categoryState, activeTrailTypes, loadTrailsForCurrentView])
+  }, [mapLoaded, categoryState, activeTrailTypes, addWMSTrailLayers, toggleWMSTrailLayer])
 
   // Load trails when map moves (debounced)
   useEffect(() => {

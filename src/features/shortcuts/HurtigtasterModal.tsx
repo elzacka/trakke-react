@@ -76,6 +76,9 @@ export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, on
   const mobileShortcuts = HURTIGTASTER.slice(0, 6)  // First 6 are mobile
   const desktopShortcuts = HURTIGTASTER.slice(6)    // Rest are desktop
 
+  // Determine if we're on mobile
+  const isMobile = window.innerWidth < 768
+
   const renderShortcutGroup = (shortcuts: ShortcutItem[], title: string) => (
     <div style={{ flex: 1 }}>
       <h3 style={{
@@ -113,29 +116,25 @@ export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, on
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Hurtigtaster og handlinger"
+      title="Handlinger og hurtigtaster"
       ariaLabelledBy="hurtigtaster-title"
     >
       <div style={{
         width: '100%',
-        maxWidth: window.innerWidth < 768 ? '100%' : '800px',
+        maxWidth: isMobile ? '100%' : '800px',
         margin: '0 auto'
       }}>
         <div style={{
           display: 'flex',
-          gap: window.innerWidth < 768 ? '0' : '24px',
-          flexDirection: window.innerWidth < 768 ? 'column' : 'row'
+          gap: '0',
+          flexDirection: 'column'
         }}>
-          {renderShortcutGroup(mobileShortcuts, 'Mobil')}
-          {window.innerWidth >= 768 && renderShortcutGroup(desktopShortcuts, 'Desktop')}
+          {/* Show only relevant shortcuts based on device type */}
+          {isMobile
+            ? renderShortcutGroup(mobileShortcuts, 'Mobil')
+            : renderShortcutGroup(desktopShortcuts, 'Desktop')
+          }
         </div>
-
-        {/* On mobile, show desktop shortcuts below mobile */}
-        {window.innerWidth < 768 && (
-          <div style={{ marginTop: '24px' }}>
-            {renderShortcutGroup(desktopShortcuts, 'Desktop')}
-          </div>
-        )}
       </div>
     </Modal>
   )

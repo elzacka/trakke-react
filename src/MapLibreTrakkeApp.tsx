@@ -559,9 +559,9 @@ function MapLibreTrakkeAppInner() {
   }, [])
 
   const handleTrailTypesChange = useCallback((activeTypes: TrailType[]) => {
-    console.log('🚫 Trail types change ignored - service temporarily disabled:', activeTypes)
-    // Temporarily disabled - not setting activeTrailTypes to prevent any trail loading
-    // setActiveTrailTypes(activeTypes)
+    console.log('🥾 Trail functionality is temporarily disabled - ignoring change:', activeTypes)
+    // Trail functionality is temporarily disabled - do not update state
+    return
   }, [])
 
   // Helper function to get active category IDs from category state
@@ -940,7 +940,7 @@ function MapLibreTrakkeAppInner() {
                 Tråkke
               </h1>
               <p style={{
-                margin: '0 0 8px 0',
+                margin: '-10px 0 8px 0',
                 fontSize: '13px',
                 color: '#6b7280', // Lighter text as specified in UI refinements
                 fontWeight: '400',
@@ -959,15 +959,15 @@ function MapLibreTrakkeAppInner() {
                     alignItems: 'center',
                     gap: '8px',
                     fontSize: '11px',
-                    color: coordinatesCopied ? '#ffffff' : '#6b7280',
-                    background: coordinatesCopied ? '#3e4533' : 'rgba(107, 114, 128, 0.1)',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
+                    color: coordinatesCopied ? '#3e4533' : '#6b7280',
+                    fontWeight: coordinatesCopied ? '600' : '400',
+                    background: 'transparent',
+                    padding: '6px 0',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    transform: coordinatesCopied ? 'scale(1.02)' : 'scale(1)',
-                    boxShadow: coordinatesCopied ? '0 2px 8px rgba(62, 69, 51, 0.3)' : 'none'
+                    marginTop: '28px',
+                    marginBottom: '-16px'
                   }}
                   onClick={async () => {
                     const coordinatesText = `${currentCoordinates.lat.toFixed(5)}°N, ${currentCoordinates.lng.toFixed(5)}°E`
@@ -1135,9 +1135,9 @@ function MapLibreTrakkeAppInner() {
         right: (() => {
           if (window.innerWidth < 768) {
             // On mobile, add extra margin when sidebar is open to prevent overlap
-            return !sidebarCollapsed ? '70px' : '6px'
+            return !sidebarCollapsed ? '75px' : '11px'
           }
-          return '14px'
+          return '19px'
         })(),
         zIndex: 100,
         display: 'flex',
@@ -1534,7 +1534,7 @@ function MapLibreTrakkeAppInner() {
         /* Mobile Responsive Styles */
         @media (max-width: 767px) {
           .map-controls {
-            right: 16px !important;
+            right: 21px !important;
             bottom: 24px !important;
           }
 
@@ -1609,16 +1609,16 @@ function MapLibreTrakkeAppInner() {
             style={{
               backgroundColor: 'white',
               borderRadius: '12px',
-              padding: window.innerWidth < 768 ? '20px' : '28px',
-              maxWidth: '500px',
+              padding: window.innerWidth < 768 ? '16px' : '28px',
+              maxWidth: window.innerWidth < 768 ? '340px' : '500px',
               width: '100%',
               boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-              maxHeight: '80vh',
+              maxHeight: window.innerWidth < 768 ? '85vh' : '80vh',
               overflowY: 'auto'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: window.innerWidth < 768 ? '12px' : '20px' }}>
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#111827' }}>
                 Om kartet
               </h2>
@@ -1644,7 +1644,7 @@ function MapLibreTrakkeAppInner() {
               </button>
             </div>
 
-            <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.6' }}>
+            <div style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px', color: '#374151', lineHeight: window.innerWidth < 768 ? '1.5' : '1.6' }}>
               <p style={{ marginTop: 0 }}>
                 <strong>Karttype:</strong> {mapType === 'topo' ? 'Topografisk kart' : 'Satellittkart'}
               </p>
@@ -1662,7 +1662,7 @@ function MapLibreTrakkeAppInner() {
                       href="https://www.kartverket.no"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#667154', textDecoration: 'none' }}
+                      style={{ color: '#1f2937', textDecoration: 'underline' }}
                     >
                       www.kartverket.no
                     </a>
@@ -1681,7 +1681,7 @@ function MapLibreTrakkeAppInner() {
                       href="https://www.esri.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#667154', textDecoration: 'none' }}
+                      style={{ color: '#1f2937', textDecoration: 'underline' }}
                     >
                       www.esri.com
                     </a>
@@ -1693,7 +1693,7 @@ function MapLibreTrakkeAppInner() {
                 <strong>Kategorier (POI-er):</strong><br />
                 POI-data kommer fra flere kilder:
               </p>
-              <ul style={{ marginTop: '8px', marginBottom: '12px', paddingLeft: '20px', lineHeight: '1.8' }}>
+              <ul style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px', marginBottom: window.innerWidth < 768 ? '8px' : '12px', paddingLeft: '20px', lineHeight: window.innerWidth < 768 ? '1.6' : '1.8' }}>
                 <li>
                   <strong>OpenStreetMap</strong> – Et brukerstyrt og gratis kartprosjekt som samler geografiske data og gjør dem tilgjengelig for alle
                   <br />
@@ -1701,19 +1701,19 @@ function MapLibreTrakkeAppInner() {
                     href="https://www.openstreetmap.org/copyright"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#667154', textDecoration: 'none', fontSize: '13px' }}
+                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
                   >
                     © OpenStreetMap-bidragsytere
                   </a>
                 </li>
-                <li style={{ marginTop: '8px' }}>
+                <li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
                   <strong>Tilfluktsrom</strong> – DSBs datasett i Geonorges kartkatalog
                   <br />
                   <a
                     href="https://kartkatalog.geonorge.no/metadata/tilfluktsrom-offentlige/dbae9aae-10e7-4b75-8d67-7f0e8828f3d8"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#667154', textDecoration: 'none', fontSize: '13px' }}
+                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
                   >
                     © Geonorge / DSB
                   </a>
@@ -1721,8 +1721,8 @@ function MapLibreTrakkeAppInner() {
               </ul>
 
               <div style={{
-                marginTop: '20px',
-                padding: '12px',
+                marginTop: window.innerWidth < 768 ? '12px' : '20px',
+                padding: window.innerWidth < 768 ? '8px' : '12px',
                 backgroundColor: '#f8fafc',
                 borderRadius: '6px',
                 border: '1px solid #e2e8f0'

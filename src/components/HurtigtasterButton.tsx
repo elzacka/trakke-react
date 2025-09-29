@@ -48,7 +48,7 @@ export function HurtigtasterButton() {
         }}>
           keyboard
         </span>
-        <span>Hurtigtaster og handlinger</span>
+        <span>Handlinger og hurtigtaster</span>
       </button>
     </div>
   )

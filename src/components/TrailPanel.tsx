@@ -37,8 +37,8 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
   ]
 
   const handleTrailTypeToggle = useCallback((trailType: TrailType) => {
-    // Temporarily disabled - trail data fetching is paused
-    console.log(`🚫 Trail type ${trailType} toggle disabled - service temporarily unavailable`)
+    // Trail functionality is temporarily disabled
+    console.log(`🥾 Trail functionality is temporarily disabled - ${trailType} toggle ignored`)
     return
   }, [])
 
@@ -99,19 +99,19 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
             Turløyper
           </span>
           <span style={{
-            fontSize: '12px',
+            fontSize: '11px',
             color: '#9ca3af',
             fontStyle: 'italic',
-            fontWeight: '400'
+            marginLeft: '6px'
           }}>
-            (Kommer)
+            (Kommer snart)
           </span>
         </div>
         <span
           style={{
             fontFamily: 'Material Symbols Outlined',
             fontSize: '16px',
-            color: '#9ca3af',
+            color: '#64748b',
             transform: isTrailsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease'
           }}
@@ -135,7 +135,7 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
             <div style={{
               marginBottom: '12px',
               padding: '8px',
-              backgroundColor: '#f8fafc',
+              backgroundColor: '#f8f9fa',
               borderRadius: '4px',
               fontSize: '12px',
               color: '#9ca3af'
@@ -162,7 +162,7 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      backgroundColor: '#f9fafb',
+                      backgroundColor: '#f8f9fa',
                       border: 'none',
                       display: 'flex',
                       alignItems: 'center',
@@ -171,6 +171,16 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                       transition: 'all 0.2s ease',
                       opacity: 0.6
                     }}
+                    onMouseEnter={(e) => {
+                      if (!_activeTrailTypes.includes(type)) {
+                        e.currentTarget.style.backgroundColor = '#f8fafc'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!_activeTrailTypes.includes(type)) {
+                        e.currentTarget.style.backgroundColor = '#ffffff'
+                      }
+                    }}
                   >
                     {/* Checkbox */}
                     <div style={{
@@ -178,7 +188,7 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                       height: '16px',
                       borderRadius: '3px',
                       border: '2px solid #d1d5db',
-                      backgroundColor: '#f9fafb',
+                      backgroundColor: '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
