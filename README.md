@@ -31,9 +31,9 @@
 
 ## 🏗️ Technology
 
-**Stack**: React 19 + TypeScript, MapLibre GL JS, Zustand, Vite
-**Data Sources**: Kartverket, Geonorge, OpenStreetMap, Esri, Norwegian cultural institutions
-**Browser Support**: Chrome/Edge 90+, Firefox 88+, Safari 14+, Mobile Safari iOS 14+
+- **Stack**: React 19 + TypeScript, MapLibre GL JS, Zustand, Vite
+- **Data Sources**: Kartverket, Geonorge, OpenStreetMap, Esri, Norwegian cultural institutions
+- **Browser Support**: Chrome/Edge 90+, Firefox 88+, Safari 14+, Mobile Safari iOS 14+
 
 ## 🚀 Quick Start
 
@@ -45,15 +45,15 @@ npm install
 npm run dev
 ```
 
-**Development**: http://localhost:5173
-**Build**: `npm run build`
-**Deploy**: `npm run deploy`
+- **Development**: http://localhost:5173
+- **Build**: `npm run build`
+- **Deploy**: `npm run deploy`
 
 ## 🎮 Controls
 
-**Desktop**: `Ctrl+K` search, `Ctrl+B` toggle sidebar, `Ctrl+click` copy coordinates
-**Mobile**: Long press to copy coordinates, pinch to zoom, two-finger rotate
-**Distance**: Click ruler button → click map points → click ruler again to finish
+- **Desktop**: `Ctrl+K` search, `Ctrl+B` toggle sidebar, `Ctrl+click` copy coordinates
+- **Mobile**: Long press to copy coordinates, pinch to zoom, two-finger rotate
+- **Distance**: Click ruler button → click map points → click ruler again to finish
 
 ## 🔧 Configuration
 
@@ -80,8 +80,8 @@ Embraces **Allemansretten** (Right to Roam), **Friluftsliv** (outdoor life), DNT
 
 ## 📄 Attribution & License
 
-**Data**: © Kartverket, © Esri, © OpenStreetMap contributors, Geonorge/DSB
-**License**: MIT - see [LICENSE](LICENSE)
+- **Data**: © Kartverket, © Esri, © OpenStreetMap contributors, Geonorge/DSB
+- **License**: MIT - see [LICENSE](LICENSE)
 
 ---
 
