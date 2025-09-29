@@ -1618,10 +1618,6 @@ function MapLibreTrakkeAppInner() {
 
         /* Mobile Responsive Styles */
         @media (max-width: 767px) {
-          .map-controls {
-            right: 21px !important;
-            bottom: 24px !important;
-          }
 
           .sidebar-toggle {
             width: 40px !important;
