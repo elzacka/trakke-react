@@ -456,6 +456,13 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         console.log(`✅ MapLibre loaded with ${mapType} map tiles`)
         setMapLoaded(true)
 
+        // Initialize coordinates with map center for immediate display
+        const center = map.getCenter()
+        onCoordinatesChange?.({
+          lat: center.lat,
+          lng: center.lng
+        })
+
         // Emit initial viewport bounds
         setTimeout(() => {
           if (onViewportChangeRef.current) {

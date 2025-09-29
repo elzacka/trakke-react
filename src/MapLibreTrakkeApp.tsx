@@ -52,6 +52,7 @@ function MapLibreTrakkeAppInner() {
   const [currentZoom, setCurrentZoom] = useState(7) // Track current zoom level for scale display (matches initial map zoom)
   const [currentCoordinates, setCurrentCoordinates] = useState<{lat: number, lng: number} | null>(null) // Track cursor coordinates
   const [coordinatesCopied, setCoordinatesCopied] = useState(false) // Track coordinate copy feedback
+  const [mapControlsVisible, setMapControlsVisible] = useState(true) // Track map controls visibility
 
   // Distance measurement state
   const [distanceMeasurements, setDistanceMeasurements] = useState<DistanceMeasurement[]>([])
@@ -1129,21 +1130,58 @@ function MapLibreTrakkeAppInner() {
       {/* UI Overlay Components */}
 
       {/* Unified Map Controls - Right Side (Order: Zoom group, Location, Ruler, Info) */}
-      <div className="map-controls" style={{
-        position: 'absolute',
-        bottom: '24px',
-        right: (() => {
-          if (window.innerWidth < 768) {
-            // On mobile, add extra margin when sidebar is open to prevent overlap
-            return !sidebarCollapsed ? '75px' : '11px'
-          }
-          return '19px'
-        })(),
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px'
-      }}>
+      {mapControlsVisible && (
+        <div className="map-controls" style={{
+          position: 'absolute',
+          bottom: '24px',
+          right: (() => {
+            if (window.innerWidth < 768) {
+              // On mobile, add extra margin when sidebar is open to prevent overlap
+              return !sidebarCollapsed ? '67px' : '3px'
+            }
+            return '11px'
+          })(),
+          zIndex: 100,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
+        }}>
+        {/* Eye Button - Controls Toggle */}
+        <button
+          onClick={() => setMapControlsVisible(!mapControlsVisible)}
+          aria-label={mapControlsVisible ? "Hide map controls" : "Show map controls"}
+          style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+            transition: 'all 0.2s ease',
+            fontSize: '12px',
+            color: '#374151'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f8fafc'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'
+          }}
+        >
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '16px',
+            transform: mapControlsVisible ? 'rotate(0deg)' : 'rotate(180deg)',
+            transition: 'transform 0.2s ease'
+          }}>
+            {mapControlsVisible ? 'visibility_off' : 'visibility'}
+          </span>
+        </button>
+
         {/* 1. Zoom Button Group (connected vertically) with Current Zoom and Scale Info */}
         <div style={{
           display: 'flex',
@@ -1424,7 +1462,53 @@ function MapLibreTrakkeAppInner() {
           </span>
         </button>
 
-      </div>
+        </div>
+      )}
+
+      {/* Floating Eye Button - Visible when controls are hidden */}
+      {!mapControlsVisible && (
+        <button
+          onClick={() => setMapControlsVisible(true)}
+          aria-label="Show map controls"
+          style={{
+            position: 'absolute',
+            bottom: '24px',
+            right: (() => {
+              if (window.innerWidth < 768) {
+                return !sidebarCollapsed ? '67px' : '3px'
+              }
+              return '11px'
+            })(),
+            zIndex: 101,
+            width: '44px',
+            height: '44px',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+            transition: 'all 0.2s ease',
+            fontSize: '12px',
+            color: '#374151'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f8fafc'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)'
+          }}
+        >
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '16px'
+          }}>
+            visibility
+          </span>
+        </button>
+      )}
 
       {/* Distance Measurement Mode Indicator */}
       {isDistanceMeasuring && (

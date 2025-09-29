@@ -38,13 +38,13 @@ const ShortcutRow: React.FC<{ shortcut: ShortcutItem }> = ({ shortcut }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: window.innerWidth < 768 ? '16px 20px' : '16px 24px',
+        padding: window.innerWidth < 768 ? '12px 16px' : '14px 20px',
         borderBottom: '1px solid #f3f4f6'
       }}
     >
       <span
         style={{
-          fontSize: '15px',
+          fontSize: window.innerWidth < 768 ? '14px' : '15px',
           fontWeight: '500',
           color: '#111827'
         }}
@@ -79,36 +79,25 @@ export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, on
   // Determine if we're on mobile
   const isMobile = window.innerWidth < 768
 
-  const renderShortcutGroup = (shortcuts: ShortcutItem[], title: string) => (
-    <div style={{ flex: 1 }}>
-      <h3 style={{
-        margin: '0 0 12px 0',
-        fontSize: '16px',
-        fontWeight: '600',
-        color: '#374151',
-        textAlign: 'center'
-      }}>
-        {title}
-      </h3>
-      <div
-        style={{
-          borderRadius: '8px',
-          border: '1px solid #e5e7eb',
-          overflow: 'hidden'
-        }}
-      >
-        {shortcuts.map((shortcut, index) => (
-          <div
-            key={index}
-            style={{
-              backgroundColor: 'white',
-              borderBottom: index < shortcuts.length - 1 ? '1px solid #f3f4f6' : 'none'
-            }}
-          >
-            <ShortcutRow shortcut={shortcut} />
-          </div>
-        ))}
-      </div>
+  const renderShortcutList = (shortcuts: ShortcutItem[]) => (
+    <div
+      style={{
+        borderRadius: '8px',
+        border: '1px solid #e5e7eb',
+        overflow: 'hidden'
+      }}
+    >
+      {shortcuts.map((shortcut, index) => (
+        <div
+          key={index}
+          style={{
+            backgroundColor: 'white',
+            borderBottom: index < shortcuts.length - 1 ? '1px solid #f3f4f6' : 'none'
+          }}
+        >
+          <ShortcutRow shortcut={shortcut} />
+        </div>
+      ))}
     </div>
   )
 
@@ -117,24 +106,62 @@ export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, on
       isOpen={isOpen}
       onClose={onClose}
       title="Handlinger og hurtigtaster"
+      showHeader={false}
       ariaLabelledBy="hurtigtaster-title"
     >
+      {/* Custom header without border */}
       <div style={{
-        width: '100%',
-        maxWidth: isMobile ? '100%' : '800px',
-        margin: '0 auto'
+        padding: isMobile ? '16px 20px 12px' : '20px 24px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
       }}>
-        <div style={{
-          display: 'flex',
-          gap: '0',
-          flexDirection: 'column'
+        <h2 style={{
+          margin: 0,
+          fontSize: isMobile ? '18px' : '20px',
+          fontWeight: '600',
+          color: '#111827'
         }}>
-          {/* Show only relevant shortcuts based on device type */}
-          {isMobile
-            ? renderShortcutGroup(mobileShortcuts, 'Mobil')
-            : renderShortcutGroup(desktopShortcuts, 'Desktop')
-          }
-        </div>
+          Handlinger og hurtigtaster
+        </h2>
+
+        <button
+          onClick={onClose}
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '16px',
+            color: '#374151',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#f3f4f6'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'
+          }}
+          aria-label="Lukk modal"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Content without additional wrapper */}
+      <div style={{
+        padding: isMobile ? '0 20px 20px' : '0 24px 24px'
+      }}>
+        {/* Show only relevant shortcuts based on device type - no section headers */}
+        {isMobile
+          ? renderShortcutList(mobileShortcuts)
+          : renderShortcutList(desktopShortcuts)
+        }
       </div>
     </Modal>
   )
