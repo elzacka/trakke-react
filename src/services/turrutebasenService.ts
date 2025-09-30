@@ -15,10 +15,10 @@ export class TurrutebasenService {
   private static readonly WMS_VERSION = '1.3.0'
 
   private static readonly WMS_LAYERS = {
-    hiking: 'friluftsruter:Fotrute',
-    cycling: 'friluftsruter:Sykkelrute',
-    skiing: 'friluftsruter:Skiloype',
-    other: 'friluftsruter:AnnenRute'
+    hiking: 'Fotrute',
+    cycling: 'Sykkelrute',
+    skiing: 'Skiloype',
+    other: 'AnnenRute'
   } as const
 
   static async checkServiceAvailability(): Promise<boolean> {
@@ -34,7 +34,7 @@ export class TurrutebasenService {
 
   static getWMSTileURL(trailType: keyof typeof this.WMS_LAYERS): string {
     const layer = this.WMS_LAYERS[trailType]
-    return `${this.WMS_BASE_URL}?service=WMS&version=${this.WMS_VERSION}&request=GetMap&layers=${layer}&styles=&format=image/png&transparent=true&srs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}`
+    return `${this.WMS_BASE_URL}?service=WMS&version=${this.WMS_VERSION}&request=GetMap&layers=${layer}&styles=&format=image/png&transparent=true&CRS=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}`
   }
 
   static getWMSLayerSources(): Record<string, { type: 'raster'; tiles: string[]; tileSize: number; attribution: string }> {

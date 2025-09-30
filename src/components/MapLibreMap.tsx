@@ -14,6 +14,7 @@ import {
 import { TurrutebasenService } from '../services/turrutebasenService'
 import type { Trail, BoundingBox, TrailType } from '../data/trails'
 import { TrailUtils, TRAIL_STYLES } from '../data/trails'
+import { NaturskogService } from '../services/naturskogService'
 
 // ARCHITECTURAL SAFEGUARDS - PREVENT REGRESSION TO OLD APPROACHES
 // ================================================================
@@ -461,6 +462,81 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       }
     }
 
+    // Initialize map layers (both Naturskog and Turrutebasen)
+    const initializeMapLayers = (map: maplibregl.Map, context: string) => {
+      console.log(`🔄 [${context}] Starting layer initialization...`)
+
+      // Add Naturskog WMS layers
+      try {
+        console.log(`🌲 [${context}] Starting Naturskog WMS layer initialization...`)
+        const naturskogSources = NaturskogService.getWMSLayerSources()
+        console.log(`🌲 [${context}] Got Naturskog sources:`, Object.keys(naturskogSources))
+        const naturskogLayers = NaturskogService.getMapLayers()
+        console.log(`🌲 [${context}] Got Naturskog layers:`, naturskogLayers.map(l => l.id))
+
+        // Add sources
+        Object.entries(naturskogSources).forEach(([sourceId, source]) => {
+          try {
+            if (!map.getSource(sourceId)) {
+              map.addSource(sourceId, source)
+              console.log(`✅ [${context}] Added Naturskog source: ${sourceId}`)
+            } else {
+              console.log(`ℹ️ [${context}] Naturskog source ${sourceId} already exists`)
+            }
+          } catch (error) {
+            console.error(`❌ [${context}] Failed to add Naturskog source ${sourceId}:`, error)
+          }
+        })
+
+        // Add layers
+        naturskogLayers.forEach(layer => {
+          try {
+            if (!map.getLayer(layer.id)) {
+              map.addLayer(layer)
+              console.log(`✅ [${context}] Added Naturskog layer: ${layer.id}`)
+            } else {
+              console.log(`ℹ️ [${context}] Naturskog layer ${layer.id} already exists`)
+            }
+          } catch (error) {
+            console.error(`❌ [${context}] Failed to add Naturskog layer ${layer.id}:`, error)
+          }
+        })
+        console.log(`🌲 [${context}] Naturskog layers initialized`)
+      } catch (error) {
+        console.error(`❌ [${context}] [CRITICAL] Failed to add Naturskog layers:`, error)
+      }
+
+      // Add Turrutebasen WMS layers
+      try {
+        console.log(`🥾 [${context}] Starting Turrutebasen WMS layer initialization...`)
+        const turrutebasenSources = TurrutebasenService.getWMSLayerSources()
+
+        // Add sources and layers for each trail type
+        Object.entries(turrutebasenSources).forEach(([sourceId, source]) => {
+          if (!map.getSource(sourceId)) {
+            map.addSource(sourceId, source)
+            console.log(`✅ [${context}] Added Turrutebasen source: ${sourceId}`)
+          } else {
+            console.log(`ℹ️ [${context}] Turrutebasen source ${sourceId} already exists`)
+          }
+        })
+
+        const turrutebasenLayers = TurrutebasenService.getMapLayers()
+        turrutebasenLayers.forEach(layer => {
+          if (!map.getLayer(layer.id)) {
+            map.addLayer(layer)
+            console.log(`✅ [${context}] Added Turrutebasen layer: ${layer.id}`)
+          } else {
+            console.log(`ℹ️ [${context}] Turrutebasen layer ${layer.id} already exists`)
+          }
+        })
+
+        console.log(`🥾 [${context}] Turrutebasen layers initialized`)
+      } catch (error) {
+        console.error(`❌ [${context}] Failed to add Turrutebasen layers:`, error)
+      }
+    }
+
     // Setup map event handlers
     const setupMapEventHandlers = (map: maplibregl.Map) => {
       // No default controls - using custom overlay UI components instead
@@ -489,6 +565,9 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
             })
           }
         }, 100)
+
+        // Initialize layers on map load
+        initializeMapLayers(map, 'MAP_LOAD')
       })
 
       // Add error handling for map
@@ -503,6 +582,8 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
       map.on('style.load', () => {
         console.log(`🎨 [DEBUG] Style fully loaded for ${mapType}`)
+        // Re-initialize layers when style loads (handles hard refresh issues)
+        initializeMapLayers(map, 'STYLE_LOAD')
       })
 
       // Handle viewport changes

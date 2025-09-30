@@ -12,35 +12,40 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
   const availableTrailTypes: Array<{ type: TrailType; name: string; icon: string; description: string }> = [
     {
       type: 'hiking',
-      name: 'Fotturer',
+      name: 'Fottur',
       icon: 'hiking',
       description: 'Vandreruter og fotturer'
     },
     {
       type: 'skiing',
-      name: 'Skiløyper',
+      name: 'Skiløype',
       icon: 'downhill_skiing',
       description: 'Langrennsløyper og skiturer'
     },
     {
       type: 'cycling',
-      name: 'Sykkelruter',
+      name: 'Sykkelrute',
       icon: 'directions_bike',
       description: 'Sykkelruter og sykkeltråkk'
     },
     {
-      type: 'mixed',
-      name: 'Flerfunksjonsløyper',
-      icon: 'sports',
-      description: 'Løyper for flere aktiviteter'
+      type: 'other',
+      name: 'Annen rute',
+      icon: 'alt_route',
+      description: 'Andre typer ruter og stier'
     }
   ]
 
   const handleTrailTypeToggle = useCallback((trailType: TrailType) => {
-    // Trail functionality is temporarily disabled
-    console.log(`🥾 Trail functionality is temporarily disabled - ${trailType} toggle ignored`)
-    return
-  }, [])
+    const newActiveTrailTypes = _activeTrailTypes.includes(trailType)
+      ? _activeTrailTypes.filter(t => t !== trailType)
+      : [..._activeTrailTypes, trailType]
+
+    _setActiveTrailTypes(newActiveTrailTypes)
+    onTrailTypesChange(newActiveTrailTypes)
+
+    console.log(`🥾 Trail type ${trailType} ${newActiveTrailTypes.includes(trailType) ? 'enabled' : 'disabled'}`)
+  }, [_activeTrailTypes, onTrailTypesChange])
 
   const _clearAllTrails = useCallback(() => {
     _setActiveTrailTypes([])
@@ -65,7 +70,7 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
           cursor: 'pointer',
           fontSize: '13px',
           fontWeight: '500',
-          color: '#64748b',
+          color: _activeTrailTypes.length > 0 ? '#3e4533' : '#64748b',
           transition: 'all 0.2s ease',
           marginBottom: isTrailsExpanded ? '8px' : '0'
         }}
@@ -86,26 +91,32 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
           <span style={{
             fontFamily: 'Material Symbols Outlined',
             fontSize: '16px',
-            color: '#9ca3af'
+            color: _activeTrailTypes.length > 0 ? '#3e4533' : '#64748b'
           }}>
             route
           </span>
           <span style={{
             fontSize: '14px',
             fontWeight: '500',
-            color: '#9ca3af',
+            color: _activeTrailTypes.length > 0 ? '#3e4533' : '#334155',
             letterSpacing: '0.2px'
           }}>
             Turløyper
           </span>
-          <span style={{
-            fontSize: '11px',
-            color: '#9ca3af',
-            fontStyle: 'italic',
-            marginLeft: '6px'
-          }}>
-            (Kommer snart)
-          </span>
+          {_activeTrailTypes.length > 0 && (
+            <span style={{
+              fontSize: '11px',
+              backgroundColor: '#3e4533',
+              color: 'white',
+              borderRadius: '10px',
+              padding: '2px 6px',
+              fontWeight: '600',
+              minWidth: '16px',
+              textAlign: 'center'
+            }}>
+              {_activeTrailTypes.length}
+            </span>
+          )}
         </div>
         <span
           style={{
@@ -131,16 +142,17 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
         }}>
           <div style={{ padding: '12px' }}>
 
-            {/* Help Text */}
+            {/* Info Text */}
             <div style={{
               marginBottom: '12px',
               padding: '8px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: '#f0f9ff',
               borderRadius: '4px',
               fontSize: '12px',
-              color: '#9ca3af'
+              color: '#075985',
+              lineHeight: '1.4'
             }}>
-              Turløype-funksjonen er midlertidig utilgjengelig
+              <strong>Turløyper:</strong> Stier og løyper fra Turrutebasen. Viser fire hovedtyper av ruter i Norge.
             </div>
 
             {/* Trail Type Toggles */}
@@ -158,18 +170,16 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                 >
                   <button
                     onClick={() => handleTrailTypeToggle(type)}
-                    disabled={true}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      backgroundColor: '#f8f9fa',
+                      backgroundColor: _activeTrailTypes.includes(type) ? '#f0f9ff' : '#ffffff',
                       border: 'none',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
-                      cursor: 'not-allowed',
-                      transition: 'all 0.2s ease',
-                      opacity: 0.6
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
                       if (!_activeTrailTypes.includes(type)) {
@@ -187,20 +197,29 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                       width: '16px',
                       height: '16px',
                       borderRadius: '3px',
-                      border: '2px solid #d1d5db',
-                      backgroundColor: '#ffffff',
+                      border: `2px solid ${_activeTrailTypes.includes(type) ? '#3e4533' : '#d1d5db'}`,
+                      backgroundColor: _activeTrailTypes.includes(type) ? '#3e4533' : '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       transition: 'all 0.2s ease'
                     }}>
+                      {_activeTrailTypes.includes(type) && (
+                        <span style={{
+                          color: 'white',
+                          fontSize: '10px',
+                          lineHeight: '1'
+                        }}>
+                          ✓
+                        </span>
+                      )}
                     </div>
 
                     {/* Icon */}
                     <span style={{
                       fontFamily: 'Material Symbols Outlined',
                       fontSize: '18px',
-                      color: '#9ca3af'
+                      color: _activeTrailTypes.includes(type) ? '#3e4533' : '#64748b'
                     }}>
                       {icon}
                     </span>
@@ -210,14 +229,14 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '500',
-                        color: '#9ca3af',
+                        color: _activeTrailTypes.includes(type) ? '#3e4533' : '#334155',
                         marginBottom: '2px'
                       }}>
                         {name}
                       </div>
                       <div style={{
                         fontSize: '11px',
-                        color: '#9ca3af'
+                        color: '#6b7280'
                       }}>
                         {description}
                       </div>

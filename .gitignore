@@ -26,6 +26,7 @@ dist-ssr
 # For Claude and app owner/developer
 CLAUDE.md
 Console log in localhost.md
+Console log debug info.md
 Github build errors.md
 s1.png
 UI adjustments.md

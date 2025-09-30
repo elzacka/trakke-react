@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { MapLibreMap, MapLibreMapRef } from './components/MapLibreMap'
 import { CategoryPanel } from './components/CategoryPanel'
 import { TrailPanel } from './components/TrailPanel'
+import { NaturskogPanel } from './components/NaturskogPanel'
 import { HurtigtasterButton } from './components/HurtigtasterButton'
 import { AdminControls } from './components/AdminControls'
 import { TrailDetails } from './components/TrailDetails'
@@ -14,6 +15,7 @@ import { poiDataService } from './services/poiDataService'
 import { TilfluktsromService, TilfluktsromPOI } from './services/tilfluktsromService'
 import { krigsminneEnhancementService } from './services/krigsminneEnhancementService'
 import { DistanceMeasurement } from './services/distanceService'
+import { NaturskogLayerType } from './services/naturskogService'
 import { useUIStore } from './state/uiStore'
 import { UIProvider } from './state/UIProvider'
 import { HurtigtasterModal } from './features/shortcuts/HurtigtasterModal'
@@ -560,9 +562,59 @@ function MapLibreTrakkeAppInner() {
   }, [])
 
   const handleTrailTypesChange = useCallback((activeTypes: TrailType[]) => {
-    console.log('🥾 Trail functionality is temporarily disabled - ignoring change:', activeTypes)
-    // Trail functionality is temporarily disabled - do not update state
-    return
+    console.log('🥾 Trail types changed:', activeTypes)
+    _setActiveTrailTypes(activeTypes)
+
+    // Update trail visibility on map
+    if (mapRef.current) {
+      const map = mapRef.current.getMap()
+      if (map) {
+        // Hide all trail layers first
+        const allTrailTypes: TrailType[] = ['hiking', 'cycling', 'skiing', 'other']
+        allTrailTypes.forEach(type => {
+          const layerId = `turrutebasen-${type}`
+          try {
+            if (map.getLayer(layerId)) {
+              map.setLayoutProperty(layerId, 'visibility', 'none')
+            }
+          } catch (error) {
+            console.warn(`Could not hide trail layer ${layerId}:`, error)
+          }
+        })
+
+        // Show selected trail layers
+        activeTypes.forEach(type => {
+          const layerId = `turrutebasen-${type}`
+          try {
+            if (map.getLayer(layerId)) {
+              map.setLayoutProperty(layerId, 'visibility', 'visible')
+              console.log(`✅ Trail layer ${layerId} enabled`)
+            }
+          } catch (error) {
+            console.warn(`Could not show trail layer ${layerId}:`, error)
+          }
+        })
+      }
+    }
+  }, [])
+
+  // Handle Naturskog layer toggles
+  const handleNaturskogLayerToggle = useCallback((layerType: NaturskogLayerType, enabled: boolean) => {
+    console.log(`🌲 Naturskog layer ${layerType} ${enabled ? 'enabled' : 'disabled'}`)
+
+    if (mapRef.current) {
+      const map = mapRef.current.getMap()
+      if (map) {
+        const layerId = `naturskog-${layerType}`
+        try {
+          // Toggle layer visibility
+          map.setLayoutProperty(layerId, 'visibility', enabled ? 'visible' : 'none')
+          console.log(`✅ Naturskog layer ${layerType} visibility set to ${enabled ? 'visible' : 'none'}`)
+        } catch (error) {
+          console.warn(`⚠️ Could not toggle Naturskog layer ${layerType}:`, error)
+        }
+      }
+    }
   }, [])
 
   // Helper function to get active category IDs from category state
@@ -1039,6 +1091,9 @@ function MapLibreTrakkeAppInner() {
                 onMapTypeChange={handleMapTypeChange}
               />
 
+              <NaturskogPanel
+                onLayerToggle={handleNaturskogLayerToggle}
+              />
               <TrailPanel
                 onTrailTypesChange={handleTrailTypesChange}
               />
@@ -1771,12 +1826,12 @@ function MapLibreTrakkeAppInner() {
               )}
 
               <p>
-                <strong>Kategorier (POI-er):</strong><br />
-                POI-data kommer fra flere kilder:
+                <strong>Kategorier (POI-data) og kartlag:</strong><br />
+                Leveres fra flere kilder:
               </p>
               <ul style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px', marginBottom: window.innerWidth < 768 ? '8px' : '12px', paddingLeft: '20px', lineHeight: window.innerWidth < 768 ? '1.6' : '1.8' }}>
                 <li>
-                  <strong>OpenStreetMap</strong> – Et brukerstyrt og gratis kartprosjekt som samler geografiske data og gjør dem tilgjengelig for alle
+                  <strong>Flere kategorier</strong> – Fra OpenStreetMap, et brukerstyrt og gratis kartprosjekt som samler geografiske data og gjør dem tilgjengelig for alle
                   <br />
                   <a
                     href="https://www.openstreetmap.org/copyright"
@@ -1788,7 +1843,7 @@ function MapLibreTrakkeAppInner() {
                   </a>
                 </li>
                 <li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
-                  <strong>Tilfluktsrom</strong> – DSBs datasett i Geonorges kartkatalog
+                  <strong>Tilfluktsrom</strong> – Datasett i Geonorges kartkatalog
                   <br />
                   <a
                     href="https://kartkatalog.geonorge.no/metadata/tilfluktsrom-offentlige/dbae9aae-10e7-4b75-8d67-7f0e8828f3d8"
@@ -1796,7 +1851,31 @@ function MapLibreTrakkeAppInner() {
                     rel="noopener noreferrer"
                     style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
                   >
-                    © Geonorge / DSB
+                    © Direktoratet for samfunnssikkerhet og beredskap
+                  </a>
+                </li>
+                <li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
+                  <strong>Naturskog</strong> – Datasett i Geonorges kartkatalog
+                  <br />
+                  <a
+                    href="https://kartkatalog.geonorge.no/metadata/naturskog-v1/a0062ac4-8ee0-408f-9373-4c8b8c3088d8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
+                  >
+                    © Miljødirektoratet
+                  </a>
+                </li>
+<li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
+                  <strong>Turløyper</strong> – Datasett (turrutebasen) i Geonorges kartkatalog
+                  <br />
+                  <a
+                    href="https://kartkatalog.geonorge.no/metadata/turrutebasen/d1422d17-6d95-4ef1-96ab-8af31744dd63?search=turrut"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
+                  >
+                    © Kartverket
                   </a>
                 </li>
               </ul>
