@@ -119,7 +119,7 @@ export class TilfluktsromService {
           const pointElement = posElement?.getElementsByTagNameNS('*', 'Point')[0]
           const positionElement = pointElement?.getElementsByTagNameNS('*', 'pos')[0]
 
-          if (!positionElement || !positionElement.textContent) {
+          if (!positionElement?.textContent) {
             console.warn('⚠️ Skipping feature without position data')
             continue
           }

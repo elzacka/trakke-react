@@ -121,20 +121,6 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
         }}>
           <div style={{ padding: '12px' }}>
-
-            {/* Info Text */}
-            <div style={{
-              marginBottom: '12px',
-              padding: '8px',
-              backgroundColor: '#f0f9ff',
-              borderRadius: '4px',
-              fontSize: '12px',
-              color: '#075985',
-              lineHeight: '1.4'
-            }}>
-              <strong>Naturskog:</strong> Kart over naturskog i Norge fra Miljødirektoratet. Viser tre ulike tilnærminger til kartlegging av gammel skog.
-            </div>
-
             {/* Layer Toggles */}
             <div style={{ marginBottom: '12px' }}>
               {NATURSKOG_LAYERS.map((layer) => {

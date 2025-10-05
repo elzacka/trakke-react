@@ -88,7 +88,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onCategoryToggle, catego
     if (formData.lng < -180 || formData.lng > 180) return 'Ugyldig lengdegrad'
 
     // Basic URL validation if website is provided
-    if (formData.website && formData.website.trim()) {
+    if (formData.website?.trim()) {
       try {
         new URL(formData.website.startsWith('http') ? formData.website : `https://${formData.website}`)
       } catch {

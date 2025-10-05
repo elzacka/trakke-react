@@ -141,20 +141,6 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
         }}>
           <div style={{ padding: '12px' }}>
-
-            {/* Info Text */}
-            <div style={{
-              marginBottom: '12px',
-              padding: '8px',
-              backgroundColor: '#f0f9ff',
-              borderRadius: '4px',
-              fontSize: '12px',
-              color: '#075985',
-              lineHeight: '1.4'
-            }}>
-              <strong>Turløyper:</strong> Stier og løyper fra Turrutebasen. Viser fire hovedtyper av ruter i Norge.
-            </div>
-
             {/* Trail Type Toggles */}
             <div style={{ marginBottom: '12px' }}>
               {availableTrailTypes.map(({ type, name, icon, description }) => (

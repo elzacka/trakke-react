@@ -15,7 +15,8 @@ import { poiDataService } from './services/poiDataService'
 import { TilfluktsromService, TilfluktsromPOI } from './services/tilfluktsromService'
 import { krigsminneEnhancementService } from './services/krigsminneEnhancementService'
 import { DistanceMeasurement } from './services/distanceService'
-import { NaturskogLayerType } from './services/naturskogService'
+import { NaturskogLayerType, NaturskogService } from './services/naturskogService'
+import { TurrutebasenService } from './services/turrutebasenService'
 import { useUIStore } from './state/uiStore'
 import { UIProvider } from './state/UIProvider'
 import { HurtigtasterModal } from './features/shortcuts/HurtigtasterModal'
@@ -266,7 +267,7 @@ function MapLibreTrakkeAppInner() {
         // If this is a child category, handle parent state logic
         if (clickedNode.parent) {
           const parentNode = findNode(categoryTree, clickedNode.parent)
-          if (parentNode && parentNode.children) {
+          if (parentNode?.children) {
             const allChildrenChecked = parentNode.children.every(child => newChecked[child.id])
             const someChildrenChecked = parentNode.children.some(child => newChecked[child.id])
             
@@ -582,14 +583,43 @@ function MapLibreTrakkeAppInner() {
           }
         })
 
-        // Show selected trail layers
+        // Show selected trail layers (with lazy loading)
         activeTypes.forEach(type => {
           const layerId = `turrutebasen-${type}`
+          const sourceId = `turrutebasen-${type}`
+
           try {
-            if (map.getLayer(layerId)) {
-              map.setLayoutProperty(layerId, 'visibility', 'visible')
-              console.log(`✅ Trail layer ${layerId} enabled`)
+            // Lazy initialization: Add layer if it doesn't exist
+            if (!map.getLayer(layerId)) {
+              console.log(`🔄 Lazy loading trail layer: ${layerId}`)
+
+              // Get layer configuration
+              const turrutebasenSources = TurrutebasenService.getWMSLayerSources()
+              const source = turrutebasenSources[sourceId]
+
+              if (source) {
+                // Add source if it doesn't exist
+                if (!map.getSource(sourceId)) {
+                  map.addSource(sourceId, source)
+                  console.log(`✅ Added trail source: ${sourceId}`)
+                }
+
+                // Add raster layer for WMS
+                map.addLayer({
+                  id: layerId,
+                  type: 'raster',
+                  source: sourceId,
+                  paint: {
+                    'raster-opacity': 0.8
+                  }
+                })
+                console.log(`✅ Added trail layer: ${layerId}`)
+              }
             }
+
+            // Show the layer
+            map.setLayoutProperty(layerId, 'visibility', 'visible')
+            console.log(`✅ Trail layer ${layerId} enabled`)
           } catch (error) {
             console.warn(`Could not show trail layer ${layerId}:`, error)
           }
@@ -606,7 +636,33 @@ function MapLibreTrakkeAppInner() {
       const map = mapRef.current.getMap()
       if (map) {
         const layerId = `naturskog-${layerType}`
+        const sourceId = `naturskog-${layerType}`
+
         try {
+          // Lazy initialization: Add layer if it doesn't exist
+          if (!map.getLayer(layerId)) {
+            console.log(`🔄 Lazy loading Naturskog layer: ${layerId}`)
+
+            // Get layer configuration
+            const naturskogSources = NaturskogService.getWMSLayerSources()
+            const naturskogLayers = NaturskogService.getMapLayers()
+
+            const source = naturskogSources[sourceId]
+            const layerConfig = naturskogLayers.find(l => l.id === layerId)
+
+            if (source && layerConfig) {
+              // Add source if it doesn't exist
+              if (!map.getSource(sourceId)) {
+                map.addSource(sourceId, source)
+                console.log(`✅ Added Naturskog source: ${sourceId}`)
+              }
+
+              // Add layer
+              map.addLayer(layerConfig)
+              console.log(`✅ Added Naturskog layer: ${layerId}`)
+            }
+          }
+
           // Toggle layer visibility
           map.setLayoutProperty(layerId, 'visibility', enabled ? 'visible' : 'none')
           console.log(`✅ Naturskog layer ${layerType} visibility set to ${enabled ? 'visible' : 'none'}`)
@@ -1122,7 +1178,7 @@ function MapLibreTrakkeAppInner() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 29. sept 2025
+                  Under utvikling • Sist oppdatert 05. okt 2025
                 </p>
               </div>
             </div>

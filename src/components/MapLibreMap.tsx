@@ -62,28 +62,29 @@ export interface MapLibreMapProps {
 }
 
 // Distance measurement enabled
-const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
-  pois,
-  categoryState,
-  categoryTree: _categoryTree,
-  onCategoryToggle: _onCategoryToggle,
-  onExpandToggle: _onExpandToggle,
-  searchResult,
-  userLocation,
-  onViewportChange,
-  onBearingChange,
-  onCoordinatesChange,
-  onCoordinatesCopied,
-  sidebarCollapsed: _sidebarCollapsed = true,
-  mapType = 'topo',
-  distanceMeasurements = [],
-  onDistanceMeasurementUpdate,
-  isDistanceMeasuring = false,
-  onDistanceMeasuringChange,
-  activeTrailTypes = [],
-  onTrailSelect,
-  onTrailHighlight
-}, ref) => {
+const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props, ref) => {
+  const {
+    pois,
+    categoryState,
+    categoryTree: _categoryTree,
+    onCategoryToggle: _onCategoryToggle,
+    onExpandToggle: _onExpandToggle,
+    searchResult,
+    userLocation,
+    onViewportChange,
+    onBearingChange,
+    onCoordinatesChange,
+    onCoordinatesCopied,
+    sidebarCollapsed: _sidebarCollapsed = true,
+    mapType = 'topo',
+    distanceMeasurements = [],
+    onDistanceMeasurementUpdate,
+    isDistanceMeasuring = false,
+    onDistanceMeasuringChange,
+    activeTrailTypes = [],
+    onTrailSelect,
+    onTrailHighlight
+  } = props
   const mapRef = useRef<maplibregl.Map | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const onViewportChangeRef = useRef(onViewportChange)
@@ -135,7 +136,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     distanceLinesRef.current.forEach(line => line.remove())
     distanceLinesRef.current = []
 
-    console.log('🧹 Cleared temporary distance measurements')
+    // Cleared temporary distance measurements
   }
 
   const clearDistanceMeasurements = () => {
@@ -185,7 +186,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     setCurrentMeasurement(prevMeasurement => {
       const newPoints = [...prevMeasurement, coordinate]
 
-      console.log(`📏 Current measurement had ${prevMeasurement.length} points, now has ${newPoints.length} points`)
+      // Current measurement updated
 
       // Create marker for this point
       const markerElement = document.createElement('div')
@@ -210,17 +211,17 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         .addTo(mapRef.current!)
 
       distanceMarkersRef.current.push(marker)
-      console.log(`✅ Distance marker ${newPoints.length} added at [${coordinate.lat.toFixed(5)}, ${coordinate.lng.toFixed(5)}]`)
+      // Distance marker added
 
       // If this is the second or later point, draw line from previous point
       if (newPoints.length >= 2) {
         const prevPoint = newPoints[newPoints.length - 2]
         const currentPoint = coordinate
-        console.log(`🎯 Drawing line between point ${newPoints.length - 1} and ${newPoints.length}`)
+        // Drawing line between points
         drawDistanceLine(prevPoint, currentPoint, newPoints.length - 1)
       }
 
-      console.log(`📏 Added distance measurement point ${newPoints.length}: [${coordinate.lat.toFixed(5)}, ${coordinate.lng.toFixed(5)}]`)
+      // Added distance measurement point
 
       return newPoints
     })
@@ -233,7 +234,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
 
     // Calculate distance for this segment
     const distance = calculateHaversineDistance(start, end)
-    console.log(`📐 Drawing line: ${formatDistance(distance)} between [${start.lat.toFixed(5)}, ${start.lng.toFixed(5)}] and [${end.lat.toFixed(5)}, ${end.lng.toFixed(5)}]`)
+    // Drawing distance line
 
     // Create line element
     const lineContainer = document.createElement('div')
@@ -269,7 +270,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     label.style.fontFamily = 'system-ui, -apple-system, sans-serif'
     label.textContent = formatDistance(distance)
 
-    console.log(`🏷️ Created label with text: "${label.textContent}"`)
+    // Created distance label
 
     lineContainer.appendChild(line)
     lineContainer.appendChild(label)
@@ -284,7 +285,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
       const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI
 
-      console.log(`📐 Updating line: start=[${startPixel.x.toFixed(1)}, ${startPixel.y.toFixed(1)}], end=[${endPixel.x.toFixed(1)}, ${endPixel.y.toFixed(1)}], length=${length.toFixed(1)}px`)
+      // Updating line position
 
       // Update line position
       line.style.position = 'absolute'
@@ -304,7 +305,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       label.style.left = `${labelX}px`
       label.style.top = `${labelY}px`
 
-      console.log(`📍 Label positioned at [${labelX.toFixed(1)}, ${labelY.toFixed(1)}] with text: "${label.textContent}"`)
+      // Positioned distance label
     }
 
     // Initial position
@@ -321,13 +322,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     distanceLinesRef.current.push(lineContainer)
 
     // Verify the elements are in the DOM
-    console.log(`✅ Distance line added to map. Line visible: ${line.offsetWidth > 0}, Label visible: ${label.offsetWidth > 0}`)
-    console.log(`✅ Label text: "${label.textContent}", Label styles:`, {
-      left: label.style.left,
-      top: label.style.top,
-      zIndex: label.style.zIndex,
-      background: label.style.background
-    })
+    // Distance line added to map
   }
 
   // Expose map methods to parent component
@@ -462,9 +457,35 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       }
     }
 
+    // Track if layers have been initialized to prevent duplicates
+    let layersInitialized = false
+
     // Initialize map layers (both Naturskog and Turrutebasen)
     const initializeMapLayers = (map: maplibregl.Map, context: string) => {
+      if (layersInitialized) {
+        console.log(`🔄 [${context}] Layers already initialized, skipping...`)
+        return
+      }
+
       console.log(`🔄 [${context}] Starting layer initialization...`)
+      layersInitialized = true
+
+      // PERFORMANCE OPTIMIZATION: Only log layer sources without adding them to map
+      // Layers will be initialized on-demand when first toggled
+      console.log(`⚡ [${context}] Using lazy layer initialization for better performance`)
+
+      try {
+        const _naturskogSources = NaturskogService.getWMSLayerSources()
+        const naturskogLayers = NaturskogService.getMapLayers()
+        console.log(`🌲 [${context}] Naturskog layers ready for lazy loading:`, naturskogLayers.map(l => l.id))
+
+        const _turrutebasenSources = TurrutebasenService.getWMSLayerSources()
+        console.log(`🥾 [${context}] Turrutebasen sources ready for lazy loading:`, Object.keys(_turrutebasenSources))
+      } catch (error) {
+        console.error(`❌ [${context}] Error preparing lazy layer data:`, error)
+      }
+
+      return
 
       // Add Naturskog WMS layers
       try {
@@ -521,15 +542,8 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
           }
         })
 
-        const turrutebasenLayers = TurrutebasenService.getMapLayers()
-        turrutebasenLayers.forEach(layer => {
-          if (!map.getLayer(layer.id)) {
-            map.addLayer(layer)
-            console.log(`✅ [${context}] Added Turrutebasen layer: ${layer.id}`)
-          } else {
-            console.log(`ℹ️ [${context}] Turrutebasen layer ${layer.id} already exists`)
-          }
-        })
+        // Turrutebasen layers are now handled via WMS sources only
+        console.log(`ℹ️ [${context}] Turrutebasen WMS sources prepared for lazy loading`)
 
         console.log(`🥾 [${context}] Turrutebasen layers initialized`)
       } catch (error) {
@@ -613,119 +627,22 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       map.on('rotate', handleBearingChange)
       map.on('rotateend', handleBearingChange)
 
-      // Monitor tile loading and zoom events for debugging - FIXED SOURCE ID
-      map.on('data', (e: maplibregl.MapDataEvent) => {
-        if ((e as unknown as {sourceId?: string, isSourceLoaded?: boolean}).sourceId === 'kartverket-topo' &&
-            (e as unknown as {sourceId?: string, isSourceLoaded?: boolean}).isSourceLoaded === false) {
-          console.log(`🔄 [TILE DEBUG] Loading tiles at zoom ${map.getZoom().toFixed(2)}`)
-        }
-      })
-
-      map.on('sourcedataloading', (e: maplibregl.MapDataEvent) => {
-        if ((e as unknown as {sourceId?: string}).sourceId === 'kartverket-topo') {
-          console.log(`⏳ [TILE DEBUG] Tile loading started at zoom ${map.getZoom().toFixed(2)}`)
-        }
-      })
-
-      // Enhanced tile error handling and debugging
-      map.on('sourcedata', (e: maplibregl.MapDataEvent) => {
-        const eventData = e as unknown as {sourceId?: string, isSourceLoaded?: boolean}
-        if (eventData.sourceId === 'kartverket-topo') {
-          if (eventData.isSourceLoaded) {
-            console.log(`✅ [TILE DEBUG] Source loaded successfully at zoom ${map.getZoom().toFixed(2)}`)
-          } else {
-            console.log(`⚠️ [TILE DEBUG] Source loading issue at zoom ${map.getZoom().toFixed(2)}`)
-          }
-        }
-      })
-
-      // Detailed tile request monitoring with URL inspection
-      map.on('dataloading', (e: maplibregl.MapDataEvent) => {
-        if ((e as unknown as {sourceId?: string}).sourceId === 'kartverket-topo') {
-          const zoom = map.getZoom()
-          console.log(`📡 [TILE DEBUG] Data loading event at zoom ${zoom.toFixed(2)}`, e)
-
-          // Log tile requests at critical zoom levels
-          if (zoom >= 15) {
-            console.log(`📡 [HIGH ZOOM] Tile request at zoom ${zoom.toFixed(2)} - monitoring for failures`)
-          }
-        }
-      })
-
-      // Enhanced error handling with tile-specific debugging
+      // Essential error handling only - removed verbose debug logging for performance
       map.on('error', (e) => {
-        const zoom = map.getZoom()
-        const center = map.getCenter()
-        console.error(`❌ [MAP ERROR] Zoom ${zoom.toFixed(2)}, Center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)}:`, e)
-
-        // Check if error is tile-related at critical zoom
-        if (e.error && e.error.message) {
-          console.error(`❌ [ERROR DETAILS] ${e.error.message}`)
-          if (e.error.message.includes('404') || e.error.message.includes('tile')) {
-            console.error(`❌ [TILE ERROR] Tile loading failed - this may be the grey map cause!`)
-          }
-        }
+        console.error(`❌ Map error:`, e)
       })
 
-      // Monitor tile loading failures specifically
       map.on('sourceerror', (e) => {
-        console.error(`❌ [SOURCE ERROR] Source: ${e.sourceId}`, e)
-        if (e.sourceId === 'kartverket-topo') {
-          console.error(`❌ [KARTVERKET ERROR] Topographic tiles failed to load at zoom ${map.getZoom().toFixed(2)}`)
-        } else if (e.sourceId === 'esri-satellite') {
-          console.error(`❌ [ESRI ERROR] Satellite tiles failed to load at zoom ${map.getZoom().toFixed(2)}`)
-        }
+        console.error(`❌ Source error: ${e.sourceId}`, e)
       })
 
-      // Enhanced zoom tracking with coordinate/projection debugging
+      // Optimized zoom handling - minimal logging
       map.on('zoomend', () => {
         const currentZoom = map.getZoom()
-        const center = map.getCenter()
-        const calculateMapScale = (zoom: number, latitude: number): string => {
-          const metersPerPixel = 156543.03392 * Math.cos(latitude * Math.PI / 180) / Math.pow(2, zoom)
-          const referencePixels = 60
-          const referenceMeters = metersPerPixel * referencePixels
-          if (referenceMeters >= 1000) {
-            const km = referenceMeters / 1000
-            if (km >= 50) return `${Math.round(km / 10) * 10}km`
-            else if (km >= 10) return `${Math.round(km / 5) * 5}km`
-            else if (km >= 2) return `${Math.round(km)}km`
-            else return `${km.toFixed(1)}km`
-          } else {
-            if (referenceMeters >= 500) return `${Math.round(referenceMeters / 100) * 100}m`
-            else if (referenceMeters >= 100) return `${Math.round(referenceMeters / 50) * 50}m`
-            else if (referenceMeters >= 20) return `${Math.round(referenceMeters / 10) * 10}m`
-            else return `${Math.round(referenceMeters)}m`
-          }
-        }
-        const scale = calculateMapScale(currentZoom, center.lat)
-        const metersPerPixel = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, currentZoom)
-
-        console.log(`🔍 [ZOOM DEBUG] Zoom: ${currentZoom.toFixed(2)}, Scale: ${scale}, MaxZoom: ${map.getMaxZoom()}`)
-        console.log(`🌍 [COORD DEBUG] Center: ${center.lat.toFixed(5)}°N, ${center.lng.toFixed(5)}°E, m/px: ${metersPerPixel.toFixed(2)}`)
-
-        // Critical zoom level warning (70m scale issue)
-        if (metersPerPixel <= 1.5 && metersPerPixel >= 0.8) {
-          console.warn(`⚠️ [CRITICAL ZOOM] Approaching 70m scale zone where grey map issue occurs!`)
-          console.warn(`⚠️ [TILE CHECK] At zoom ${currentZoom.toFixed(2)}, requesting tiles that may not exist`)
-        }
-
         _setCurrentZoom(currentZoom)
         // Close any custom popups during zoom for better UX
         const existingPopups = document.querySelectorAll('.custom-poi-popup')
         existingPopups.forEach(popup => popup.remove())
-      })
-
-      // Additional zoom monitoring for real-time debugging
-      map.on('zoom', () => {
-        const zoom = map.getZoom()
-        const center = map.getCenter()
-        const metersPerPixel = 156543.03392 * Math.cos(center.lat * Math.PI / 180) / Math.pow(2, zoom)
-
-        // Real-time monitoring for the problematic 70m scale
-        if (metersPerPixel <= 2.0 && metersPerPixel >= 0.5) {
-          console.log(`🔄 [REALTIME] Zoom: ${zoom.toFixed(2)}, Scale: ${metersPerPixel.toFixed(2)}m/px - CRITICAL ZONE`)
-        }
       })
       
       // Emit initial bearing
@@ -872,7 +789,10 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       })
 
       mapRef.current = map
-      console.log(`🗺️ [DEBUG] Map assigned to mapRef.current:`, !!mapRef.current)
+      console.log(`🗺️ Map initialized successfully`)
+
+      // Set up event handlers immediately
+      setupMapEventHandlers(map)
     }
 
     // Try user location first, fallback to Hardangervidda if disabled/failed
@@ -881,29 +801,17 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
-          console.log(`📍 Using user location: [${userCenter[1]}, ${userCenter[0]}] with 60km scale and max tilt`)
-          const map = initializeWithLocation(userCenter)
-          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (user location):`, !!map)
-          if (map) {
-            setupMapEventHandlers(map)
-          } else {
-            console.error(`❌ [ERROR] Map initialization failed with user location`)
-          }
+          console.log(`📍 Using user location`)
+          initializeWithLocation(userCenter)
         },
         (error) => {
           console.log(`❌ Geolocation failed: ${error.message}, using Hardangervidda fallback`)
-          const hardangervidda: [number, number] = [7.47408, 60.13022] // Hardangervidda coordinates
-          const map = initializeWithLocation(hardangervidda)
-          console.log(`🗺️ [DEBUG] Map from initializeWithLocation (Hardangervidda fallback):`, !!map)
-          if (map) {
-            setupMapEventHandlers(map)
-          } else {
-            console.error(`❌ [ERROR] Map initialization failed with Hardangervidda fallback`)
-          }
+          const hardangervidda: [number, number] = [7.47408, 60.13022]
+          initializeWithLocation(hardangervidda)
         },
         {
-          enableHighAccuracy: true,
-          timeout: 5000,
+          enableHighAccuracy: false, // Faster location acquisition
+          timeout: 1500, // Reduced from 5000ms to 1500ms for faster fallback
           maximumAge: 300000
         }
       )
@@ -994,17 +902,17 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
     if (!mapRef.current || !mapLoaded) return
 
     const map = mapRef.current
-    console.log(`🎯 API-based POI rendering: ${pois.length} POIs`)
+    // API-based POI rendering
 
     // Clean up existing POI overlays
     const existingOverlays = document.querySelectorAll('.custom-poi-overlay')
     existingOverlays.forEach(overlay => overlay.remove())
 
-    console.log(`🎯 Creating ${pois.length} POI markers`)
+    // Creating POI markers
 
     // Create API-based POI markers using custom DOM overlays positioned over the map
-    pois.forEach((poi, index) => {
-      console.log(`🎨 Creating marker ${index + 1} for POI:`, poi.name, 'with color:', poi.color, 'at coords:', poi.lat, poi.lng)
+    pois.forEach((poi, _index) => {
+      // Creating POI marker
 
       // Create overlay container
       const overlay = document.createElement('div')
@@ -1065,122 +973,35 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         markerElement.style.zIndex = '10'
       })
 
-      // Enhanced popup content creation for Krigsminne POIs
-      const createEnhancedPopupContent = (poi: POI): string => {
-        const hasEnhancedData = poi.enhancedData && poi.enhancedData.media?.thumbnails?.length
-
-        // Responsive popup sizing
+      // Optimized popup content creation - simplified and lazy loaded
+      const createPopupContent = (poi: POI): string => {
         const isMobile = window.innerWidth < 768
-        const popupMaxWidth = hasEnhancedData ? (isMobile ? '90vw' : '380px') : (isMobile ? '85vw' : '320px')
-        const popupMinWidth = isMobile ? '280px' : '280px'
 
-        const createImageCarousel = () => {
-          if (!poi.enhancedData?.media?.thumbnails?.length) {
-            console.log(`📸 No images available for ${poi.name} (enhancement service may be disabled)`)
-            return ''
-          }
-
-          const getSourceDisplayName = (source: string) => {
-            switch (source) {
-              case 'digitalt_museum': return 'Digitalt Museum'
-              case 'flickr': return 'Flickr'
-              case 'nasjonalbiblioteket': return 'Nasjonalbiblioteket'
-              default: return source
-            }
-          }
-
-          // Responsive image sizing
-          const imageSize = isMobile ? '70px' : '80px'
-          const imageHeight = isMobile ? '52px' : '60px'
-          const imageGap = isMobile ? '8px' : '12px'
-
-          return `
-            <div style="margin: 12px 0; overflow-x: auto;">
-              <div style="display: flex; gap: ${imageGap}; padding-bottom: 8px; min-width: min-content;">
-                ${poi.enhancedData.media.thumbnails.map(img => `
-                  <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
-                    <img src="${img.url}" alt="${img.title || 'Historisk bilde'}"
-                         style="width: ${imageSize}; height: ${imageHeight}; object-fit: cover; border-radius: 6px; cursor: pointer;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s ease;"
-                         onclick="window.open('${img.url}', '_blank')"
-                         onmouseover="this.style.transform='scale(1.05)'"
-                         onmouseout="this.style.transform='scale(1)'" />
-                    <div style="margin-top: 6px; font-size: ${isMobile ? '9px' : '10px'}; color: #6b7280; text-align: center;
-                                background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;
-                                min-width: 60px; white-space: nowrap;">
-                      ${getSourceDisplayName(img.source)}
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `
-        }
-
-
-        const htmlContent = `
-          <div style="background: white; border-radius: ${isMobile ? '8px' : '12px'}; box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
-                      max-width: ${popupMaxWidth}; min-width: ${popupMinWidth};
-                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                      backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2);
-                      position: relative;">
-
-            <!-- Close button for enhanced popups -->
+        // Simplified popup for faster rendering
+        return `
+          <div style="background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                      max-width: ${isMobile ? '85vw' : '320px'}; min-width: 280px;
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
             <button onclick="this.closest('.maplibregl-popup').remove()" style="
-              position: absolute;
-              top: 12px;
-              right: 12px;
-              width: 32px;
-              height: 32px;
-              border: none;
-              background: rgba(0,0,0,0.06);
-              border-radius: 8px;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-family: 'Material Symbols Outlined', Arial, sans-serif;
-              font-size: 18px;
-              color: #6b7280;
-              transition: all 0.2s ease;
-              z-index: 1001;
-            " onmouseover="this.style.background='rgba(0,0,0,0.1)'; this.style.color='#374151'" onmouseout="this.style.background='rgba(0,0,0,0.06)'; this.style.color='#6b7280'">
-              close
-            </button>
-
-            <div style="padding: ${isMobile ? '12px' : '16px'};">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
-                          padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.08);">
-                <div style="width: 24px; height: 24px; border-radius: 50%; background: ${poi.color || '#7c3aed'};
-                            border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0;
-                            display: flex; align-items: center; justify-content: center;">
-                  ${poi.type === 'war_memorials' ? '' : '<span style="color: white; font-size: 12px;">🏰</span>'}
-                </div>
-                <div>
-                  <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1F2937; line-height: 1.3;">
-                    ${poi.name}
-                  </h3>
-                  ${hasEnhancedData ? '<span style="font-size: 11px; color: #7c3aed; font-weight: 500;">UTVIDET</span>' : ''}
-                </div>
+              position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border: none;
+              background: rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; display: flex;
+              align-items: center; justify-content: center; font-size: 16px; color: #666;">×</button>
+            <div style="padding: 14px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <div style="width: 20px; height: 20px; border-radius: 50%; background: ${poi.color || '#7c3aed'}; flex-shrink: 0;"></div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 600; color: #1F2937;">${poi.name}</h3>
               </div>
-
-              <div style="font-size: 13px; color: #4B5563; line-height: 1.5; margin-bottom: 8px;">
-                ${poi.description}
-              </div>
-
-              ${createImageCarousel()}
+              <div style="font-size: 13px; color: #4B5563; line-height: 1.4;">${poi.description}</div>
             </div>
           </div>
         `
-
-        return htmlContent
       }
 
       // Add click handler for custom popup
       markerElement.addEventListener('click', (e) => {
         // If in distance measurement mode, allow click to propagate to map
         if (isDistanceMeasuringRef.current) {
-          console.log('📏 POI clicked but in measurement mode - allowing propagation')
+          // POI clicked in measurement mode
           return
         }
 
@@ -1190,97 +1011,8 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         // Close any existing popups
         document.querySelectorAll('.maplibregl-popup').forEach(popup => popup.remove())
 
-        // Parse description for popup content
-        const parts = poi.description ? poi.description.split('. ') : []
-        const categoryName = parts[0] || poi.name || 'Ukjent sted'
-        const additionalInfo = parts.slice(1).join('. ')
-
-        const headerText = categoryName
-        const detailText = (poi.name && poi.name !== categoryName)
-          ? `${poi.name}${additionalInfo ? '. ' + additionalInfo : ''}`
-          : (additionalInfo || '')
-
-        const formattedDetailText = detailText
-          ? detailText.replace(/📖 Les mer: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Les mer på Wikipedia →</a>')
-                      .replace(/📖 Wikidata: (https?:\/\/[^\s.]+)/g, '<br><a href="$1" target="_blank" style="color: #2c5530; text-decoration: none;">📖 Se på Wikidata →</a>')
-          : 'Ingen tilleggsinformasjon'
-
-        // Create popup content based on POI type
-        let popupContent: string
-        if (poi.type === 'war_memorials' && poi.enhancedData) {
-          popupContent = createEnhancedPopupContent(poi)
-        } else {
-          // Create standard popup content for non-enhanced POIs
-          popupContent = `
-          <div style="
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
-            max-width: 320px;
-            min-width: 280px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.2);
-          ">
-            <!-- Close button - positioned following 2025 UI best practices -->
-            <button onclick="this.closest('.maplibregl-popup').remove()" style="
-              position: absolute;
-              top: 12px;
-              right: 12px;
-              width: 32px;
-              height: 32px;
-              border: none;
-              background: rgba(0,0,0,0.06);
-              border-radius: 8px;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-family: 'Material Symbols Outlined', Arial, sans-serif;
-              font-size: 18px;
-              color: #6b7280;
-              transition: all 0.2s ease;
-              z-index: 1001;
-            " onmouseover="this.style.background='rgba(0,0,0,0.1)'; this.style.color='#374151'" onmouseout="this.style.background='rgba(0,0,0,0.06)'; this.style.color='#6b7280'">
-              close
-            </button>
-
-            <!-- Header -->
-            <div style="
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              padding: 16px 16px 12px 16px;
-              border-bottom: 1px solid rgba(0,0,0,0.1);
-            ">
-              <div style="
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, ${poi.color || '#8B4B8B'}, ${adjustBrightness(poi.color || '#8B4B8B', -20)});
-                flex-shrink: 0;
-              "></div>
-              <h3 style="
-                margin: 0;
-                font-size: 16px;
-                font-weight: 600;
-                color: #1f2937;
-                line-height: 1.3;
-              ">${headerText}</h3>
-            </div>
-
-            <!-- Body -->
-            <div style="
-              padding: 12px 16px 16px 16px;
-              font-size: 14px;
-              line-height: 1.5;
-              color: #4b5563;
-            ">
-              ${formattedDetailText}
-            </div>
-          </div>
-        `
-        }
+        // Use simplified popup for all POIs - better performance
+        const popupContent = createPopupContent(poi)
 
         // Create MapLibre popup that follows the marker
         new maplibregl.Popup({
@@ -1294,7 +1026,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
       })
     })
 
-    console.log(`✅ Created ${pois.length} API-based POI overlays`)
+    // Created POI overlays
   }, [mapLoaded, pois])
 
   // Handle trail click events
@@ -1370,7 +1102,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>(({
         map.getCanvas().style.cursor = 'pointer'
 
         // Highlight trail if callback provided
-        if (onTrailHighlight && e.features && e.features[0]) {
+        if (onTrailHighlight && e.features?.[0]) {
           const trailId = e.features[0].properties?.id
           if (trailId) {
             const trail = trails.find(t => t.id === trailId)
@@ -2152,7 +1884,7 @@ declare global {
 }
 
 // Helper function to adjust color brightness
-function adjustBrightness(color: string, percent: number): string {
+function _adjustBrightness(color: string, percent: number): string {
   const num = parseInt(color.replace('#', ''), 16)
   const amt = Math.round(2.55 * percent)
   const R = (num >> 16) + amt

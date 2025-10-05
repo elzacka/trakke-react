@@ -823,7 +823,7 @@ export function updatePoisData(newPois: POI[]) {
 
 // GeoJSON conversion function for Krigsminne data
 function convertKrigsminneGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI[] {
-  if (!geojson || !geojson.features) {
+  if (!geojson?.features) {
     console.warn('⚠️ Invalid GeoJSON data for Krigsminne')
     return []
   }
@@ -950,7 +950,7 @@ function generateKrigsminneDescription(props: KrigsminneProps): string {
     parts.push('Underjordisk anlegg')
   }
   
-  if (props.layer && props.layer.includes('-')) {
+  if (props.layer?.includes('-')) {
     parts.push('Ligger under bakkenivå')
   }
 
@@ -963,7 +963,7 @@ function generateKrigsminneDescription(props: KrigsminneProps): string {
 
 // GeoJSON conversion function for Utsiktspunkter data
 function convertUtsiktspunkterGeoJSONToPOIs(geojson: GeoJSONFeatureCollection): POI[] {
-  if (!geojson || !geojson.features) {
+  if (!geojson?.features) {
     console.warn('⚠️ Invalid GeoJSON data for Utsiktspunkter')
     return []
   }
