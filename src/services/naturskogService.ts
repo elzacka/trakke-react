@@ -43,23 +43,23 @@ export const NATURSKOG_LAYERS: NaturskogLayer[] = [
   {
     type: 'forest_pre_1940',
     name: 'Skog etablert før 1940',
-    description: 'Skog som ikke har vært flatehogd etter 1940',
+    description: 'Skog som har stått kontinuerlig siden 1940 – kan være plantet eller tynnet, men ikke flatehogd',
     wmsLayerName: 'skog_etablert_foer_1940_ikke_flatehogd',
     icon: 'forest',
     color: '#2d5016'
   },
   {
     type: 'forest_probability',
-    name: 'Naturskogsannsynlighet',
-    description: 'Skog etablert før 1940 uten registrerte inngrep siden ca. 1965',
+    name: 'Urørt skog (sannsynlighet)',
+    description: 'Hvor sannsynlig det er at skogen er urørt siden 1965 – mindre menneskelig påvirkning',
     wmsLayerName: 'naturskogssannsynlighet',
     icon: 'park',
     color: '#4a7c59'
   },
   {
     type: 'forest_proximity',
-    name: 'Naturskogsnærhet',
-    description: 'Gradering av naturskogsnærhet basert på dødvedandel og suksesjon',
+    name: 'Villmarkspreg (gradering)',
+    description: 'Gradering av hvor urørt og villmarksaktig skogen er',
     wmsLayerName: 'naturskogsnaerhet',
     icon: 'eco',
     color: '#5d8a32'
