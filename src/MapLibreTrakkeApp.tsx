@@ -401,37 +401,83 @@ function MapLibreTrakkeAppInner() {
             }
 
             // Load bus stops from Entur API if bussholdeplass category is active
+            // Only load when zoomed in (zoom >= 10) to avoid overwhelming the map
             if (activeCategories.includes('bussholdeplass')) {
-              console.log('🚌 Loading bus stops from Entur API with viewport:', currentViewport)
-              try {
-                const busStops = await EnturService.fetchBusStops(currentViewport)
-                console.log('📊 Raw bus stop data received:', busStops.length, busStops)
+              if (currentViewport.zoom >= 10) {
+                console.log('🚌 Loading bus stops from Entur API with viewport:', currentViewport)
+                try {
+                  const busStops = await EnturService.fetchBusStops(currentViewport)
+                  console.log('📊 Raw bus stop data received:', busStops.length, busStops)
 
-                const transformedBusStops = transformEnturStops(busStops, 'bus')
-                allPOIs = [...allPOIs, ...transformedBusStops]
+                  const transformedBusStops = transformEnturStops(busStops, 'bus')
+                  allPOIs = [...allPOIs, ...transformedBusStops]
 
-                console.log(`🚌 Loaded ${transformedBusStops.length} bus stops from Entur API`)
-              } catch (enturError) {
-                console.error('❌ Error loading bus stops:', enturError)
-                setError(`Feil ved lasting av bussholdeplasser: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
+                  console.log(`🚌 Loaded ${transformedBusStops.length} bus stops from Entur API`)
+                } catch (enturError) {
+                  console.error('❌ Error loading bus stops:', enturError)
+                  setError(`Feil ved lasting av bussholdeplasser: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
+                }
+              } else {
+                console.log('🚌 Skipping bus stops - zoom in to level 10 or higher (current: ' + currentViewport.zoom + ')')
               }
             }
 
             // Load train stations from Entur API if togstasjon category is active
+            // Train stations can load at lower zoom (8+) as there are fewer of them
             if (activeCategories.includes('togstasjon')) {
-              console.log('🚂 Loading train stations from Entur API with viewport:', currentViewport)
-              try {
-                const trainStations = await EnturService.fetchTrainStations(currentViewport)
-                console.log('📊 Raw train station data received:', trainStations.length, trainStations)
+              if (currentViewport.zoom >= 8) {
+                console.log('🚂 Loading train stations from Entur API with viewport:', currentViewport)
+                try {
+                  const trainStations = await EnturService.fetchTrainStations(currentViewport)
+                  console.log('📊 Raw train station data received:', trainStations.length, trainStations)
 
-                const transformedStations = transformEnturStops(trainStations, 'train')
-                allPOIs = [...allPOIs, ...transformedStations]
+                  const transformedStations = transformEnturStops(trainStations, 'train')
+                  allPOIs = [...allPOIs, ...transformedStations]
 
-                console.log(`🚂 Loaded ${transformedStations.length} train stations from Entur API`)
-              } catch (enturError) {
-                console.error('❌ Error loading train stations:', enturError)
-                setError(`Feil ved lasting av togstasjoner: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
+                  console.log(`🚂 Loaded ${transformedStations.length} train stations from Entur API`)
+                } catch (enturError) {
+                  console.error('❌ Error loading train stations:', enturError)
+                  setError(`Feil ved lasting av togstasjoner: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
+                }
+              } else {
+                console.log('🚂 Skipping train stations - zoom in to level 8 or higher (current: ' + currentViewport.zoom + ')')
               }
+            }
+
+            // Load cable cars from OpenStreetMap if taubane category is active
+            if (activeCategories.includes('taubane')) {
+              console.log('🚡 Loading cable cars from OpenStreetMap with viewport:', currentViewport)
+              const cableCarPOIs = await OverpassService.fetchCableCarPOIs(currentViewport)
+              console.log('📊 Raw Cable Car POIs received:', cableCarPOIs.length, cableCarPOIs)
+
+              const transformedCableCarPOIs = transformCableCarPOIs(cableCarPOIs)
+              allPOIs = [...allPOIs, ...transformedCableCarPOIs]
+
+              console.log(`🚡 Loaded ${transformedCableCarPOIs.length} cable car POIs from OpenStreetMap`)
+            }
+
+            // Load waterfalls from OpenStreetMap if foss category is active
+            if (activeCategories.includes('foss')) {
+              console.log('💧 Loading waterfalls from OpenStreetMap with viewport:', currentViewport)
+              const waterfallPOIs = await OverpassService.fetchWaterfallPOIs(currentViewport)
+              console.log('📊 Raw Waterfall POIs received:', waterfallPOIs.length, waterfallPOIs)
+
+              const transformedWaterfallPOIs = transformWaterfallPOIs(waterfallPOIs)
+              allPOIs = [...allPOIs, ...transformedWaterfallPOIs]
+
+              console.log(`💧 Loaded ${transformedWaterfallPOIs.length} waterfall POIs from OpenStreetMap`)
+            }
+
+            // Load viewpoints from OpenStreetMap if utsiktspunkt category is active
+            if (activeCategories.includes('utsiktspunkt')) {
+              console.log('👁️ Loading viewpoints from OpenStreetMap with viewport:', currentViewport)
+              const viewpointPOIs = await OverpassService.fetchViewpointPOIs(currentViewport)
+              console.log('📊 Raw Viewpoint POIs received:', viewpointPOIs.length, viewpointPOIs)
+
+              const transformedViewpointPOIs = transformViewpointPOIs(viewpointPOIs)
+              allPOIs = [...allPOIs, ...transformedViewpointPOIs]
+
+              console.log(`👁️ Loaded ${transformedViewpointPOIs.length} viewpoint POIs from OpenStreetMap`)
             }
 
 
@@ -1016,6 +1062,113 @@ function MapLibreTrakkeAppInner() {
     }))
 
     console.log(`🔄 Transformed ${stopType} stops:`, transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}]`))
+    return transformedPOIs
+  }
+
+  // Transform cable car POIs to our POI interface
+  const transformCableCarPOIs = (cableCarPOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = cableCarPOIs.map(poi => {
+      let specificName = poi.name
+      if (!specificName || specificName === 'Taubane') {
+        specificName = poi.tags.place || poi.tags.addr_place || poi.tags.addr_city ||
+                      poi.tags['name:place'] || 'Taubane'
+      }
+
+      const categoryInfo = 'Taubane'
+      const additionalInfo = []
+
+      if (poi.tags.aerialway === 'cable_car') additionalInfo.push('Kabelbane')
+      else if (poi.tags.aerialway === 'gondola') additionalInfo.push('Gondol')
+      else if (poi.tags.aerialway === 'goods') additionalInfo.push('Godsbane')
+
+      if (poi.tags.access) additionalInfo.push(`Tilgang: ${translateTagValue(poi.tags.access)}`)
+      if (poi.tags.capacity) additionalInfo.push(`Kapasitet: ${poi.tags.capacity}`)
+
+      const description = additionalInfo.length > 0
+        ? `${categoryInfo}. ${additionalInfo.join('. ')}`
+        : categoryInfo
+
+      return {
+        id: poi.id,
+        name: ensureUTF8(specificName),
+        description: ensureUTF8(description),
+        type: 'cable_cars' as POIType,
+        lat: poi.lat,
+        lng: poi.lng,
+        color: '#0284c7' // Transport category color (blue)
+      }
+    })
+
+    console.log('🔄 Transformed Cable Car POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform waterfall POIs to our POI interface
+  const transformWaterfallPOIs = (waterfallPOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = waterfallPOIs.map(poi => {
+      let specificName = poi.name
+      if (!specificName || specificName === 'Foss') {
+        specificName = poi.tags.place || poi.tags.addr_place || poi.tags.addr_city ||
+                      poi.tags['name:place'] || 'Foss'
+      }
+
+      const categoryInfo = 'Foss'
+      const additionalInfo = []
+
+      if (poi.tags.height) additionalInfo.push(`Høyde: ${poi.tags.height}m`)
+      if (poi.tags.intermittent === 'yes') additionalInfo.push('Sesongavhengig')
+
+      const description = additionalInfo.length > 0
+        ? `${categoryInfo}. ${additionalInfo.join('. ')}`
+        : categoryInfo
+
+      return {
+        id: poi.id,
+        name: ensureUTF8(specificName),
+        description: ensureUTF8(description),
+        type: 'nature_gems' as POIType,
+        lat: poi.lat,
+        lng: poi.lng,
+        color: '#7c3aed' // Naturperle category color (purple)
+      }
+    })
+
+    console.log('🔄 Transformed Waterfall POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform viewpoint POIs to our POI interface
+  const transformViewpointPOIs = (viewpointPOIs: OverpassPOI[]): POI[] => {
+    const transformedPOIs = viewpointPOIs.map(poi => {
+      let specificName = poi.name
+      if (!specificName || specificName === 'Utsiktspunkt') {
+        specificName = poi.tags.place || poi.tags.addr_place || poi.tags.addr_city ||
+                      poi.tags['name:place'] || 'Utsiktspunkt'
+      }
+
+      const categoryInfo = 'Utsiktspunkt'
+      const additionalInfo = []
+
+      if (poi.tags.ele) additionalInfo.push(`Høyde: ${poi.tags.ele}moh`)
+      if (poi.tags.direction) additionalInfo.push(`Retning: ${poi.tags.direction}°`)
+      if (poi.tags.access) additionalInfo.push(`Tilgang: ${translateTagValue(poi.tags.access)}`)
+
+      const description = additionalInfo.length > 0
+        ? `${categoryInfo}. ${additionalInfo.join('. ')}`
+        : categoryInfo
+
+      return {
+        id: poi.id,
+        name: ensureUTF8(specificName),
+        description: ensureUTF8(description),
+        type: 'viewpoints' as POIType,
+        lat: poi.lat,
+        lng: poi.lng,
+        color: '#7c3aed' // Naturperle category color (purple)
+      }
+    })
+
+    console.log('🔄 Transformed Viewpoint POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1921,7 +2074,7 @@ function MapLibreTrakkeAppInner() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: window.innerWidth < 768 ? '12px' : '20px' }}>
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#111827' }}>
-                Om kartet
+                Datakilder
               </h2>
               <button
                 onClick={() => setIsAttributionOpen(false)}
@@ -1963,7 +2116,7 @@ function MapLibreTrakkeAppInner() {
                       href="https://www.kartverket.no"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#1f2937', textDecoration: 'underline' }}
+                      style={{ color: '#667154', textDecoration: 'underline' }}
                     >
                       www.kartverket.no
                     </a>
@@ -1982,7 +2135,7 @@ function MapLibreTrakkeAppInner() {
                       href="https://www.esri.com"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#1f2937', textDecoration: 'underline' }}
+                      style={{ color: '#667154', textDecoration: 'underline' }}
                     >
                       www.esri.com
                     </a>
@@ -2002,7 +2155,7 @@ function MapLibreTrakkeAppInner() {
                     href="https://www.openstreetmap.org/copyright"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
+                    style={{ color: '#667154', textDecoration: 'underline', fontSize: '13px' }}
                   >
                     © OpenStreetMap-bidragsytere
                   </a>
@@ -2014,9 +2167,21 @@ function MapLibreTrakkeAppInner() {
                     href="https://kartkatalog.geonorge.no/metadata/tilfluktsrom-offentlige/dbae9aae-10e7-4b75-8d67-7f0e8828f3d8"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
+                    style={{ color: '#667154', textDecoration: 'underline', fontSize: '13px' }}
                   >
                     © Direktoratet for samfunnssikkerhet og beredskap
+                  </a>
+                </li>
+                <li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
+                  <strong>Bussholdeplass og togstasjon</strong> – Fra Entur, Norges nasjonale register for kollektivtrafikk
+                  <br />
+                  <a
+                    href="https://developer.entur.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#667154', textDecoration: 'underline', fontSize: '13px' }}
+                  >
+                    © Entur
                   </a>
                 </li>
                 <li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
@@ -2026,24 +2191,25 @@ function MapLibreTrakkeAppInner() {
                     href="https://kartkatalog.geonorge.no/metadata/naturskog-v1/a0062ac4-8ee0-408f-9373-4c8b8c3088d8"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
+                    style={{ color: '#667154', textDecoration: 'underline', fontSize: '13px' }}
                   >
                     © Miljødirektoratet
                   </a>
                 </li>
-<li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
-                  <strong>Turløyper</strong> – Datasett (turrutebasen) i Geonorges kartkatalog
+                <li style={{ marginTop: window.innerWidth < 768 ? '6px' : '8px' }}>
+                  <strong>Turløype</strong> – Datasett (turrutebasen) i Geonorges kartkatalog
                   <br />
                   <a
                     href="https://kartkatalog.geonorge.no/metadata/turrutebasen/d1422d17-6d95-4ef1-96ab-8af31744dd63?search=turrut"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: '#1f2937', textDecoration: 'underline', fontSize: '13px' }}
+                    style={{ color: '#667154', textDecoration: 'underline', fontSize: '13px' }}
                   >
                     © Kartverket
                   </a>
                 </li>
               </ul>
+
 
               <div style={{
                 marginTop: window.innerWidth < 768 ? '12px' : '20px',
@@ -2053,7 +2219,15 @@ function MapLibreTrakkeAppInner() {
                 border: '1px solid #e2e8f0'
               }}>
                 <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
-                  <strong>Tråkke</strong> kombinerer åpne datakilder for å gi deg et kartverktøy der du kan utforske og planlegge neste tur.
+                  <strong>I henhold til </strong>
+                <a
+                  href="https://data.norge.no/nlod/no/2.0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#667154', textDecoration: 'underline' }}
+                >
+                  Norsk lisens for offentlige data (NLOD)
+                </a>
                 </p>
               </div>
             </div>

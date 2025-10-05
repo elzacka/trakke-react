@@ -1246,4 +1246,142 @@ export class OverpassService {
       return []
     }
   }
+
+  /**
+   * Fetch cable car / gondola POIs within bounds (Taubane)
+   * OSM tags: aerialway=cable_car, aerialway=gondola, aerialway=goods
+   */
+  static async fetchCableCarPOIs(bounds: { north: number; south: number; east: number; west: number }): Promise<OverpassPOI[]> {
+    const { south, west, north, east } = bounds
+    const cacheKey = `cablecars_${south}_${west}_${north}_${east}`
+
+    const cached = this.cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log(`🗄️ Using cached cable car data (${cached.data.length} POIs)`)
+      return cached.data
+    }
+
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["aerialway"="cable_car"](${south},${west},${north},${east});
+        way["aerialway"="cable_car"](${south},${west},${north},${east});
+        node["aerialway"="gondola"](${south},${west},${north},${east});
+        way["aerialway"="gondola"](${south},${west},${north},${east});
+        node["aerialway"="goods"](${south},${west},${north},${east});
+        way["aerialway"="goods"](${south},${west},${north},${east});
+      );
+      out center body 500;
+    `
+
+    try {
+      const data = await this.queryOverpass(query)
+      const rawPois: OverpassPOI[] = data.elements?.map((element: OverpassElement) => ({
+        id: element.id?.toString() || `cablecar_${element.lat}_${element.lon}`,
+        type: element.type || 'node',
+        lat: element.lat || element.center?.lat,
+        lng: element.lon || element.center?.lon,
+        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Taubane',
+        tags: element.tags || {}
+      })) || []
+
+      console.log(`🚡 Extracted ${rawPois.length} cable car POIs`)
+      this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
+      console.log(`✅ Fetched ${rawPois.length} cable car POIs from OpenStreetMap`)
+      return rawPois
+    } catch (error) {
+      console.error('❌ Error fetching cable cars:', error)
+      return []
+    }
+  }
+
+  /**
+   * Fetch waterfall POIs within bounds (Foss)
+   * OSM tags: waterway=waterfall, natural=waterfall
+   */
+  static async fetchWaterfallPOIs(bounds: { north: number; south: number; east: number; west: number }): Promise<OverpassPOI[]> {
+    const { south, west, north, east } = bounds
+    const cacheKey = `waterfalls_${south}_${west}_${north}_${east}`
+
+    const cached = this.cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log(`🗄️ Using cached waterfall data (${cached.data.length} POIs)`)
+      return cached.data
+    }
+
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["waterway"="waterfall"](${south},${west},${north},${east});
+        way["waterway"="waterfall"](${south},${west},${north},${east});
+        node["natural"="waterfall"](${south},${west},${north},${east});
+        way["natural"="waterfall"](${south},${west},${north},${east});
+      );
+      out center body 500;
+    `
+
+    try {
+      const data = await this.queryOverpass(query)
+      const rawPois: OverpassPOI[] = data.elements?.map((element: OverpassElement) => ({
+        id: element.id?.toString() || `waterfall_${element.lat}_${element.lon}`,
+        type: element.type || 'node',
+        lat: element.lat || element.center?.lat,
+        lng: element.lon || element.center?.lon,
+        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Foss',
+        tags: element.tags || {}
+      })) || []
+
+      console.log(`💧 Extracted ${rawPois.length} waterfall POIs`)
+      this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
+      console.log(`✅ Fetched ${rawPois.length} waterfall POIs from OpenStreetMap`)
+      return rawPois
+    } catch (error) {
+      console.error('❌ Error fetching waterfalls:', error)
+      return []
+    }
+  }
+
+  /**
+   * Fetch viewpoint POIs within bounds (Utsiktspunkt)
+   * OSM tags: tourism=viewpoint
+   */
+  static async fetchViewpointPOIs(bounds: { north: number; south: number; east: number; west: number }): Promise<OverpassPOI[]> {
+    const { south, west, north, east } = bounds
+    const cacheKey = `viewpoints_${south}_${west}_${north}_${east}`
+
+    const cached = this.cache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log(`🗄️ Using cached viewpoint data (${cached.data.length} POIs)`)
+      return cached.data
+    }
+
+    const query = `
+      [out:json][timeout:25];
+      (
+        node["tourism"="viewpoint"](${south},${west},${north},${east});
+        way["tourism"="viewpoint"](${south},${west},${north},${east});
+      );
+      out center body 500;
+    `
+
+    try {
+      const data = await this.queryOverpass(query)
+      const rawPois: OverpassPOI[] = data.elements?.map((element: OverpassElement) => ({
+        id: element.id?.toString() || `viewpoint_${element.lat}_${element.lon}`,
+        type: element.type || 'node',
+        lat: element.lat || element.center?.lat,
+        lng: element.lon || element.center?.lon,
+        name: element.tags?.name || element.tags?.['name:no'] || element.tags?.['name:nb'] || 'Utsiktspunkt',
+        tags: element.tags || {}
+      })) || []
+
+      console.log(`👁️ Extracted ${rawPois.length} viewpoint POIs`)
+      this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
+      console.log(`✅ Fetched ${rawPois.length} viewpoint POIs from OpenStreetMap`)
+      return rawPois
+    } catch (error) {
+      console.error('❌ Error fetching viewpoints:', error)
+      return []
+    }
+  }
 }

@@ -55,7 +55,8 @@ export class EnturService {
    */
   static async fetchBusStops(bounds: StopBounds): Promise<EnturStop[]> {
     console.log('🚌 Fetching bus stops from Entur API...')
-    return this.fetchStops(bounds, ['venue'], ['onstreetBus', 'busStation'])
+    // Use multiple search terms to get comprehensive coverage
+    return this.fetchStopsMultipleSearches(bounds, ['venue'], ['onstreetBus', 'busStation'])
   }
 
   /**
@@ -63,19 +64,74 @@ export class EnturService {
    */
   static async fetchTrainStations(bounds: StopBounds): Promise<EnturStop[]> {
     console.log('🚂 Fetching train stations from Entur API...')
-    return this.fetchStops(bounds, ['venue'], ['railStation'])
+    return this.fetchStopsMultipleSearches(bounds, ['venue'], ['railStation'])
   }
 
   /**
-   * Generic method to fetch stops by category
-   * Uses Entur's /features endpoint which supports bounding box queries
+   * Fetch stops using multiple search terms and combine results
+   * This overcomes the limitation that Entur requires a search text
+   *
+   * Optimizations:
+   * - Parallel requests for speed
+   * - Combined cache key for all searches
+   * - Deduplication by stop ID
    */
-  private static async fetchStops(
+  private static async fetchStopsMultipleSearches(
     bounds: StopBounds,
     layers: string[],
     stopTypes: string[]
   ): Promise<EnturStop[]> {
-    const cacheKey = `${stopTypes.join(',')}_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
+    // Check combined cache first
+    const combinedCacheKey = `combined_${stopTypes.join(',')}_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
+    const cached = this.cache.get(combinedCacheKey)
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      console.log(`🗄️ Using cached Entur data (${cached.data.length} stops)`)
+      return cached.data
+    }
+
+    // Use common Norwegian letters/terms to get good coverage
+    const searchTerms = ['a', 'b', 's', 'o', 'e']
+
+    // **OPTIMIZATION: Run all searches in parallel instead of sequential**
+    const searchPromises = searchTerms.map(term =>
+      this.fetchStops(bounds, layers, stopTypes, term)
+    )
+
+    try {
+      const results = await Promise.all(searchPromises)
+
+      // Deduplicate by ID across all results
+      const allStops = new Map<string, EnturStop>()
+      results.forEach(stops => {
+        stops.forEach(stop => {
+          allStops.set(stop.id, stop)
+        })
+      })
+
+      const uniqueStops = Array.from(allStops.values())
+      console.log(`📊 Combined ${uniqueStops.length} unique stops from ${searchTerms.length} parallel searches`)
+
+      // Cache the combined result
+      this.cache.set(combinedCacheKey, { data: uniqueStops, timestamp: Date.now() })
+
+      return uniqueStops
+    } catch (error) {
+      console.error('❌ Error in parallel searches:', error)
+      return []
+    }
+  }
+
+  /**
+   * Generic method to fetch stops by category
+   * Uses Entur's /autocomplete endpoint with a search term and bounding box
+   */
+  private static async fetchStops(
+    bounds: StopBounds,
+    layers: string[],
+    stopTypes: string[],
+    searchTerm: string
+  ): Promise<EnturStop[]> {
+    const cacheKey = `${searchTerm}_${stopTypes.join(',')}_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
 
     // Check cache
     const cached = this.cache.get(cacheKey)
@@ -85,17 +141,31 @@ export class EnturService {
     }
 
     try {
-      // Entur geocoder features endpoint with bounding box
+      // Use center point of bounds for reverse geocoding
+      const centerLat = (bounds.north + bounds.south) / 2
+      const centerLon = (bounds.east + bounds.west) / 2
+
+      // Calculate radius from center to corner (in meters, approximate)
+      const latDiff = bounds.north - centerLat
+      const lonDiff = bounds.east - centerLon
+      const radiusKm = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 111 // 1 degree ≈ 111km
+      const _radiusMeters = Math.min(radiusKm * 1000, 100000) // Cap at 100km radius (unused but kept for reference)
+
+      // Entur geocoder autocomplete endpoint with bounding box
+      // We'll filter by category in parseEnturResponse
       const params = new URLSearchParams({
+        'text': searchTerm,
+        'focus.point.lat': String(centerLat),
+        'focus.point.lon': String(centerLon),
         'layers': layers.join(','),
-        'size': '1000', // Max results
+        'size': '500', // Max results per search
         'boundary.rect.min_lat': String(bounds.south),
         'boundary.rect.min_lon': String(bounds.west),
         'boundary.rect.max_lat': String(bounds.north),
         'boundary.rect.max_lon': String(bounds.east)
       })
 
-      const url = `${this.GEOCODER_URL}/features?${params.toString()}`
+      const url = `${this.GEOCODER_URL}/autocomplete?${params.toString()}`
 
       console.log('📡 Entur API request:', url)
 

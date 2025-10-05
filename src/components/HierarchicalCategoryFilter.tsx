@@ -31,23 +31,23 @@ export function HierarchicalCategoryFilter({
       
       // Newly active categories with real POI data
       'aktivitet': true,          // Contains bålplass with firepit data
-      'naturperle': false,
+      'naturperle': true,         // Contains foss and utsiktspunkt with real POI data
       'overnatte': true,          // Contains gapahuk_vindskjul with shelter data
       'service': true,            // Contains tilfluktsrom with real WFS data
-      'transport': false,
+      'transport': true,          // Contains bus stops and train stations from Entur API
 
       // Newly active subcategories with real POI data
       'bålplass': true,           // Fire pits from leisure=firepit
       'gapahuk_vindskjul': true,  // Shelters from amenity=shelter
       'tilfluktsrom': true,       // Emergency shelters from Geonorge WFS
-      
+
       // All other subcategories inactive (no POI sources)
       'badeplass': false,
       'badeplass_med_strand': false,
       'fiskeplass': false,
       'kanopadling': false,
-      'foss': false,
-      'utsiktspunkt': false,
+      'foss': true,               // Waterfalls from waterway=waterfall
+      'utsiktspunkt': true,       // Viewpoints from tourism=viewpoint
       'campingplass': false,
       'fri_camping': false,
       'hengekøyeplass': false,
@@ -64,9 +64,9 @@ export function HierarchicalCategoryFilter({
       'spise_rasteplass': false,
       'toalett': false,
       'utfartparkering': false,
-      'bussholdeplass': false,
-      'taubane': false,
-      'togstasjon': false,
+      'bussholdeplass': true,     // Bus stops from Entur API
+      'taubane': true,            // Cable cars from aerialway=cable_car, gondola, goods
+      'togstasjon': true,         // Train stations from Entur API
       'tursti': false,
       'fjelltopp': false,
       'skiløype': false
