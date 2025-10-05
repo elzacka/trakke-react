@@ -1261,7 +1261,7 @@ export class OverpassService {
       return cached.data
     }
 
-    const query = `
+    const overpassQuery = `
       [out:json][timeout:25];
       (
         node["aerialway"="cable_car"](${south},${west},${north},${east});
@@ -1272,10 +1272,26 @@ export class OverpassService {
         way["aerialway"="goods"](${south},${west},${north},${east});
       );
       out center body 500;
-    `
+    `.trim()
 
     try {
-      const data = await this.queryOverpass(query)
+      const response = await fetch(this.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+        },
+        body: overpassQuery
+      })
+
+      if (!response.ok) {
+        throw new Error(`Overpass API request failed: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
+
       const rawPois: OverpassPOI[] = data.elements?.map((element: OverpassElement) => ({
         id: element.id?.toString() || `cablecar_${element.lat}_${element.lon}`,
         type: element.type || 'node',
@@ -1309,7 +1325,7 @@ export class OverpassService {
       return cached.data
     }
 
-    const query = `
+    const overpassQuery = `
       [out:json][timeout:25];
       (
         node["waterway"="waterfall"](${south},${west},${north},${east});
@@ -1318,10 +1334,26 @@ export class OverpassService {
         way["natural"="waterfall"](${south},${west},${north},${east});
       );
       out center body 500;
-    `
+    `.trim()
 
     try {
-      const data = await this.queryOverpass(query)
+      const response = await fetch(this.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+        },
+        body: overpassQuery
+      })
+
+      if (!response.ok) {
+        throw new Error(`Overpass API request failed: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
+
       const rawPois: OverpassPOI[] = data.elements?.map((element: OverpassElement) => ({
         id: element.id?.toString() || `waterfall_${element.lat}_${element.lon}`,
         type: element.type || 'node',
@@ -1355,17 +1387,33 @@ export class OverpassService {
       return cached.data
     }
 
-    const query = `
+    const overpassQuery = `
       [out:json][timeout:25];
       (
         node["tourism"="viewpoint"](${south},${west},${north},${east});
         way["tourism"="viewpoint"](${south},${west},${north},${east});
       );
       out center body 500;
-    `
+    `.trim()
 
     try {
-      const data = await this.queryOverpass(query)
+      const response = await fetch(this.BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Accept': 'application/json; charset=utf-8',
+          'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
+        },
+        body: overpassQuery
+      })
+
+      if (!response.ok) {
+        throw new Error(`Overpass API request failed: ${response.status}`)
+      }
+
+      const responseText = await response.text()
+      const data = JSON.parse(responseText)
+
       const rawPois: OverpassPOI[] = data.elements?.map((element: OverpassElement) => ({
         id: element.id?.toString() || `viewpoint_${element.lat}_${element.lon}`,
         type: element.type || 'node',

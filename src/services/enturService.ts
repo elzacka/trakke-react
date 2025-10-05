@@ -237,7 +237,7 @@ export class EnturService {
         // Use label for display name, fallback to name
         const displayName = props.label || props.name || 'Unnamed stop'
 
-        return {
+        const enturStop: EnturStop = {
           id: props.id || `entur_${coords[1]}_${coords[0]}`,
           name: displayName,
           type,
@@ -246,6 +246,7 @@ export class EnturService {
           locality: props.locality,
           category: category
         }
+        return enturStop
       })
       .filter((stop): stop is EnturStop => stop !== null)
 
