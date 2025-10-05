@@ -13,6 +13,7 @@ import { OverpassService, OverpassPOI } from './services/overpassService'
 import { SearchResult, SearchService } from './services/searchService'
 import { poiDataService } from './services/poiDataService'
 import { TilfluktsromService, TilfluktsromPOI } from './services/tilfluktsromService'
+import { EnturService, EnturStop } from './services/enturService'
 import { krigsminneEnhancementService } from './services/krigsminneEnhancementService'
 import { DistanceMeasurement } from './services/distanceService'
 import { NaturskogLayerType, NaturskogService } from './services/naturskogService'
@@ -399,6 +400,40 @@ function MapLibreTrakkeAppInner() {
               }
             }
 
+            // Load bus stops from Entur API if bussholdeplass category is active
+            if (activeCategories.includes('bussholdeplass')) {
+              console.log('🚌 Loading bus stops from Entur API with viewport:', currentViewport)
+              try {
+                const busStops = await EnturService.fetchBusStops(currentViewport)
+                console.log('📊 Raw bus stop data received:', busStops.length, busStops)
+
+                const transformedBusStops = transformEnturStops(busStops, 'bus')
+                allPOIs = [...allPOIs, ...transformedBusStops]
+
+                console.log(`🚌 Loaded ${transformedBusStops.length} bus stops from Entur API`)
+              } catch (enturError) {
+                console.error('❌ Error loading bus stops:', enturError)
+                setError(`Feil ved lasting av bussholdeplasser: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
+              }
+            }
+
+            // Load train stations from Entur API if togstasjon category is active
+            if (activeCategories.includes('togstasjon')) {
+              console.log('🚂 Loading train stations from Entur API with viewport:', currentViewport)
+              try {
+                const trainStations = await EnturService.fetchTrainStations(currentViewport)
+                console.log('📊 Raw train station data received:', trainStations.length, trainStations)
+
+                const transformedStations = transformEnturStops(trainStations, 'train')
+                allPOIs = [...allPOIs, ...transformedStations]
+
+                console.log(`🚂 Loaded ${transformedStations.length} train stations from Entur API`)
+              } catch (enturError) {
+                console.error('❌ Error loading train stations:', enturError)
+                setError(`Feil ved lasting av togstasjoner: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
+              }
+            }
+
 
             // Load custom POIs from local storage for all active categories
             console.log('🏛️ Loading custom POIs for active categories:', activeCategories)
@@ -741,6 +776,10 @@ function MapLibreTrakkeAppInner() {
           activeCategories.push('gapahuk_vindskjul')
         } else if (node.id === 'tilfluktsrom') {
           activeCategories.push('tilfluktsrom')
+        } else if (node.id === 'bussholdeplass') {
+          activeCategories.push('bussholdeplass')
+        } else if (node.id === 'togstasjon') {
+          activeCategories.push('togstasjon')
         }
       }
       if (node.children) {
@@ -956,6 +995,27 @@ function MapLibreTrakkeAppInner() {
     }))
 
     console.log('🔄 Transformed Tilfluktsrom POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
+    return transformedPOIs
+  }
+
+  // Transform Entur stops (bus/train) to our POI interface
+  const transformEnturStops = (enturStops: EnturStop[], stopType: 'bus' | 'train'): POI[] => {
+    const transportColor = '#0284c7' // Transport category color
+    const isBus = stopType === 'bus'
+
+    const transformedPOIs = enturStops.map(stop => ({
+      id: stop.id,
+      name: ensureUTF8(stop.name),
+      description: stop.locality
+        ? `${isBus ? 'Bussholdeplass' : 'Togstasjon'} i ${stop.locality}`
+        : isBus ? 'Bussholdeplass' : 'Togstasjon',
+      type: (isBus ? 'public_transport' : 'train_stations') as POIType,
+      lat: stop.lat,
+      lng: stop.lng,
+      color: transportColor
+    }))
+
+    console.log(`🔄 Transformed ${stopType} stops:`, transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}]`))
     return transformedPOIs
   }
 
