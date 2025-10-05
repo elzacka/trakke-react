@@ -449,6 +449,12 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         console.log(`🗺️ [DEBUG] Map object created successfully:`, map)
         setMapInitialized(true)
         setMapInitError(null)
+
+        // Assign map to ref and set up event handlers
+        mapRef.current = map
+        setupMapEventHandlers(map)
+        console.log(`🗺️ Map initialized and event handlers attached`)
+
         return map
       } catch (error) {
         console.error(`❌ [ERROR] Failed to create MapLibre map:`, error)
@@ -787,12 +793,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           addDistanceMeasurementPoint({ lat, lng })
         }
       })
-
-      mapRef.current = map
-      console.log(`🗺️ Map initialized successfully`)
-
-      // Set up event handlers immediately
-      setupMapEventHandlers(map)
     }
 
     // Try user location first, fallback to Hardangervidda if disabled/failed
@@ -1469,6 +1469,20 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       zoom: 15,
       duration: 1000
     })
+
+    // Automatically remove search marker after 3 seconds
+    const removeTimer = setTimeout(() => {
+      if (searchMarkerRef.current) {
+        console.log('⏱️ Auto-removing search marker after 3 seconds')
+        searchMarkerRef.current.remove()
+        searchMarkerRef.current = null
+      }
+    }, 3000)
+
+    // Cleanup timer on unmount or when searchResult changes
+    return () => {
+      clearTimeout(removeTimer)
+    }
   }, [searchResult])
 
   // Handle user location centering and marker

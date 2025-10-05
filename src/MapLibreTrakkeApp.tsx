@@ -61,6 +61,9 @@ function MapLibreTrakkeAppInner() {
   const [distanceMeasurements, setDistanceMeasurements] = useState<DistanceMeasurement[]>([])
   const [isDistanceMeasuring, setIsDistanceMeasuring] = useState(false)
 
+  // Layer state tracking for re-initialization after style changes
+  const [activeNaturskogLayers, setActiveNaturskogLayers] = useState<Set<NaturskogLayerType>>(new Set())
+
   // Attribution modal state
   const [isAttributionOpen, setIsAttributionOpen] = useState(false)
 
@@ -632,6 +635,17 @@ function MapLibreTrakkeAppInner() {
   const handleNaturskogLayerToggle = useCallback((layerType: NaturskogLayerType, enabled: boolean) => {
     console.log(`🌲 Naturskog layer ${layerType} ${enabled ? 'enabled' : 'disabled'}`)
 
+    // Track active layers for re-initialization after style changes
+    setActiveNaturskogLayers(prev => {
+      const newSet = new Set(prev)
+      if (enabled) {
+        newSet.add(layerType)
+      } else {
+        newSet.delete(layerType)
+      }
+      return newSet
+    })
+
     if (mapRef.current) {
       const map = mapRef.current.getMap()
       if (map) {
@@ -672,6 +686,41 @@ function MapLibreTrakkeAppInner() {
       }
     }
   }, [])
+
+  // Re-apply active layers after map style changes
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const map = mapRef.current.getMap()
+    if (!map) return
+
+    // Wait for style to load before re-adding layers
+    const handleStyleLoad = () => {
+      console.log('🔄 Style changed, re-initializing active layers')
+
+      // Re-trigger trail layers if any are active
+      if (_activeTrailTypes.length > 0) {
+        console.log(`🥾 Re-adding ${_activeTrailTypes.length} active trail layers`)
+        handleTrailTypesChange(_activeTrailTypes)
+      }
+
+      // Re-trigger Naturskog layers if any are active
+      if (activeNaturskogLayers.size > 0) {
+        console.log(`🌲 Re-adding ${activeNaturskogLayers.size} active Naturskog layers`)
+        activeNaturskogLayers.forEach(layerType => {
+          handleNaturskogLayerToggle(layerType, true)
+        })
+      }
+    }
+
+    void map.once('styledata', handleStyleLoad)
+
+    return () => {
+      if (map) {
+        map.off('styledata', handleStyleLoad)
+      }
+    }
+  }, [mapType, _activeTrailTypes, activeNaturskogLayers, handleTrailTypesChange, handleNaturskogLayerToggle])
 
   // Helper function to get active category IDs from category state
   const getActiveCategories = (state: CategoryState): string[] => {
