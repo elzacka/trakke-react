@@ -3,7 +3,7 @@
 [![Deploy to GitHub Pages](https://github.com/elzacka/trakke-react/actions/workflows/deploy.yml/badge.svg)](https://github.com/elzacka/trakke-react/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Tråkke** is a modern web application for exploring Norway's nature, cultural heritage, and outdoor adventures. Built with official Norwegian government data sources and open data for comprehensive, accurate coverage of trails, points of interest, and geographical information.
+**Tråkke** is a web application for exploring Norway's nature, cultural heritage, and outdoor adventures. Built with official Norwegian government data sources and open data for comprehensive, accurate coverage of trails, points of interest, and geographical information.
 
 🌐 **Live App**: [https://elzacka.github.io/trakke-react/](https://elzacka.github.io/trakke-react/)
 
