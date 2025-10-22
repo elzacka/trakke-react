@@ -168,10 +168,10 @@ export function HierarchicalCategoryFilter({
           />
           
           {node.icon && !node.parent && (
-            <div 
-              className="icon-preview" 
-              style={{ 
-                backgroundColor: isDisabled ? '#e5e7eb' : (node.color || '#6b7280'),
+            <div
+              className="icon-preview"
+              style={{
+                backgroundColor: isDisabled ? '#e5e7eb' : (node.color ?? '#6b7280'),
                 width: '22px',
                 height: '22px',
                 borderRadius: '6px',

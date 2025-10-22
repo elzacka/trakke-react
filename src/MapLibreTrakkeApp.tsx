@@ -4,7 +4,6 @@ import { CategoryPanel } from './components/CategoryPanel'
 import { TrailPanel } from './components/TrailPanel'
 import { NaturskogPanel } from './components/NaturskogPanel'
 import { HurtigtasterButton } from './components/HurtigtasterButton'
-import { PersonvernButton } from './components/PersonvernButton'
 import { SlettDataButton } from './components/SlettDataButton'
 import { AdminControls } from './components/AdminControls'
 import { TrailDetails } from './components/TrailDetails'
@@ -1101,7 +1100,7 @@ function MapLibreTrakkeAppInner() {
     const transformedPOIs = tilfluktsromPOIs.map(poi => ({
       id: poi.id,
       name: ensureUTF8(poi.name),
-      description: ensureUTF8(poi.tags.description || 'Offentlig tilfluktsrom'),
+      description: ensureUTF8(poi.tags.description ?? 'Offentlig tilfluktsrom'),
       type: 'emergency_shelters' as POIType,
       lat: poi.lat,
       lng: poi.lng,

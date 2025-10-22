@@ -17,44 +17,29 @@ export class TilfluktsromService {
   private baseUrl = 'https://wfs.geonorge.no/skwms1/wfs.tilfluktsrom_offentlige'
 
 
-  // Alternative proxy methods for fallback
+  // Try direct access (GDPR compliant - no third-party proxies)
   private async fetchWithFallback(url: string, headers: HeadersInit): Promise<Response> {
-    const isProduction = window.location.hostname.includes('github.io')
+    // ALWAYS try direct access first (works if CORS is enabled by the WFS server)
+    try {
+      console.log(`🔄 Trying direct WFS access (GDPR compliant)...`)
+      const directResponse = await fetch(url, { headers })
 
-    if (!isProduction) {
-      // Direct fetch for development
-      return fetch(url, { headers })
-    }
-
-    // Production: try multiple CORS proxy services
-    const proxies = [
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-      `https://corsproxy.io/?${encodeURIComponent(url)}`,
-      `https://cors-anywhere.herokuapp.com/${url}`
-    ]
-
-    for (const proxyUrl of proxies) {
-      try {
-        console.log(`🔄 Trying CORS proxy: ${proxyUrl.split('?')[0]}`)
-        const response = await fetch(proxyUrl, {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest' // Some proxies require this
-          }
-        })
-
-        if (response.ok) {
-          console.log(`✅ CORS proxy successful: ${proxyUrl.split('?')[0]}`)
-          return response
-        } else {
-          console.warn(`⚠️ CORS proxy failed (${response.status}): ${proxyUrl.split('?')[0]}`)
-        }
-      } catch (error) {
-        console.warn(`❌ CORS proxy error: ${proxyUrl.split('?')[0]}`, error)
-        continue
+      if (directResponse.ok) {
+        console.log(`✅ Direct WFS access successful - CORS enabled by Geonorge`)
+        return directResponse
+      } else {
+        console.warn(`⚠️ Direct access returned ${directResponse.status}: ${directResponse.statusText}`)
+      }
+    } catch (error) {
+      console.warn(`❌ Direct access error:`, error)
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.error('🚨 CORS policy blocking request - WFS server does not allow cross-origin requests')
       }
     }
 
-    throw new Error('All CORS proxy methods failed. Tilfluktsrom data unavailable in production.')
+    // Direct access failed - no untrusted third-party proxies for GDPR compliance
+    // TODO: Implement own server-side proxy (Cloudflare Worker or GitHub Actions)
+    throw new Error('Tilfluktsrom WFS er ikke tilgjengelig. CORS-policy blokkerer direkte tilgang. Implementer egen proxy for å løse dette.')
   }
 
   async fetchTilfluktsrom(bounds: {
@@ -189,18 +174,23 @@ export class TilfluktsromService {
     } catch (error) {
       console.error('❌ Error fetching tilfluktsrom data:', error)
 
-      // If we're on GitHub Pages and all proxies failed, return some static examples
-      const isProduction = window.location.hostname.includes('github.io')
-      if (isProduction && error instanceof Error && error.message.includes('CORS proxy')) {
-        console.warn('🔄 All CORS proxies failed, returning static examples for demonstration')
-        return this.getStaticExamples()
+      // If CORS fails, provide informative message but don't fail completely
+      // Return empty array - this is non-critical POI data
+      if (error instanceof Error && error.message.includes('CORS')) {
+        console.warn('⚠️ Tilfluktsrom data ikke tilgjengelig pga. CORS-policy.')
+        console.warn('💡 Vurder å implementere egen proxy (Cloudflare Worker eller GitHub Actions)')
+        // Return empty array instead of failing - this allows the app to continue working
+        return []
       }
 
       if (error instanceof TypeError && error.message.includes('fetch')) {
         console.error('🚨 Likely CORS issue - WFS service may not allow requests from this domain')
-        throw new Error('CORS error: Tilfluktsrom service not accessible from this domain. This may work in development but fail in production.')
+        return [] // Return empty array to allow app to continue
       }
-      throw error
+
+      // For other errors, return empty array to prevent app crash
+      console.error('🚨 Returning empty tilfluktsrom list due to error')
+      return []
     }
   }
 

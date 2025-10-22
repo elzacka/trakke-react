@@ -126,10 +126,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onCategoryToggle, catego
         lat: formData.lat,
         lng: formData.lng,
         type: formData.type as POIType, // Cast to POI type
-        subcategory: formData.subcategory || undefined,
-        website: formData.website?.trim() || undefined,
-        phone: formData.phone?.trim() || undefined,
-        address: formData.address?.trim() || undefined,
+        subcategory: formData.subcategory ?? undefined,
+        website: formData.website?.trim() ?? undefined,
+        phone: formData.phone?.trim() ?? undefined,
+        address: formData.address?.trim() ?? undefined,
         color: '#3b82f6' // Default color, will be overridden by category
       })
 
@@ -409,7 +409,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onCategoryToggle, catego
                       </div>
                       <input
                         type="url"
-                        value={formData.website || ''}
+                        value={formData.website ?? ''}
                         onChange={(e) => handleInputChange('website', e.target.value)}
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 text-gray-900 placeholder-gray-500"
                         placeholder="https://example.com"

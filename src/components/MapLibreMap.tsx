@@ -1007,7 +1007,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
               align-items: center; justify-content: center; font-size: 16px; color: #666;">×</button>
             <div style="padding: 14px;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                <div style="width: 20px; height: 20px; border-radius: 50%; background: ${poi.color || '#7c3aed'}; flex-shrink: 0;"></div>
+                <div style="width: 20px; height: 20px; border-radius: 50%; background: ${poi.color ?? '#7c3aed'}; flex-shrink: 0;"></div>
                 <h3 style="margin: 0; font-size: 15px; font-weight: 600; color: #1F2937;">${poi.name}</h3>
               </div>
               <div style="font-size: 13px; color: #4B5563; line-height: 1.4;">${poi.description}</div>
@@ -1248,7 +1248,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         source: 'trails-data',
         filter: ['==', ['get', 'type'], trailType],
         paint: {
-          'line-color': style.glowColor || style.color + '40',
+          'line-color': style.glowColor ?? style.color + '40',
           'line-width': style.width + 2,
           'line-blur': 2,
           'line-opacity': 0.6
