@@ -23,10 +23,7 @@
 }
 
 .search-icon {
-  color: #64748b;
-  font-size: 20px;
-  margin-left: 12px;
-  flex-shrink: 0;
+  display: none;
 }
 
 .search-input {
@@ -44,7 +41,7 @@
 }
 
 .search-loading {
-  color: #2c5530;
+  color: #3e4533;
   font-size: 18px;
   margin-right: 12px;
   animation: spin 1s linear infinite;
@@ -74,8 +71,9 @@
   color: #333;
 }
 
-.search-clear .material-symbols-outlined {
-  font-size: 18px;
+.search-clear {
+  font-size: 24px;
+  line-height: 1;
 }
 
 /* Error styling */
@@ -97,10 +95,6 @@
   z-index: 1000;
 }
 
-.search-error .material-symbols-outlined {
-  font-size: 16px;
-  color: #f44336;
-}
 
 .search-results {
   position: absolute;
@@ -147,7 +141,7 @@
 }
 
 .result-icon {
-  color: #2c5530;
+  color: #3e4533;
   font-size: 20px;
   margin-top: 2px;
   flex-shrink: 0;
@@ -183,7 +177,7 @@
 
 .result-type {
   background: #e8f5e8;
-  color: #2c5530;
+  color: #3e4533;
   padding: 2px 6px;
   border-radius: 12px;
   font-weight: 500;
@@ -211,9 +205,8 @@
   color: #666;
 }
 
-.search-no-results .material-symbols-outlined {
-  font-size: 32px;
-  color: #ccc;
+.search-no-results > span:first-child {
+  display: block;
   margin-bottom: 8px;
 }
 
@@ -250,12 +243,12 @@
 
 /* Focus states for tilgjengelighet */
 .search-result-item:focus {
-  outline: 2px solid #2c5530;
+  outline: 2px solid #3e4533;
   outline-offset: -2px;
 }
 
 .search-clear:focus {
-  outline: 2px solid #2c5530;
+  outline: 2px solid #3e4533;
   outline-offset: 2px;
 }
 

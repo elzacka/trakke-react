@@ -4,6 +4,8 @@ import { CategoryPanel } from './components/CategoryPanel'
 import { TrailPanel } from './components/TrailPanel'
 import { NaturskogPanel } from './components/NaturskogPanel'
 import { HurtigtasterButton } from './components/HurtigtasterButton'
+import { PersonvernButton } from './components/PersonvernButton'
+import { SlettDataButton } from './components/SlettDataButton'
 import { AdminControls } from './components/AdminControls'
 import { TrailDetails } from './components/TrailDetails'
 import { SearchBox, SearchBoxRef } from './components/SearchBox'
@@ -24,6 +26,7 @@ import { HurtigtasterModal } from './features/shortcuts/HurtigtasterModal'
 import { TegnforklaringModal } from './features/legend/TegnforklaringModal'
 import { AdminLoginModal } from './components/modal/AdminLoginModal'
 import { AdminPanel } from './components/modal/AdminPanel'
+import { InstallPromptModal } from './components/InstallPromptModal'
 import './services/adminService' // Import to make adminService available globally
 
 function MapLibreTrakkeAppInner() {
@@ -67,6 +70,9 @@ function MapLibreTrakkeAppInner() {
 
   // Attribution modal state
   const [isAttributionOpen, setIsAttributionOpen] = useState(false)
+
+  // PWA Install Prompt state
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
 
   // POI data state (currently only Krigsminne from OpenStreetMap)
   const [pois, setPois] = useState<POI[]>([])
@@ -230,6 +236,68 @@ function MapLibreTrakkeAppInner() {
       document.removeEventListener('keydown', handleGlobalKeyDown)
     }
   }, [sidebarCollapsed, toggleSidebar])
+
+  // PWA Install Prompt - show on first visit or after 7 days if dismissed (MOBILE ONLY)
+  useEffect(() => {
+    const checkInstallPrompt = () => {
+      const DISMISSED_KEY = 'pwa-install-dismissed'
+      const INSTALLED_KEY = 'pwa-installed'
+
+      // Only show on mobile devices (not desktop)
+      const userAgent = navigator.userAgent.toLowerCase()
+      const isMobile = /iphone|ipad|ipod|android/.test(userAgent)
+
+      if (!isMobile) {
+        return // Skip install prompt on desktop
+      }
+
+      // Check if already installed (standalone mode)
+      // iOS Safari has a non-standard 'standalone' property on navigator
+      interface NavigatorStandalone extends Navigator {
+        standalone?: boolean
+      }
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || (window.navigator as NavigatorStandalone).standalone
+        || document.referrer.includes('android-app://')
+
+      if (isStandalone) {
+        localStorage.setItem(INSTALLED_KEY, 'true')
+        return
+      }
+
+      // Check if user has installed before
+      if (localStorage.getItem(INSTALLED_KEY)) {
+        return
+      }
+
+      // Check if user dismissed the prompt
+      const dismissedTime = localStorage.getItem(DISMISSED_KEY)
+      if (dismissedTime) {
+        const daysSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24)
+        if (daysSinceDismissed < 7) {
+          return
+        }
+      }
+
+      // Show prompt after a short delay (let the page load first)
+      const timer = setTimeout(() => {
+        setShowInstallPrompt(true)
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+
+    checkInstallPrompt()
+  }, [])
+
+  const handleInstallPromptClose = useCallback(() => {
+    setShowInstallPrompt(false)
+  }, [])
+
+  const handleInstallPromptDismiss = useCallback(() => {
+    localStorage.setItem('pwa-install-dismissed', Date.now().toString())
+    setShowInstallPrompt(false)
+  }, [])
 
   const handleCategoryToggle = useCallback((nodeId: string) => {
     setCategoryState(prev => {
@@ -1322,61 +1390,6 @@ function MapLibreTrakkeAppInner() {
                 Oppdag Norge med turskoa på
               </p>
 
-              {/* Coordinates Display */}
-              {currentCoordinates && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '11px',
-                    color: coordinatesCopied ? '#3e4533' : '#6b7280',
-                    fontWeight: coordinatesCopied ? '600' : '400',
-                    background: 'transparent',
-                    padding: '6px 0',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    marginTop: '28px',
-                    marginBottom: '-16px'
-                  }}
-                  onClick={async () => {
-                    const coordinatesText = `${currentCoordinates.lat.toFixed(5)}°N, ${currentCoordinates.lng.toFixed(5)}°E`
-                    try {
-                      if (navigator.clipboard && window.isSecureContext) {
-                        await navigator.clipboard.writeText(coordinatesText)
-                      } else {
-                        const textArea = document.createElement('textarea')
-                        textArea.value = coordinatesText
-                        textArea.style.position = 'fixed'
-                        textArea.style.left = '-999999px'
-                        textArea.style.top = '-999999px'
-                        document.body.appendChild(textArea)
-                        textArea.focus()
-                        textArea.select()
-                        document.execCommand('copy')
-                        document.body.removeChild(textArea)
-                      }
-                      handleCoordinatesCopied(true)
-                    } catch (error) {
-                      console.error('Failed to copy coordinates:', error)
-                      handleCoordinatesCopied(true)
-                    }
-                  }}
-                  title={coordinatesCopied ? "Koordinater kopiert!" : "Klikk for å kopiere koordinater"}
-                >
-                  <span style={{
-                    fontFamily: 'Material Symbols Outlined',
-                    fontSize: '14px',
-                    fontWeight: '400'
-                  }}>
-                    location_on
-                  </span>
-                  <span>
-                    {currentCoordinates.lat.toFixed(5)}°N, {currentCoordinates.lng.toFixed(5)}°E
-                  </span>
-                </div>
-              )}
             </div>
 
             {/* Search */}
@@ -1418,6 +1431,8 @@ function MapLibreTrakkeAppInner() {
 
               <HurtigtasterButton />
 
+              <SlettDataButton />
+
               <AdminControls />
 
               {/* Last updated text - flows with content */}
@@ -1440,7 +1455,7 @@ function MapLibreTrakkeAppInner() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 05. okt 2025
+                  Under utvikling • Sist oppdatert 22. okt 2025
                 </p>
               </div>
             </div>
@@ -1918,6 +1933,40 @@ function MapLibreTrakkeAppInner() {
         </div>
       )}
 
+      {/* Coordinates Copied Confirmation */}
+      {coordinatesCopied && (
+        <div style={{
+          position: 'absolute',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100,
+          backgroundColor: '#3e4533',
+          color: 'white',
+          padding: '4px 6px',
+          borderRadius: '4px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+          fontSize: '12px',
+          fontWeight: '500',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeIn 0.3s ease',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          whiteSpace: 'nowrap'
+        }}>
+          <span style={{
+            fontFamily: 'Material Symbols Outlined',
+            fontSize: '14px'
+          }}>
+            check_circle
+          </span>
+          <span>
+            Koordinater kopiert!
+          </span>
+        </div>
+      )}
+
       {/* Legacy compass container (keeping for styling but now empty) */}
       <div
         className="compass-container"
@@ -2126,19 +2175,25 @@ function MapLibreTrakkeAppInner() {
                 <>
                   <p>
                     <strong>Satellittbilder fra Esri:</strong><br />
-                    Satellittbildene leveres av Esri World Imagery, som kombinerer bilder
-                    fra flere kilder inkludert DigitalGlobe, GeoEye, og NASA.
+                    Satellittbildene leveres av Esri World Imagery og gir global dekning
+                    med høy oppløsning. Bildene er sammensatt fra flere kommersielle og
+                    offentlige kilder.
                   </p>
                   <p>
                     <strong>© Esri</strong><br />
                     <a
-                      href="https://www.esri.com"
+                      href="https://www.esri.com/en-us/arcgis/products/imagery/imagery-sources"
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: '#667154', textDecoration: 'underline' }}
                     >
-                      www.esri.com
+                      Esri World Imagery
                     </a>
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '8px' }}>
+                    <strong>Merk:</strong> Satellittbildene lastes fra servere i USA (arcgisonline.com).
+                    Din IP-adresse vil bli sendt til Esri for å hente kartfliser, i henhold til
+                    deres personvernregler.
                   </p>
                 </>
               )}
@@ -2244,6 +2299,14 @@ function MapLibreTrakkeAppInner() {
         isOpen={isTegnforklaringOpen}
         onClose={closeTegnforklaring}
       />
+
+      {/* PWA Install Prompt Modal */}
+      {showInstallPrompt && (
+        <InstallPromptModal
+          onClose={handleInstallPromptClose}
+          onDismiss={handleInstallPromptDismiss}
+        />
+      )}
 
       {/* Trail Details Modal */}
       {showTrailDetails && (

@@ -40,12 +40,8 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
   // Expose focusInput method to parent components
   useImperativeHandle(ref, () => ({
     focusInput: () => {
-      console.log('SearchBox focusInput called, inputRef.current:', inputRef.current)
       if (inputRef.current) {
         inputRef.current.focus()
-        console.log('Input focused successfully')
-      } else {
-        console.warn('Input ref is null, cannot focus')
       }
     }
   }))
@@ -213,10 +209,6 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
   return (
     <div className={`search-box ${className}`} data-search-box>
       <div className="search-input-container">
-        <span className="search-icon material-symbols-outlined" aria-hidden="true">
-          search
-        </span>
-        
         <input
           ref={inputRef}
           type="text"
@@ -236,18 +228,8 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
           aria-autocomplete="list"
           aria-label="Søk etter steder og koordinater"
         />
-        
-        {isLoading && (
-          <span 
-            className="search-loading material-symbols-outlined"
-            aria-label="Søker..."
-            role="status"
-          >
-            refresh
-          </span>
-        )}
-        
-        {query && !isLoading && (
+
+        {query && (
           <button
             onClick={clearSearch}
             className="search-clear"
@@ -255,7 +237,7 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
             aria-label="Tøm søkefeltet"
             type="button"
           >
-            <span className="material-symbols-outlined" aria-hidden="true">close</span>
+            ×
           </button>
         )}
         
@@ -263,7 +245,7 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
 
       {error && (
         <div className="search-error" role="alert" aria-live="polite">
-          <span className="material-symbols-outlined">error</span>
+          <span style={{ fontSize: '16px' }}>⚠</span>
           {error}
         </div>
       )}
@@ -330,7 +312,7 @@ export const SearchBox = forwardRef<SearchBoxRef, SearchBoxProps>(({
       {isOpen && results.length === 0 && !isLoading && query.trim() && !error && (
         <div ref={resultsRef} className="search-results">
           <div className="search-no-results" role="status" aria-live="polite">
-            <span className="material-symbols-outlined" aria-hidden="true">search_off</span>
+            <span style={{ fontSize: '32px' }} aria-hidden="true">🔍</span>
             <div>Ingen resultater for "{query}"</div>
             <small>Prøv stedsnavn, koordinater eller andre søkeord</small>
           </div>

@@ -383,16 +383,26 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         ]
       }
     } else {
-      // Simple satellite map using Esri World Imagery
+      // Satellite/aerial imagery - using Esri World Imagery
+      // NOTE: Norwegian alternatives investigated but not suitable for production:
+      // - Sentinel-2 WMS: Too slow (on-demand rendering, poor UX during fast interactions)
+      // - Norge i bilder WMTS: Service unavailable (opencache.statkart.no returns 503)
+      // - Norge i bilder WMS: Requires authentication
+      // Trade-off: Esri provides fast, reliable tiles but IP addresses are sent to USA servers
       return {
         version: 8,
         sources: {
           'esri-satellite': {
             type: 'raster',
             tiles: [
+              // Multiple servers for better parallelization and load distribution
+              'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
               'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256,
+            minzoom: 0,
+            maxzoom: 19,
+            scheme: 'xyz',
             attribution: '© Esri'
           }
         },
@@ -400,7 +410,11 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           {
             id: 'esri-satellite-layer',
             type: 'raster',
-            source: 'esri-satellite'
+            source: 'esri-satellite',
+            paint: {
+              // Faster fade-in for better perceived performance
+              'raster-fade-duration': 100
+            }
           }
         ]
       }
@@ -420,7 +434,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       console.log(`🗺️ Initializing MapLibre with center: [${center}] and style:`, createMapStyle(mapType))
 
       try {
-        const initialMaxZoom = mapType === 'topo' ? 18 : 17 // Reduced satellite to 17 to avoid "Map data not yet available" tiles
+        const initialMaxZoom = 18 // Same max zoom for both map types
 
         const map = new maplibregl.Map({
           container: containerRef.current!,
@@ -430,7 +444,12 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           pitch: 60, // Maximum tilt (60 degrees is MapLibre's maximum)
           minZoom: 3,
           maxZoom: initialMaxZoom,
-          attributionControl: false
+          attributionControl: false,
+          // Restrict map to Norwegian territory (includes mainland + Svalbard + Jan Mayen)
+          maxBounds: [
+            [4.0, 57.5],   // Southwest coordinates [lng, lat]
+            [31.5, 71.5]   // Northeast coordinates [lng, lat]
+          ]
         })
 
         // Enable scroll zoom with Shift for precise control

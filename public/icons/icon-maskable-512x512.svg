@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Maskable icon - full bleed background (no border radius) -->
+  <rect width="512" height="512" fill="#f8f9fa"/>
+
+  <!-- Forest icon centered in safe zone (80% of canvas) -->
+  <!-- Safe zone: 410x410 centered in 512x512 -->
+  <g transform="translate(256, 256) scale(1.2)">
+    <!-- Left tree -->
+    <path d="M-80,-53 L-107,0 L-80,0 L-93,27 L-80,27 L-93,67 L-67,67 L-67,27 L-53,27 L-67,0 L-40,0 Z" fill="#3e4533"/>
+    <!-- Center tree (taller) -->
+    <path d="M-13,-80 L-48,-13 L-27,-13 L-40,21 L-27,21 L-48,80 L21,80 L0,21 L13,21 L0,-13 L21,-13 Z" fill="#3e4533"/>
+    <!-- Right tree -->
+    <path d="M40,-53 L13,0 L40,0 L27,27 L40,27 L27,67 L53,67 L53,27 L67,27 L53,0 L80,0 Z" fill="#3e4533"/>
+  </g>
+</svg>
