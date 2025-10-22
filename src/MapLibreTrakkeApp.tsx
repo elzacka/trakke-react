@@ -256,7 +256,7 @@ function MapLibreTrakkeAppInner() {
         standalone?: boolean
       }
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-        || (window.navigator as NavigatorStandalone).standalone
+        || (window.navigator as NavigatorStandalone).standalone === true
         || document.referrer.includes('android-app://')
 
       if (isStandalone) {

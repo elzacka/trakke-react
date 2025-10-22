@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default tseslint.config([
-  { ignores: ['dist', 'node_modules', '.github', '*.config.js', '*.config.ts'] },
+  { ignores: ['dist', 'dist-ssr', 'dev-dist', 'node_modules', '.github', '*.config.js', '*.config.ts'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
