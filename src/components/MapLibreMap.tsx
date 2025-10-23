@@ -689,8 +689,8 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       let longPressTimer: NodeJS.Timeout | null = null
       let longPressCoords: { lat: number; lng: number } | null = null
       let startTouch: { x: number; y: number } | null = null
-      const LONG_PRESS_DURATION = 800 // Longer duration to reduce sensitivity
-      const TOUCH_MOVE_THRESHOLD = 15 // Larger threshold to prevent accidental triggers
+      const LONG_PRESS_DURATION = 1200 // 1.2 seconds - long enough to avoid interfering with pan
+      const TOUCH_MOVE_THRESHOLD = 25 // 25px - larger threshold to prevent accidental triggers during pan
 
       map.on('touchstart', (e) => {
         if (e.lngLat && e.originalEvent.touches.length === 1) {
@@ -712,15 +712,35 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
                 if (navigator.clipboard && window.isSecureContext) {
                   await navigator.clipboard.writeText(coordinatesText)
                 } else {
-                  // Fallback for mobile browsers
+                  // Improved fallback for mobile browsers (especially iOS Safari)
                   const textArea = document.createElement('textarea')
                   textArea.value = coordinatesText
                   textArea.style.position = 'fixed'
-                  textArea.style.left = '-999999px'
-                  textArea.style.top = '-999999px'
+                  textArea.style.top = '0'
+                  textArea.style.left = '0'
+                  textArea.style.width = '2em'
+                  textArea.style.height = '2em'
+                  textArea.style.padding = '0'
+                  textArea.style.border = 'none'
+                  textArea.style.outline = 'none'
+                  textArea.style.boxShadow = 'none'
+                  textArea.style.background = 'transparent'
+                  textArea.setAttribute('readonly', '')
                   document.body.appendChild(textArea)
-                  textArea.focus()
-                  textArea.select()
+
+                  // iOS Safari requires the element to be in viewport
+                  textArea.contentEditable = 'true'
+                  textArea.readOnly = false
+
+                  const range = document.createRange()
+                  range.selectNodeContents(textArea)
+                  const selection = window.getSelection()
+                  if (selection) {
+                    selection.removeAllRanges()
+                    selection.addRange(range)
+                  }
+                  textArea.setSelectionRange(0, 999999)
+
                   document.execCommand('copy')
                   document.body.removeChild(textArea)
                 }
@@ -783,14 +803,35 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           if (navigator.clipboard && window.isSecureContext) {
             await navigator.clipboard.writeText(coordinatesText)
           } else {
+            // Improved fallback for mobile browsers (especially iOS Safari)
             const textArea = document.createElement('textarea')
             textArea.value = coordinatesText
             textArea.style.position = 'fixed'
-            textArea.style.left = '-999999px'
-            textArea.style.top = '-999999px'
+            textArea.style.top = '0'
+            textArea.style.left = '0'
+            textArea.style.width = '2em'
+            textArea.style.height = '2em'
+            textArea.style.padding = '0'
+            textArea.style.border = 'none'
+            textArea.style.outline = 'none'
+            textArea.style.boxShadow = 'none'
+            textArea.style.background = 'transparent'
+            textArea.setAttribute('readonly', '')
             document.body.appendChild(textArea)
-            textArea.focus()
-            textArea.select()
+
+            // iOS Safari requires the element to be in viewport
+            textArea.contentEditable = 'true'
+            textArea.readOnly = false
+
+            const range = document.createRange()
+            range.selectNodeContents(textArea)
+            const selection = window.getSelection()
+            if (selection) {
+              selection.removeAllRanges()
+              selection.addRange(range)
+            }
+            textArea.setSelectionRange(0, 999999)
+
             document.execCommand('copy')
             document.body.removeChild(textArea)
           }
