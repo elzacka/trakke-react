@@ -1000,12 +1000,13 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         return `
           <div style="background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                       max-width: ${isMobile ? '85vw' : '320px'}; min-width: 280px;
-                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      position: relative;">
             <button onclick="this.closest('.maplibregl-popup').remove()" style="
               position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border: none;
               background: rgba(0,0,0,0.1); border-radius: 6px; cursor: pointer; display: flex;
-              align-items: center; justify-content: center; font-size: 16px; color: #666;">×</button>
-            <div style="padding: 14px;">
+              align-items: center; justify-content: center; font-size: 16px; color: #666; z-index: 1;">×</button>
+            <div style="padding: 14px 44px 14px 14px;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                 <div style="width: 20px; height: 20px; border-radius: 50%; background: ${poi.color ?? '#7c3aed'}; flex-shrink: 0;"></div>
                 <h3 style="margin: 0; font-size: 15px; font-weight: 600; color: #1F2937;">${poi.name}</h3>
