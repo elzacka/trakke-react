@@ -13,6 +13,18 @@ dist-ssr
 dev-dist
 *.local
 
+# Environment variables and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+credentials.json
+secrets.json
+*-credentials.json
+*-secrets.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -24,6 +36,14 @@ dev-dist
 *.sln
 *.sw?
 
+# Temporary files and folders
+temp/
+tmp/
+*.tmp
+.cache/
+*.backup
+*.bak
+
 # For Claude and app owner/developer
 CLAUDE.md
 Console log in localhost.md
@@ -31,3 +51,6 @@ Console log debug info.md
 Github build errors.md
 s1.png
 UI adjustments.md
+*.local.md
+notes/
+debug/
