@@ -2,14 +2,6 @@
   <!-- Light background with rounded corners -->
   <rect width="192" height="192" rx="32" fill="#f8f9fa"/>
 
-  <!-- Forest icon - Material Symbols "forest" rendered from font -->
-  <!-- Centered tree symbols representing Norwegian forest -->
-  <g transform="translate(96, 96)">
-    <!-- Left tree -->
-    <path d="M-30,-20 L-40,0 L-30,0 L-35,10 L-30,10 L-35,25 L-25,25 L-25,10 L-20,10 L-25,0 L-15,0 Z" fill="#3e4533"/>
-    <!-- Center tree (taller) -->
-    <path d="M-5,-30 L-18,-5 L-10,-5 L-15,8 L-10,8 L-18,30 L8,30 L0,8 L5,8 L0,-5 L8,-5 Z" fill="#3e4533"/>
-    <!-- Right tree -->
-    <path d="M15,-20 L5,0 L15,0 L10,10 L15,10 L10,25 L20,25 L20,10 L25,10 L20,0 L30,0 Z" fill="#3e4533"/>
-  </g>
+  <!-- Forest/Tree icon centered -->
+  <text x="96" y="125" font-size="100" text-anchor="middle" fill="#3e4533">🌲</text>
 </svg>

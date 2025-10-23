@@ -87,8 +87,9 @@
   color: #111827;
 }
 
-.install-prompt-close .material-symbols-outlined {
-  font-size: 20px;
+.install-prompt-close {
+  font-size: 28px;
+  line-height: 1;
 }
 
 /* Title */
@@ -188,8 +189,7 @@
   line-height: 1.5;
 }
 
-.install-prompt-note .material-symbols-outlined {
-  font-size: 18px;
+.install-prompt-note > span:first-child {
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -223,8 +223,8 @@
   transform: translateY(0);
 }
 
-.install-prompt-install-btn .material-symbols-outlined {
-  font-size: 20px;
+.install-prompt-install-btn > span:first-child {
+  display: inline-block;
 }
 
 /* Footer */
