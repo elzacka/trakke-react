@@ -2,7 +2,11 @@
   <!-- Maskable icon - full bleed background (no border radius) -->
   <rect width="512" height="512" fill="#f8f9fa"/>
 
-  <!-- Forest/Tree icon centered in safe zone (80% of canvas) -->
+  <!-- Material Symbols forest icon centered in safe zone (80% of canvas) -->
   <!-- Safe zone: 410x410 centered in 512x512 -->
-  <text x="256" y="335" font-size="270" text-anchor="middle" fill="#3e4533">🌲</text>
+  <g transform="translate(256, 256) scale(14)">
+    <path d="M24 18l-3.86-6H22L15 2l-3 4.29L9 2L2 12h1.86L0 18h7v4h4v-4h2v4h4v-4h7zM15 5.49L18.16 10h-1.68l3.86 6h-3.62l-2.57-4H16l-2.78-3.97L15 5.49zM3.66 16l3.86-6H5.84L9 5.49L12.16 10h-1.68l3.86 6H3.66z"
+          transform="translate(-12, -13)"
+          fill="#3e4533"/>
+  </g>
 </svg>

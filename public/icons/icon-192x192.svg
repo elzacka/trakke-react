@@ -2,6 +2,10 @@
   <!-- Light background with rounded corners -->
   <rect width="192" height="192" rx="32" fill="#f8f9fa"/>
 
-  <!-- Forest/Tree icon centered -->
-  <text x="96" y="125" font-size="100" text-anchor="middle" fill="#3e4533">🌲</text>
+  <!-- Material Symbols forest icon centered and scaled -->
+  <g transform="translate(96, 96) scale(5)">
+    <path d="M24 18l-3.86-6H22L15 2l-3 4.29L9 2L2 12h1.86L0 18h7v4h4v-4h2v4h4v-4h7zM15 5.49L18.16 10h-1.68l3.86 6h-3.62l-2.57-4H16l-2.78-3.97L15 5.49zM3.66 16l3.86-6H5.84L9 5.49L12.16 10h-1.68l3.86 6H3.66z"
+          transform="translate(-12, -13)"
+          fill="#3e4533"/>
+  </g>
 </svg>

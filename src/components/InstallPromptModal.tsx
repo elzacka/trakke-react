@@ -72,8 +72,8 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
         {/* Header */}
         <div className="install-prompt-header">
           <div className="install-prompt-icon">
-            <span style={{ color: '#3e4533', fontSize: '32px' }}>
-              🌲
+            <span className="material-symbols-outlined" style={{ color: '#3e4533', fontSize: '32px' }}>
+              forest
             </span>
           </div>
           <button
@@ -81,7 +81,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
             onClick={onClose}
             aria-label="Lukk"
           >
-            ×
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
@@ -138,7 +138,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                 </li>
               </ol>
               <div className="install-prompt-note">
-                <span style={{ fontSize: '18px' }}>ℹ️</span>
+                <span className="material-symbols-outlined">info</span>
                 <span>Dette fungerer kun i Safari på iOS</span>
               </div>
             </>
@@ -150,7 +150,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                 For å installere Tråkke på din iPhone må du åpne denne siden i <strong>Safari</strong>.
               </p>
               <div className="install-prompt-note">
-                <span style={{ fontSize: '18px' }}>ℹ️</span>
+                <span className="material-symbols-outlined">info</span>
                 <span>Kopier lenken og åpne den i Safari-nettleseren</span>
               </div>
             </>
@@ -165,7 +165,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                 className="install-prompt-install-btn"
                 onClick={handleInstallClick}
               >
-                <span style={{ fontSize: '20px' }}>⬇️</span>
+                <span className="material-symbols-outlined">download</span>
                 Installer nå
               </button>
             </>
@@ -181,7 +181,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   <span className="step-number">1</span>
                   <div className="step-content">
                     <span className="step-text">
-                      Trykk på <strong>meny-ikonet</strong> (<span style={{ fontSize: '16px', verticalAlign: 'middle' }}>⋮</span>) øverst til høyre
+                      Trykk på <strong>meny-ikonet</strong> (<span className="material-symbols-outlined" style={{ fontSize: '16px', verticalAlign: 'middle' }}>more_vert</span>) øverst til høyre
                     </span>
                   </div>
                 </li>
@@ -215,13 +215,13 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   className="install-prompt-install-btn"
                   onClick={handleInstallClick}
                 >
-                  <span style={{ fontSize: '20px' }}>⬇️</span>
+                  <span className="material-symbols-outlined">download</span>
                   Installer nå
                 </button>
               )}
               {!deferredPrompt && (
                 <div className="install-prompt-note">
-                  <span style={{ fontSize: '18px' }}>ℹ️</span>
+                  <span className="material-symbols-outlined">info</span>
                   <span>Installasjon er tilgjengelig i Chrome, Edge og andre Chromium-baserte nettlesere</span>
                 </div>
               )}
