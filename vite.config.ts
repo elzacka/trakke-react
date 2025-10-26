@@ -110,7 +110,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true,
+        enabled: false, // Disable SW in dev to avoid caching issues
         type: 'module'
       }
     })
@@ -125,16 +125,16 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: '127.0.0.1', // Use explicit IP instead of localhost for better reliability
+    host: '0.0.0.0', // Allow network access for mobile testing
     open: true,
-    strictPort: true, // Use exact port to avoid confusion
+    strictPort: true,
     hmr: {
       port: 3001,
-      host: '127.0.0.1' // Match server host for consistency
+      host: '0.0.0.0' // Allow HMR over network
     },
     cors: true,
     watch: {
-      usePolling: true, // Better compatibility across systems
+      usePolling: true,
       interval: 300
     }
   },
