@@ -18,7 +18,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'any',
         scope: './',
-        start_url: './',
+        start_url: './?v=2',
         lang: 'no',
         icons: [
           {
