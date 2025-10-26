@@ -44,6 +44,13 @@ tmp/
 *.backup
 *.bak
 
+# Test coverage
+coverage/
+*.lcov
+
+# Prettier
+.prettier-cache
+
 # For Claude and app owner/developer
 CLAUDE.md
 Console log in localhost.md
