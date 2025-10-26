@@ -85,9 +85,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
         <div className="install-prompt-instructions">
           {platform === 'ios' && browser === 'safari' && (
             <>
-              <p className="install-prompt-description">
-                Følg disse stegene:
-              </p>
               <ol className="install-prompt-steps">
                 <li>
                   <span className="step-number">1</span>
@@ -145,9 +142,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'ios' && browser !== 'safari' && (
             <>
-              <p className="install-prompt-description">
-                For å installere Tråkke på din iPhone må du åpne denne siden i <strong>Safari</strong>.
-              </p>
               <button
                 className="install-prompt-cta-btn"
                 onClick={onClose}
@@ -163,9 +157,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'android' && deferredPrompt && (
             <>
-              <p className="install-prompt-description">
-                Installer Tråkke for raskere tilgang og bedre ytelse
-              </p>
               <button
                 className="install-prompt-install-btn"
                 onClick={handleInstallClick}
@@ -178,9 +169,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'android' && !deferredPrompt && (
             <>
-              <p className="install-prompt-description">
-                Følg disse stegene for å installere Tråkke:
-              </p>
               <ol className="install-prompt-steps">
                 <li>
                   <span className="step-number">1</span>
@@ -212,9 +200,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'desktop' && (
             <>
-              <p className="install-prompt-description">
-                Installer Tråkke for raskere tilgang og offline-støtte
-              </p>
               {deferredPrompt && (
                 <button
                   className="install-prompt-install-btn"
@@ -232,22 +217,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
               )}
             </>
           )}
-        </div>
-
-        {/* Footer buttons */}
-        <div className="install-prompt-footer">
-          <button
-            className="install-prompt-dismiss-btn"
-            onClick={handleDontShowAgain}
-          >
-            Ikke vis igjen
-          </button>
-          <button
-            className="install-prompt-later-btn"
-            onClick={onClose}
-          >
-            Kanskje senere
-          </button>
         </div>
       </div>
     </div>
