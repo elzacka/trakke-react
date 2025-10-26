@@ -16,14 +16,37 @@ dev-dist
 # Environment variables and secrets
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging
 .env*.local
+*.env
+!.env.example
+
+# Credentials and secrets (various formats)
 credentials.json
 secrets.json
 *-credentials.json
 *-secrets.json
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+service-account*.json
+firebase-adminsdk*.json
+.credentials/
+.secrets/
+
+# API keys and tokens
+*api-key*
+*apikey*
+*api_key*
+*.token
+auth-token*
+access-token*
 
 # Editor directories and files
 .vscode/*
@@ -51,13 +74,64 @@ coverage/
 # Prettier
 .prettier-cache
 
-# For Claude and app owner/developer
+# For Claude and app owner/developer - Personal/temporary files
 CLAUDE.md
 Console log in localhost.md
 Console log debug info.md
 Github build errors.md
-s1.png
 UI adjustments.md
 *.local.md
 notes/
 debug/
+scratch/
+personal/
+TODO.md
+NOTES.md
+.scratch/
+
+# Screenshots and media (development/debugging)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
+*.mp4
+*.mov
+*.avi
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.gif
+!public/**/*.webp
+!public/**/*.svg
+!src/assets/**/*
+!docs/**/*
+
+# Debug and troubleshooting files
+*.dump
+*.trace
+*.profile
+debug.log
+error.log
+combined.log
+performance.log
+*.har
+*.cpuprofile
+*.heapsnapshot
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# OS-specific files
+Thumbs.db
+Desktop.ini
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes

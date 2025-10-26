@@ -9,6 +9,7 @@ Thank you for your interest in contributing to Tråkke! This guide will help you
 - [Local Development Workflow](#local-development-workflow)
 - [Code Quality Standards](#code-quality-standards)
 - [Testing Requirements](#testing-requirements)
+- [Security Best Practices](#security-best-practices)
 - [Preview Deployments](#preview-deployments)
 - [Pull Request Process](#pull-request-process)
 - [Commit Message Guidelines](#commit-message-guidelines)
@@ -277,6 +278,103 @@ describe('MyComponent', () => {
 - Aim for >80% coverage on new code
 - Coverage reports available at `coverage/index.html`
 - Critical paths must be tested
+
+## Security Best Practices
+
+**See [SECURITY.md](SECURITY.md) for comprehensive security guidelines.**
+
+### Credential Protection
+
+**Never commit secrets!** The project has multiple safeguards to prevent accidental commits:
+
+1. **Automatic secret scanning** - Pre-commit hooks scan for API keys, tokens, passwords
+2. **Enhanced .gitignore** - Excludes all common secret file patterns
+3. **GitHub Actions scanning** - Weekly security audits
+4. **File verification** - Checks for accidentally committed secrets
+
+### Using Environment Variables
+
+**Always use environment variables for sensitive data:**
+
+```bash
+# 1. Copy the template
+cp .env.example .env.local
+
+# 2. Add your secrets (never commit this file!)
+echo "VITE_API_KEY=your_key_here" >> .env.local
+
+# 3. Use in code
+const apiKey = import.meta.env.VITE_API_KEY
+```
+
+### Security Checks
+
+**Run before committing:**
+
+```bash
+# Check for potential secrets
+npm run secrets:check
+
+# Full security audit
+./scripts/cleanup-temp-files.sh  # Check for temporary files
+npm audit                         # Check dependencies
+```
+
+### Temporary File Management
+
+Development creates personal/debug files that shouldn't be committed:
+
+- Personal notes (`CLAUDE.md`, `TODO.md`, `*.local.md`)
+- Screenshots (`*.png`, `*.jpg` outside of `public/`)
+- Debug logs (`*.log`, `*.dump`, `*.trace`)
+- Temporary directories (`notes/`, `debug/`, `scratch/`)
+
+**These are automatically ignored by .gitignore**, but you can manage them:
+
+```bash
+# Scan and manage temporary files
+./scripts/cleanup-temp-files.sh
+```
+
+**Options:**
+1. Delete all temporary files
+2. Archive to `.tar.gz`, then delete
+3. List only (no action)
+
+### Security Checklist
+
+Before every commit:
+
+- [ ] No hardcoded API keys or secrets
+- [ ] All secrets in `.env.local` (not committed)
+- [ ] No temporary/personal files included
+- [ ] No debug or log files
+- [ ] Secret scanning passed (automatic in pre-commit hook)
+- [ ] No vulnerable dependencies
+
+### What's Protected
+
+The `.gitignore` automatically excludes:
+
+```
+# Secrets
+.env, *.pem, *.key, *credential*, *secret*, *.token
+
+# Personal files
+CLAUDE.md, TODO.md, notes/, debug/, scratch/
+
+# Screenshots (except in public/assets)
+*.png, *.jpg, *.gif, *.mp4
+
+# Debug files
+*.log, *.dump, *.trace, *.har
+```
+
+### If You Accidentally Commit a Secret
+
+1. **Immediately rotate the secret** (generate new key)
+2. **Remove from git history** (see SECURITY.md for instructions)
+3. **Never commit the new secret**
 
 ## Preview Deployments
 
