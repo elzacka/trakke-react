@@ -137,6 +137,12 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   </div>
                 </li>
               </ol>
+              <button
+                className="install-prompt-cta-btn"
+                onClick={onClose}
+              >
+                Skjønner
+              </button>
               <div className="install-prompt-note">
                 <span className="material-symbols-outlined">info</span>
                 <span>Dette fungerer kun i Safari på iOS</span>
@@ -149,6 +155,12 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
               <p className="install-prompt-description">
                 For å installere Tråkke på din iPhone må du åpne denne siden i <strong>Safari</strong>.
               </p>
+              <button
+                className="install-prompt-cta-btn"
+                onClick={onClose}
+              >
+                Skjønner
+              </button>
               <div className="install-prompt-note">
                 <span className="material-symbols-outlined">info</span>
                 <span>Kopier lenken og åpne den i Safari-nettleseren</span>
