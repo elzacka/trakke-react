@@ -1,0 +1,8 @@
+{
+  "statusLine": {
+    "enabled": true,
+    "format": "{branch} | {files_changed} files | {test_status}"
+  },
+  "autoLint": true,
+  "preferredCommitStyle": "conventional"
+}

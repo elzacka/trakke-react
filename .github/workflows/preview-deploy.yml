@@ -1,0 +1,119 @@
+name: Deploy Branch Preview
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run quality checks
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test -- --run
+
+      - name: Build for preview
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Get branch name
+        id: branch
+        run: |
+          # Get branch name, sanitize it for URL
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          SAFE_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | tr '[:upper:]' '[:lower:]')
+          echo "name=$SAFE_BRANCH" >> $GITHUB_OUTPUT
+          echo "original=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Deploy to branch preview
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: previews/${{ steps.branch.outputs.name }}
+          keep_files: false
+
+      - name: Comment PR with preview URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = '${{ steps.branch.outputs.name }}';
+            const previewUrl = `https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/${branchName}/`;
+
+            const comment = `## 🚀 Preview Deployment Ready!
+
+            Your preview is available at:
+            **${previewUrl}**
+
+            ### Testing Instructions
+
+            📱 **Mobile Testing:**
+            1. Open the preview URL on your iPhone Safari
+            2. Test touch gestures, responsiveness
+            3. Test GPS/location features if applicable
+
+            🖥️ **Desktop Testing:**
+            1. Open in Chrome/Firefox/Safari
+            2. Test keyboard shortcuts
+            3. Test responsive breakpoints with DevTools
+
+            ### QR Code for Mobile Testing
+            Scan this QR code with your iPhone camera to open the preview:
+
+            ![QR Code](https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(previewUrl)})
+
+            ---
+            🤖 This preview updates automatically with each push to \`${{ steps.branch.outputs.original }}\`
+
+            **Branch:** \`${{ steps.branch.outputs.original }}\`
+            **Commit:** \`${{ github.sha }}\``;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Create commit comment with preview URL
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = '${{ steps.branch.outputs.name }}';
+            const previewUrl = `https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/${branchName}/`;
+
+            console.log(`✅ Preview deployed to: ${previewUrl}`);
+            console.log(`📱 QR Code: https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(previewUrl)}`);
+
+            core.summary
+              .addHeading('Preview Deployment Successful')
+              .addLink('Open Preview', previewUrl)
+              .addRaw(`\n\n### Mobile Testing\nScan QR code:\n`)
+              .addImage(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(previewUrl)}`, 'QR Code for mobile testing')
+              .write();

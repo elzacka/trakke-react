@@ -118,35 +118,90 @@ The application uses a cohesive Norwegian nature-inspired color palette:
 
 ## 🤝 Contributing
 
-### Development Workflow
-1. Fork repository → create feature branch
-2. **ALWAYS run before committing**:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
+
+### Quick Start - Remote Development
+
+**Option 1: GitHub Codespaces (Recommended)**
+```bash
+1. Click "Code" → "Codespaces" → "Create codespace on main"
+2. Wait for environment to build (automatic npm install)
+3. Run: npm run dev
+4. Access dev server via forwarded port
+```
+
+**Option 2: Local Development**
+```bash
+git clone https://github.com/elzacka/trakke-react.git
+cd trakke-react
+npm install
+npm run dev
+```
+
+### Development Workflow (Zero Local Setup Required)
+
+1. **Create Feature Branch**
    ```bash
-   npm run lint        # Must pass with 0 errors (max 150 warnings)
-   npm run build       # TypeScript build must succeed
+   git checkout -b feature/your-feature-name
    ```
-3. Use the safe-commit helper script (recommended):
+
+2. **Make Changes** - Automatic quality checks on commit via Husky
+   - ESLint auto-fixes on commit
+   - Prettier formats code
+   - Tests run automatically
+
+3. **Push to GitHub** - Branch preview deploys automatically
    ```bash
-   ./scripts/safe-commit.sh "Your commit message"
+   git push -u origin feature/your-feature-name
    ```
-4. Follow TypeScript + Norwegian terminology guidelines
-5. Test on desktop and mobile before submitting PR
 
-### Code Quality Requirements
-- **ESLint**: Zero tolerance for errors, max 150 warnings
-- **TypeScript**: All builds must pass type checking
-- **Pre-commit Hook**: Automatically blocks commits with ESLint errors
-- **Language**: All user-facing text in Norwegian (Bokmål)
+4. **Test Your Feature**
+   - Preview URL posted in PR comments
+   - Scan QR code to test on iPhone
+   - Test desktop in any browser
 
-### Adding POI Categories
-1. Add fetch function to appropriate service (e.g., `src/services/overpassService.ts`)
-2. Add transform function to `src/MapLibreTrakkeApp.tsx`
-3. Add loading logic to main POI loading `useEffect`
-4. Enable category in `src/components/HierarchicalCategoryFilter.tsx`
-5. Verify POI type exists in `src/data/pois.ts`
-6. Add data attribution to "Om kartet" modal
+5. **Create Pull Request**
+   - Automated quality checks run
+   - Preview deployment updates on each push
+   - Merge when all checks pass
 
-See `CLAUDE.md` for detailed implementation guidelines.
+### Quality Automation
+
+✅ **Automated on every commit:**
+- ESLint auto-fix
+- Prettier formatting
+- Type checking (via pre-commit hook)
+
+✅ **Automated on every push:**
+- Full test suite
+- Build verification
+- Preview deployment
+- Quality check reports
+
+✅ **Automated weekly:**
+- Dependency updates via Dependabot
+
+### Available Commands
+
+```bash
+npm run dev          # Start development server
+npm run build        # Production build
+npm run typecheck    # TypeScript type checking
+npm run lint         # Run ESLint
+npm run lint:fix     # Auto-fix ESLint issues
+npm run format       # Format with Prettier
+npm test             # Run tests in watch mode
+npm run test:ui      # Open Vitest UI
+npm run test:coverage # Run tests with coverage
+```
+
+### Claude Code Commands
+
+If using Claude Code, custom slash commands are available:
+- `/check` - Run all quality checks
+- `/test` - Run tests with optional coverage
+- `/fix` - Auto-fix linting and formatting
+- `/review` - Comprehensive code review
 
 ## 🏔️ Norwegian Heritage
 
