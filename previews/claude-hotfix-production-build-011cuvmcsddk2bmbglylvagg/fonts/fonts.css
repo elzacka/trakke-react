@@ -1,0 +1,74 @@
+/* Self-hosted Google Fonts for GDPR compliance */
+/* Exo 2 font family - weights 300, 400, 500, 600, 700 */
+
+/* Exo 2 Light (300) */
+@font-face {
+  font-family: 'Exo 2';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('./exo-2-v20-latin-300.woff2') format('woff2');
+}
+
+/* Exo 2 Regular (400) */
+@font-face {
+  font-family: 'Exo 2';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./exo-2-v20-latin-regular.woff2') format('woff2');
+}
+
+/* Exo 2 Medium (500) */
+@font-face {
+  font-family: 'Exo 2';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./exo-2-v20-latin-500.woff2') format('woff2');
+}
+
+/* Exo 2 Semi-Bold (600) */
+@font-face {
+  font-family: 'Exo 2';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./exo-2-v20-latin-600.woff2') format('woff2');
+}
+
+/* Exo 2 Bold (700) */
+@font-face {
+  font-family: 'Exo 2';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./exo-2-v20-latin-700.woff2') format('woff2');
+}
+
+/* Material Symbols Outlined */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url('./material-symbols-outlined.woff2') format('woff2');
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'liga';
+}
