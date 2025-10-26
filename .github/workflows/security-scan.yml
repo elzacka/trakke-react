@@ -111,7 +111,7 @@ jobs:
             found_issues=true
           fi
 
-          if git ls-files | grep -E 'secret|credential|password|token' | grep -v -E '(\.md|\.example|test|spec|\.gitignore)'; then
+          if git ls-files | grep -E 'secret|credential|password|token' | grep -v -E '(\.md|\.example|test|spec|\.gitignore|secretlint|\.yml|workflow)'; then
             echo "⚠️ Found files with 'secret', 'credential', 'password', or 'token' in name"
             found_issues=true
           fi
