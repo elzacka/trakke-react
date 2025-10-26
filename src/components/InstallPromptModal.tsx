@@ -71,11 +71,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
       <div className="install-prompt-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="install-prompt-header">
-          <div className="install-prompt-icon">
-            <span className="material-symbols-outlined" style={{ color: '#3e4533', fontSize: '32px' }}>
-              forest
-            </span>
-          </div>
+          <h2 className="install-prompt-title">Bruke Tråkke som app?</h2>
           <button
             className="install-prompt-close"
             onClick={onClose}
@@ -84,9 +80,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-
-        {/* Title */}
-        <h2 className="install-prompt-title">Bruke Tråkke som app?</h2>
 
         {/* Platform-specific instructions */}
         <div className="install-prompt-instructions">
