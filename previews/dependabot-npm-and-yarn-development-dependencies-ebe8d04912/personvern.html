@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personvernerklæring - Tråkke</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Exo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #3e4533;
+      font-size: 2em;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    h2 {
+      color: #3e4533;
+      font-size: 1.5em;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      font-weight: 600;
+      border-bottom: 2px solid #3e4533;
+      padding-bottom: 5px;
+    }
+
+    h3 {
+      color: #3e4533;
+      font-size: 1.2em;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    p {
+      margin-bottom: 15px;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    a {
+      color: #3e4533;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .last-updated {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 30px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background: #3e4533;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link:hover {
+      background: #2c3325;
+      text-decoration: none;
+    }
+
+    .highlight-box {
+      background: #f0f4f0;
+      border-left: 4px solid #3e4533;
+      padding: 15px;
+      margin: 20px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #3e4533;
+      color: white;
+      font-weight: 600;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 1.5em;
+      }
+
+      h2 {
+        font-size: 1.3em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-link">← Tilbake til Tråkke</a>
+
+    <h1>Personvernerklæring for Tråkke</h1>
+    <p class="last-updated">Sist oppdatert: 22. oktober 2025</p>
+
+    <div class="highlight-box">
+      <p><strong>Kort oppsummert:</strong> Tråkke er designet med personvern i fokus. Vi lagrer kun nødvendige data lokalt på din enhet, og all kommunikasjon med eksterne tjenester skjer med norske og europeiske datakildeer. Vi deler ikke dine data med tredjeparter for markedsføring eller sporing.</p>
+    </div>
+
+    <h2>1. Behandlingsansvarlig</h2>
+    <p>Tråkke er en åpen kildekode-applikasjon utviklet og driftet av:</p>
+    <ul>
+      <li><strong>Prosjekt:</strong> Tråkke</li>
+      <li><strong>GitHub:</strong> <a href="https://github.com/elzacka/trakke-react" target="_blank">github.com/elzacka/trakke-react</a></li>
+      <li><strong>Kontakt:</strong> Via GitHub Issues eller prosjektets repository</li>
+    </ul>
+
+    <h2>2. Hvilke personopplysninger samler vi inn?</h2>
+
+    <h3>2.1 Data lagret lokalt på din enhet</h3>
+    <p>Tråkke lagrer følgende informasjon i nettleserens lokale lagring (localStorage) på din enhet:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Type data</th>
+          <th>Formål</th>
+          <th>Lagringssted</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Kartvisningsinnstillinger</td>
+          <td>Husker karttype, zoom-nivå og siste posisjon</td>
+          <td>localStorage</td>
+        </tr>
+        <tr>
+          <td>Brukerpreferanser</td>
+          <td>Språk, enheter (km/mi), og visningsvalg</td>
+          <td>localStorage</td>
+        </tr>
+        <tr>
+          <td>Søkehistorikk</td>
+          <td>Raskere tilgang til tidligere søk</td>
+          <td>localStorage</td>
+        </tr>
+        <tr>
+          <td>Installasjonsstatus</td>
+          <td>Unngå å vise PWA-installasjonsprompt flere ganger</td>
+          <td>localStorage</td>
+        </tr>
+        <tr>
+          <td>Cache-data (PWA)</td>
+          <td>Offline-funksjonalitet og raskere lasting</td>
+          <td>Service Worker Cache</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Viktig:</strong> Alle disse dataene lagres kun på din enhet og sendes aldri til eksterne servere. Du kan slette alle data når som helst ved å bruke knappen "Slett mine data" i appens innstillinger.</p>
+
+    <h3>2.2 Posisjonsdata</h3>
+    <p>Hvis du velger å aktivere stedstjenester:</p>
+    <ul>
+      <li>Tråkke ber om tillatelse til å bruke GPS/stedstjenester via nettleserens Geolocation API</li>
+      <li>Din nåværende posisjon brukes kun til å sentrere kartet og vise din plassering</li>
+      <li>Posisjonsdata lagres <strong>aldri</strong> permanent og sendes <strong>aldri</strong> til eksterne servere</li>
+      <li>Du kan når som helst deaktivere stedstjenester i nettleserens innstillinger</li>
+    </ul>
+
+    <h3>2.3 Data vi IKKE samler inn</h3>
+    <p>Tråkke samler <strong>IKKE</strong> inn:</p>
+    <ul>
+      <li>Personnummer, fødselsdato eller andre sensitive personopplysninger</li>
+      <li>Kontaktinformasjon (e-post, telefonnummer, adresse)</li>
+      <li>Brukerkontoer eller påloggingsinformasjon</li>
+      <li>IP-adresser eller enhets-IDer for sporing</li>
+      <li>Analysedata om bruksmønstre</li>
+      <li>Informasjonskapsler (cookies) for sporing eller markedsføring</li>
+    </ul>
+
+    <h2>3. Hvordan brukes dataene?</h2>
+    <p>Data som lagres lokalt brukes kun til:</p>
+    <ul>
+      <li><strong>Funksjonalitet:</strong> Sørge for at appen fungerer som forventet</li>
+      <li><strong>Brukeropplevelse:</strong> Huske dine preferanser mellom økter</li>
+      <li><strong>Offline-bruk:</strong> Tillate bruk av appen uten internettforbindelse</li>
+      <li><strong>Ytelse:</strong> Cache kartfliser og data for raskere lasting</li>
+    </ul>
+
+    <h2>4. Deling med tredjeparter</h2>
+    <p>Tråkke deler <strong>INGEN</strong> personopplysninger med tredjeparter for markedsføring, analyse eller sporing.</p>
+
+    <h3>4.1 Eksterne datatjenester (GDPR-kompatible)</h3>
+    <p>For å vise kartdata og stedsinformasjon bruker Tråkke følgende tjenester:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Tjeneste</th>
+          <th>Leverandør</th>
+          <th>Formål</th>
+          <th>Personvern</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Kartfliser</td>
+          <td>Kartverket (Norge)</td>
+          <td>Vise topografiske kart</td>
+          <td>Norsk offentlig etat, GDPR-kompatibel</td>
+        </tr>
+        <tr>
+          <td>Satellittbilder</td>
+          <td>Esri (USA)</td>
+          <td>Satellittbilder / flyfoto</td>
+          <td>⚠️ Amerikansk selskap - IP-adresse sendes til USA</td>
+        </tr>
+        <tr>
+          <td>Stedssøk</td>
+          <td>Nominatim / OpenStreetMap</td>
+          <td>Søk etter steder og adresser</td>
+          <td>Åpen kildekode, EU-basert</td>
+        </tr>
+        <tr>
+          <td>POI-data (turstier, hytter)</td>
+          <td>Overpass API / OpenStreetMap</td>
+          <td>Interessepunkter og turdata</td>
+          <td>Åpen kildekode, EU-basert</td>
+        </tr>
+        <tr>
+          <td>DNT-hytter</td>
+          <td>Den Norske Turistforening</td>
+          <td>Informasjon om DNT-hytter</td>
+          <td>Norsk medlemsorganisasjon</td>
+        </tr>
+        <tr>
+          <td>Tilfluktsrom</td>
+          <td>DSB via Geonorge</td>
+          <td>Offentlige tilfluktsrom</td>
+          <td>Norsk offentlig etat, GDPR-kompatibel</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Viktig:</strong> Når du laster kartdata fra disse tjenestene, kan de se din IP-adresse i sine server-logger. Dette er teknisk nødvendig for å levere tjenesten.</p>
+
+    <div class="highlight-box" style="background: #fef2f2; border-left-color: #dc2626;">
+      <h4 style="color: #991b1b; margin-top: 0;">⚠️ Om Esri satellittbilder (USA)</h4>
+      <p><strong>Hvorfor bruker vi en amerikansk tjeneste?</strong></p>
+      <p>Vi har grundig undersøkt alle norske og europeiske alternativer for satellittbilder:</p>
+      <ul style="margin: 10px 0;">
+        <li><strong>Norge i bilder (Kartverket):</strong> Krever autentisering eller er utilgjengelig for offentlig bruk</li>
+        <li><strong>Sentinel-2 (Kartverket/EU):</strong> Veldig treg lasting (dårlig brukeropplevelse)</li>
+      </ul>
+      <p><strong>Hva betyr dette for ditt personvern?</strong></p>
+      <ul style="margin: 10px 0;">
+        <li>Når du velger satellittkart, lastes kartfliser fra Esri sine servere i USA (arcgisonline.com)</li>
+        <li>Din IP-adresse sendes til Esri for å hente kartfliser</li>
+        <li>Esri kan se hvilke kartområder du ser på (basert på hvilke fliser som lastes)</li>
+        <li>Data behandles i henhold til Esris personvernregler (underlagt amerikanske lover)</li>
+      </ul>
+      <p><strong>Hva gjør vi for å beskytte deg?</strong></p>
+      <ul style="margin: 10px 0;">
+        <li>Vi sender INGEN bruker-ID, cookies eller sporingsdata til Esri</li>
+        <li>Du kan når som helst bytte til topografisk kart (100% norsk)</li>
+        <li>Satellittkart er valgfritt - du velger selv om du vil bruke det</li>
+      </ul>
+      <p style="margin-bottom: 0;"><strong>Alternativ:</strong> Bruk kun topografisk kart (Kartverket) hvis du ønsker å unngå amerikanske tjenester helt.</p>
+    </div>
+
+    <h3>4.2 Ingen amerikanske sporingstjenester</h3>
+    <p>Tråkke bruker <strong>IKKE</strong>:</p>
+    <ul>
+      <li>Google Analytics eller andre analysetjenester</li>
+      <li>Facebook Pixel eller andre markedsføringsverktøy</li>
+      <li>Google Fonts fra CDN (fonter er selvhostet)</li>
+      <li>Amerikanske cloud-tjenester for lagring av brukerdata</li>
+    </ul>
+
+    <h2>5. Dine rettigheter etter personvernforordningen (GDPR)</h2>
+    <p>I henhold til personvernforordningen (GDPR) og personopplysningsloven har du følgende rettigheter:</p>
+
+    <h3>5.1 Rett til innsyn (Artikkel 15)</h3>
+    <p>Du har rett til å få informasjon om hvilke personopplysninger vi behandler om deg. Siden alle data lagres lokalt på din enhet, kan du se dette i nettleserens utviklerverktøy (DevTools → Application → Local Storage).</p>
+
+    <h3>5.2 Rett til sletting (Artikkel 17 - "Retten til å bli glemt")</h3>
+    <p>Du kan når som helst slette alle dine data fra Tråkke ved å:</p>
+    <ul>
+      <li>Bruke knappen "Slett mine data" i appens innstillinger</li>
+      <li>Slette nettleserens lokale lagring manuelt</li>
+      <li>Avinstallere PWA-appen fra din enhet</li>
+    </ul>
+
+    <h3>5.3 Rett til dataportabilitet (Artikkel 20)</h3>
+    <p>Siden alle data lagres lokalt, har du full kontroll og kan eksportere dataene ved å bruke nettleserens utviklerverktøy.</p>
+
+    <h3>5.4 Rett til å protestere (Artikkel 21)</h3>
+    <p>Du kan når som helst slutte å bruke Tråkke og slette alle lokale data.</p>
+
+    <h3>5.5 Klagerett til tilsynsmyndighet</h3>
+    <p>Du har rett til å klage til Datatilsynet hvis du mener vi behandler dine personopplysninger i strid med personvernregelverket:</p>
+    <ul>
+      <li><strong>Datatilsynet:</strong> <a href="https://www.datatilsynet.no" target="_blank">www.datatilsynet.no</a></li>
+      <li><strong>E-post:</strong> postkasse@datatilsynet.no</li>
+      <li><strong>Telefon:</strong> 22 39 69 00</li>
+    </ul>
+
+    <h2>6. Datasikkerhet</h2>
+    <p>Vi tar datasikkerhet på alvor og har implementert følgende tiltak:</p>
+    <ul>
+      <li><strong>HTTPS:</strong> All kommunikasjon med appen er kryptert via HTTPS</li>
+      <li><strong>Lokal lagring:</strong> Data lagres kun på din enhet, ikke på eksterne servere</li>
+      <li><strong>Service Worker sikkerhet:</strong> PWA-funksjonalitet følger moderne sikkerhetsstandarder</li>
+      <li><strong>Ingen tredjeparts-trackere:</strong> Vi bruker ingen sporingsverktøy eller analyse-cookies</li>
+      <li><strong>Åpen kildekode:</strong> Koden er offentlig tilgjengelig på GitHub for gjennomsiktighet</li>
+    </ul>
+
+    <h2>7. Informasjonskapsler (Cookies)</h2>
+    <p>Tråkke bruker <strong>IKKE</strong> informasjonskapsler (cookies) for sporing, analyse eller markedsføring.</p>
+    <p>Nettleseren kan opprette tekniske cookies for å håndtere:</p>
+    <ul>
+      <li>Service Worker-funksjonalitet (nødvendig for PWA)</li>
+      <li>Sesjonshåndtering (teknisk nødvendig)</li>
+    </ul>
+    <p>Disse er strengt nødvendige for at appen skal fungere og krever ikke samtykke i henhold til GDPR.</p>
+
+    <h2>8. Barn og personvern</h2>
+    <p>Tråkke samler ikke inn personopplysninger fra brukere under 18 år. Siden vi ikke krever registrering eller lagrer personlige data, kan appen brukes trygt av alle aldersgrupper under voksen veiledning.</p>
+
+    <h2>9. Endringer i personvernerklæringen</h2>
+    <p>Vi kan oppdatere denne personvernerklæringen fra tid til annen. Vesentlige endringer vil bli kommunisert via:</p>
+    <ul>
+      <li>Oppdatert "Sist oppdatert"-dato øverst på denne siden</li>
+      <li>Informasjon i appen ved neste besøk (hvis relevant)</li>
+      <li>GitHub-repository for full endringshistorikk</li>
+    </ul>
+
+    <h2>10. Kontaktinformasjon</h2>
+    <p>Hvis du har spørsmål om denne personvernerklæringen eller behandling av personopplysninger, kan du kontakte oss via:</p>
+    <ul>
+      <li><strong>GitHub Issues:</strong> <a href="https://github.com/elzacka/trakke-react/issues" target="_blank">github.com/elzacka/trakke-react/issues</a></li>
+      <li><strong>GitHub Discussions:</strong> <a href="https://github.com/elzacka/trakke-react/discussions" target="_blank">github.com/elzacka/trakke-react/discussions</a></li>
+    </ul>
+
+    <h2>11. Juridisk grunnlag</h2>
+    <p>Behandling av personopplysninger i Tråkke baseres på:</p>
+    <ul>
+      <li><strong>Artikkel 6(1)(f) - Berettiget interesse:</strong> Lagring av preferanser og cache-data er nødvendig for å levere tjenesten</li>
+      <li><strong>Artikkel 6(1)(a) - Samtykke:</strong> Bruk av stedstjenester krever eksplisitt samtykke fra bruker via nettleserens tillatelsesdialog</li>
+    </ul>
+
+    <div class="highlight-box">
+      <h3>📍 Slett mine data</h3>
+      <p>For å slette alle dine lokalt lagrede data fra Tråkke, gå til appens innstillinger og velg "Slett mine data". Dette vil fjerne all informasjon lagret på din enhet, inkludert:</p>
+      <ul>
+        <li>Kartvisningsinnstillinger</li>
+        <li>Søkehistorikk</li>
+        <li>Brukerpreferanser</li>
+        <li>Cache-data (offline-kart)</li>
+      </ul>
+      <p>Alternativt kan du slette nettleserens lokale lagring manuelt i nettleserens innstillinger.</p>
+    </div>
+
+    <hr style="margin: 40px 0; border: none; border-top: 1px solid #ddd;">
+
+    <p style="text-align: center; color: #666; font-size: 0.9em;">
+      Tråkke er en åpen kildekode-applikasjon lisensiert under MIT License.<br>
+      Kildekoden er tilgjengelig på <a href="https://github.com/elzacka/trakke-react" target="_blank">GitHub</a>.
+    </p>
+
+    <a href="/" class="back-link">← Tilbake til Tråkke</a>
+  </div>
+</body>
+</html>
