@@ -95,19 +95,39 @@ export function HierarchicalCategoryFilter({
 
     return (
       <div key={node.id} style={{ marginLeft: `${indentLevel}px` }}>
-        <div className="category-item" style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '6px 0',
-          minHeight: '32px',
-          borderRadius: '6px',
-          margin: '1px 0',
-          transition: 'background-color 0.2s ease'
-        }}>
+        <div
+          className="category-item"
+          onClick={() => !isDisabled && !hasChildren && onCategoryToggle(node.id)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '6px 8px',
+            minHeight: '32px',
+            borderRadius: '6px',
+            margin: '1px 0',
+            backgroundColor: isChecked ? '#f0fdf4' : 'transparent',
+            border: isChecked ? '1px solid #3e4533' : '1px solid transparent',
+            cursor: !isDisabled && !hasChildren ? 'pointer' : 'default',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!isDisabled && !hasChildren && !isChecked) {
+              e.currentTarget.style.backgroundColor = '#f8fafc'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isDisabled && !hasChildren && !isChecked) {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }
+          }}
+        >
           {hasChildren && (
             <button
               className="expand-button"
-              onClick={() => onExpandToggle(node.id)}
+              onClick={(e) => {
+                e.stopPropagation()
+                onExpandToggle(node.id)
+              }}
               style={{
                 background: 'none',
                 border: 'none',
@@ -132,58 +152,15 @@ export function HierarchicalCategoryFilter({
                 e.currentTarget.style.backgroundColor = 'transparent'
                 e.currentTarget.style.color = '#6b7280'
               }}
-              onFocus={(e) => {
-                e.currentTarget.style.backgroundColor = '#f8fafc'
-                e.currentTarget.style.color = '#334155'
-                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(148, 163, 184, 0.1)'
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#6b7280'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
             >
               <span style={{ fontFamily: 'Material Symbols Outlined', fontSize: '16px', transition: 'transform 0.2s ease' }}>
                 {isExpanded ? 'expand_more' : 'chevron_right'}
               </span>
             </button>
           )}
-          
-          {!hasChildren && <div style={{ width: '24px', display: 'inline-block' }} />}
 
-          {/* Custom checkbox replacement */}
-          <button
-            onClick={() => !isDisabled && onCategoryToggle(node.id)}
-            disabled={isDisabled}
-            style={{
-              width: '18px',
-              height: '18px',
-              marginRight: '8px',
-              borderRadius: '4px',
-              border: `2px solid ${isChecked ? '#3e4533' : '#d1d5db'}`,
-              backgroundColor: isChecked ? '#3e4533' : '#ffffff',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: isDisabled ? 'not-allowed' : 'pointer',
-              opacity: isDisabled ? 0.4 : 1,
-              transition: 'all 0.2s ease',
-              padding: 0,
-              flexShrink: 0
-            }}
-          >
-            {isChecked && (
-              <span style={{
-                fontFamily: 'Material Symbols Outlined',
-                fontSize: '12px',
-                color: 'white',
-                lineHeight: '1'
-              }}>
-                check
-              </span>
-            )}
-          </button>
-          
+          {!hasChildren && <div style={{ width: '32px', display: 'inline-block' }} />}
+
           {node.icon && !node.parent && (
             <div
               className="icon-preview"
@@ -201,9 +178,9 @@ export function HierarchicalCategoryFilter({
                 transition: 'all 0.2s ease'
               }}
             >
-              <span style={{ 
-                fontFamily: 'Material Symbols Outlined', 
-                fontSize: '13px', 
+              <span style={{
+                fontFamily: 'Material Symbols Outlined',
+                fontSize: '13px',
                 color: 'white',
                 opacity: isDisabled ? 0.6 : 1,
                 fontWeight: '400',
@@ -213,18 +190,17 @@ export function HierarchicalCategoryFilter({
               </span>
             </div>
           )}
-          
+
           <span
-            onClick={() => !isDisabled && onCategoryToggle(node.id)}
             style={{
-              cursor: isDisabled ? 'not-allowed' : 'pointer',
               fontSize: '14px',
               fontWeight: isDisabled ? '400' : '500',
-              color: isDisabled ? '#9ca3af' : '#374151',
+              color: isChecked ? '#3e4533' : (isDisabled ? '#9ca3af' : '#374151'),
               opacity: isDisabled ? 0.7 : 1,
               lineHeight: '1.4',
               letterSpacing: '0.1px',
-              transition: 'color 0.2s ease'
+              transition: 'color 0.2s ease',
+              flex: 1
             }}
           >
             {node.name}
