@@ -74,13 +74,13 @@ export function MapTypePanel({ mapType, onMapTypeChange }: MapTypePanelProps) {
         <span
           style={{
             fontFamily: 'Material Symbols Outlined',
-            fontSize: '18px',
-            color: '#94a3b8',
+            fontSize: '16px',
+            color: '#64748b',
             transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease'
           }}
         >
-          expand_more
+          keyboard_arrow_down
         </span>
       </button>
 
