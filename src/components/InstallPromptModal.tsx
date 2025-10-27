@@ -54,7 +54,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose 
     if (deferredPrompt) {
       // Show native install prompt (Android/Desktop Chrome/Edge)
       await deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
+      const { outcome: _outcome } = await deferredPrompt.userChoice
       setDeferredPrompt(null)
       onClose()
     }

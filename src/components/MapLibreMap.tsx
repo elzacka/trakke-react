@@ -490,7 +490,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
       try {
         const _naturskogSources = NaturskogService.getWMSLayerSources()
-        const naturskogLayers = NaturskogService.getMapLayers()
+        const _naturskogLayers = NaturskogService.getMapLayers()
 
         const _turrutebasenSources = TurrutebasenService.getWMSLayerSources()
       } catch (error) {
@@ -509,7 +509,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           try {
             if (!map.getSource(sourceId)) {
               map.addSource(sourceId, source)
-            } else {
             }
           } catch (error) {
             console.error(`❌ [${context}] Failed to add Naturskog source ${sourceId}:`, error)
@@ -521,7 +520,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           try {
             if (!map.getLayer(layer.id)) {
               map.addLayer(layer)
-            } else {
             }
           } catch (error) {
             console.error(`❌ [${context}] Failed to add Naturskog layer ${layer.id}:`, error)

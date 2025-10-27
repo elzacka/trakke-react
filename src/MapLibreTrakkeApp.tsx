@@ -442,7 +442,6 @@ function MapLibreTrakkeAppInner() {
                   console.error('❌ Error loading bus stops:', enturError)
                   setError(`Feil ved lasting av bussholdeplasser: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
                 }
-              } else {
               }
             }
 
@@ -460,7 +459,6 @@ function MapLibreTrakkeAppInner() {
                   console.error('❌ Error loading train stations:', enturError)
                   setError(`Feil ved lasting av togstasjoner: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
                 }
-              } else {
               }
             }
 
@@ -496,12 +494,8 @@ function MapLibreTrakkeAppInner() {
             const customPOIs = await poiDataService.getPOIsByCategories(activeCategories)
             if (customPOIs.length > 0) {
               allPOIs = [...allPOIs, ...(customPOIs as POI[])]
-            } else {
             }
 
-            if (allPOIs.length === 0) {
-            }
-            
             setPois(allPOIs)
           } catch (err) {
             console.error('❌ Error loading POIs:', err)
@@ -510,7 +504,6 @@ function MapLibreTrakkeAppInner() {
           } finally {
             setLoading(false)
           }
-        } else {
         }
       }, 100)
 
@@ -541,7 +534,7 @@ function MapLibreTrakkeAppInner() {
   // Function to handle map type changes
   const handleMapTypeChange = useCallback((newMapType: 'topo' | 'satellite') => {
     setMapType(newMapType)
-  }, [mapType])
+  }, [])
 
   const handleViewportChange = useCallback((viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
     setCurrentViewport(viewport)
