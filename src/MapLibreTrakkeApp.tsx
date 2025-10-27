@@ -8,6 +8,8 @@ import { SlettDataButton } from './components/SlettDataButton'
 import { AdminControls } from './components/AdminControls'
 import { TrailDetails } from './components/TrailDetails'
 import { SearchBox, SearchBoxRef } from './components/SearchBox'
+import { CoordinateDisplay } from './components/CoordinateDisplay'
+import { MapTypePanel } from './components/MapTypePanel'
 import { categoryTree, CategoryState, POI, POIType } from './data/pois'
 import type { Trail, TrailType } from './data/trails'
 import { OverpassService, OverpassPOI } from './services/overpassService'
@@ -1304,6 +1306,9 @@ function MapLibreTrakkeAppInner() {
               />
             </div>
 
+            {/* Coordinate Display (mobile only) */}
+            <CoordinateDisplay coordinates={currentCoordinates} />
+
             {/* Categories and Footer */}
             <div style={{
               flex: 1,
@@ -1312,6 +1317,11 @@ function MapLibreTrakkeAppInner() {
               display: 'flex',
               flexDirection: 'column'
             }}>
+              <MapTypePanel
+                mapType={mapType}
+                onMapTypeChange={handleMapTypeChange}
+              />
+
               <CategoryPanel
                 categoryTree={categoryTree}
                 categoryState={categoryState}
@@ -1320,8 +1330,6 @@ function MapLibreTrakkeAppInner() {
                 pois={pois}
                 loading={loading}
                 error={error}
-                mapType={mapType}
-                onMapTypeChange={handleMapTypeChange}
               />
 
               <NaturskogPanel
