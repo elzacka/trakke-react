@@ -108,11 +108,12 @@ export class OverpassService {
       
       // Debug: Check for Norwegian characters in response
       const sampleElements = data.elements?.slice(0, 3) || []
-      sampleElements.forEach((element: { tags?: { name?: string } }, index: number) => {
+      sampleElements.forEach((element: { tags?: { name?: string } }, _index: number) => {
         if (element.tags?.name) {
+          // Character encoding check removed - now handled by UTF-8 decoding above
         }
       })
-      
+
       const pois = this.transformOverpassDataToPOIs(data)
 
       // Cache the results

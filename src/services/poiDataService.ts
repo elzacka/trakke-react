@@ -292,7 +292,7 @@ export class POIDataService {
         }
       }
 
-      const deletedPOI = store.pois[poiIndex]
+      const _deletedPOI = store.pois[poiIndex]
       store.pois.splice(poiIndex, 1)
       this.saveStore(store)
 

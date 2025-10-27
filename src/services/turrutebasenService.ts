@@ -85,7 +85,7 @@ export class TurrutebasenService {
     }
   }
 
-  static async planRoute(start: { lat: number; lng: number }, end: { lat: number; lng: number }, _preferences?: RoutePreferences): Promise<PlannedRoute | null> {
+  static async planRoute(_start: { lat: number; lng: number }, _end: { lat: number; lng: number }, _preferences?: RoutePreferences): Promise<PlannedRoute | null> {
     return null
   }
 }

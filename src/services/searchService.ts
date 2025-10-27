@@ -180,7 +180,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
       }
 
       const placeName = bestPlace.skrivemåte || bestPlace.stedsnavn || bestPlace.navn
-      const placeType = bestPlace.navneobjekttype || bestPlace.stedtype || 'sted'
+      const _placeType = bestPlace.navneobjekttype || bestPlace.stedtype || 'sted'
       const municipality = bestPlace.kommuner?.[0]?.kommunenavn
 
       if (!placeName) {

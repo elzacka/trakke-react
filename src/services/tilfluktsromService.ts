@@ -47,7 +47,7 @@ export class TilfluktsromService {
     west: number
   }): Promise<TilfluktsromPOI[]> {
     try {
-      const isProduction = window.location.hostname.includes('github.io')
+      const _isProduction = window.location.hostname.includes('github.io')
 
       // Construct WFS GetFeature request with bounding box filter
       const params = new URLSearchParams({
