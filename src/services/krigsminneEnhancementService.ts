@@ -64,19 +64,15 @@ export class KrigsminneEnhancementService {
    * Enhance a Krigsminne POI with additional historical data and media
    */
   async enhancePOI(lat: number, lng: number, name: string): Promise<EnhancedKrigsminneData> {
-    console.log(`🏰 Enhancing Krigsminne POI: ${name} at [${lat}, ${lng}]`)
 
     try {
       if (!this.enableImageFetch) {
-        console.log(`⚠️ Image fetching disabled (invalid API keys). Returning empty enhancement data.`)
         return {}
       }
 
       // REMOVED: Generic sample data that wasn't geotagged to specific coordinates
       // Only use geotagged data - no fallback to non-location-specific images
-      console.log(`📍 Only fetching geotagged images for specific coordinates [${lat}, ${lng}]`)
 
-      console.log(`📡 Starting comprehensive image fetch from multiple Norwegian sources...`)
 
       // Try all available Norwegian image sources in parallel
       const [flickrImages, digitaltMuseumImages, nasjonalbibliotekImages] = await Promise.allSettled([
@@ -92,12 +88,9 @@ export class KrigsminneEnhancementService {
       // Combine all external sources with priority: Norwegian sources first
       let allThumbnails = [...(nasjonalbibliotekResult || []), ...(museumResult || []), ...(flickrResult || [])]
 
-      console.log(`📊 Found ${allThumbnails.length} images: ${nasjonalbibliotekResult?.length || 0} Nasjonalbiblioteket + ${museumResult?.length || 0} Digitalt Museum + ${flickrResult?.length || 0} Flickr`)
 
       // Only use geotagged data - no fallback to non-location-specific images
       if (allThumbnails.length === 0) {
-        console.log(`📸 No geotagged images found from external APIs for specific location [${lat}, ${lng}]`)
-        console.log(`⚠️ Using only verified geotagged sources - no fallback images provided`)
       }
 
       allThumbnails = allThumbnails.slice(0, 6) // Limit to 6 total images
@@ -116,11 +109,8 @@ export class KrigsminneEnhancementService {
         curated: allThumbnails.length === (nasjonalbibliotekResult?.length || 0) + (museumResult?.length || 0) + (flickrResult?.length || 0) ? 0 : allThumbnails.length
       }
 
-      console.log(`✅ Enhanced Krigsminne POI with ${allThumbnails.length} images:`)
-      console.log(`📊 Source breakdown: ${sourceBreakdown.nasjonalbiblioteket} Nasjonalbiblioteket + ${sourceBreakdown.digitalt_museum} Digitalt Museum + ${sourceBreakdown.flickr} Flickr + ${sourceBreakdown.curated} curated`)
 
       if (hasContent) {
-        console.log(`📋 Final enhancement data:`, enhancedData)
       }
 
       return enhancedData
@@ -137,7 +127,6 @@ export class KrigsminneEnhancementService {
    */
   private async fetchDigitaltMuseumImages(lat: number, lng: number, poiName: string): Promise<MediaThumbnail[]> {
     try {
-      console.log(`🏛️ Searching Digitalt Museum for ${poiName}...`)
 
       // Create broader search queries for better results
       const searchQueries = [
@@ -150,7 +139,6 @@ export class KrigsminneEnhancementService {
 
       // Try each search query
       for (const query of searchQueries) {
-        console.log(`🔍 Digitalt Museum search: "${query}"`)
 
         // Correct Digitalt Museum API URL and parameters
         const apiUrl = 'https://api.dimu.org/api/solr/select'
@@ -170,10 +158,8 @@ export class KrigsminneEnhancementService {
         }
 
         const data = await response.json()
-        console.log(`📊 Digitalt Museum response for "${query}":`, data)
 
         const docs = data.response?.docs || []
-        console.log(`🏛️ Found ${docs.length} items in Digitalt Museum for "${query}"`)
 
         if (docs.length > 0) {
           interface DigitaltMuseumItem {
@@ -197,13 +183,11 @@ export class KrigsminneEnhancementService {
             }))
 
           if (thumbnails.length > 0) {
-            console.log(`✅ Found ${thumbnails.length} suitable images from Digitalt Museum`)
             return thumbnails
           }
         }
       }
 
-      console.log(`🏛️ No images found in Digitalt Museum after trying all queries`)
       return []
 
     } catch (error) {
@@ -222,7 +206,6 @@ export class KrigsminneEnhancementService {
    */
   private async fetchNasjonalbibliotekImages(lat: number, lng: number, poiName: string): Promise<MediaThumbnail[]> {
     try {
-      console.log(`📚 Searching Norwegian National Library for ${poiName}...`)
 
       // Search strategies for Norwegian National Library
       const searchQueries = [
@@ -234,20 +217,17 @@ export class KrigsminneEnhancementService {
       ]
 
       for (const query of searchQueries) {
-        console.log(`🔍 National Library search: "${query}"`)
 
         // Try Norwegian National Library API (if available)
         // This is a fallback approach using generic search terms
         try {
           // For now, return empty as we don't have direct API access
           // In a real implementation, this would connect to api.nb.no
-          console.log(`📚 National Library API not yet implemented for this search`)
         } catch (error) {
           console.warn(`⚠️ National Library search failed for "${query}":`, error)
         }
       }
 
-      console.log(`📚 No images found in Norwegian National Library (API implementation pending)`)
       return []
 
     } catch (error) {
@@ -261,7 +241,6 @@ export class KrigsminneEnhancementService {
    */
   private async fetchFlickrImages(lat: number, lng: number, poiName: string): Promise<MediaThumbnail[]> {
     try {
-      console.log(`📸 Fetching Flickr images for ${poiName}...`)
 
       // Extract location name from POI name for better search
       const locationParts = poiName.split(' ').filter(part => part.length > 2)
@@ -290,7 +269,6 @@ export class KrigsminneEnhancementService {
       ]
 
       for (const [index, strategy] of searchStrategies.entries()) {
-        console.log(`📸 Trying Flickr search strategy ${index + 1}: "${strategy.text}" (radius: ${strategy.radius}km)`)
 
         const flickrUrl = 'https://api.flickr.com/services/rest/'
         const params = new URLSearchParams({
@@ -313,7 +291,6 @@ export class KrigsminneEnhancementService {
         })
 
         const fullUrl = `${flickrUrl}?${params.toString()}`
-        console.log(`🔗 Flickr API URL: ${fullUrl}`)
 
         const response = await fetch(fullUrl)
         if (!response.ok) {
@@ -322,10 +299,8 @@ export class KrigsminneEnhancementService {
         }
 
         const data = await response.json()
-        console.log(`📊 Flickr strategy ${index + 1} response:`, data)
 
         const photos = data.photos?.photo || []
-        console.log(`📸 Strategy ${index + 1} found ${photos.length} photos`)
 
         if (photos.length > 0) {
           interface FlickrPhoto {
@@ -351,12 +326,10 @@ export class KrigsminneEnhancementService {
               photographer: photo.ownername || 'Ukjent fotograf'
             }))
 
-          console.log(`✅ Found ${thumbnails.length} suitable Flickr images using strategy ${index + 1}`)
           return thumbnails
         }
       }
 
-      console.log(`📸 No Flickr images found after trying all strategies`)
       return []
 
     } catch (error) {

@@ -90,7 +90,6 @@ function MapLibreTrakkeAppInner() {
   const _tilfluktsromService = useRef(new TilfluktsromService())
   const mapRef = useRef<MapLibreMapRef>(null)
 
-  console.log(`🎯 MapLibre App: ${pois.length} POIs loaded`)
 
 
   // Handle search result selection
@@ -100,19 +99,14 @@ function MapLibreTrakkeAppInner() {
     // Set new search result after a brief delay to ensure cleanup
     setTimeout(() => {
       setSearchResult(result)
-      console.log('📍 Navigerer til:', result.displayName)
     }, 50)
   }, [])
 
   // Handle location button click - with toggle functionality
   const handleLocationClick = useCallback(() => {
-    console.log('🔘 Position button clicked!')
-    console.log('🔘 Current userLocation state:', userLocation)
-    console.log('🔘 Current locationLoading state:', locationLoading)
 
     // Toggle off: If location is already active, clear it
     if (userLocation && !locationLoading) {
-      console.log('🔘 Toggling off - clearing user location')
       setUserLocation(null)
       return
     }
@@ -127,8 +121,6 @@ function MapLibreTrakkeAppInner() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords
-        console.log('📍 User location obtained:', latitude, longitude)
-        console.log('📍 Setting userLocation state...')
 
         // Check if location is within Norwegian bounds
         const norwegianBounds = {
@@ -141,15 +133,12 @@ function MapLibreTrakkeAppInner() {
         if (latitude >= norwegianBounds.south && latitude <= norwegianBounds.north &&
             longitude >= norwegianBounds.west && longitude <= norwegianBounds.east) {
           setUserLocation({ lat: latitude, lng: longitude })
-          console.log('✅ Location set within Norway bounds:', { lat: latitude, lng: longitude })
         } else {
           console.warn('⚠️ Location outside Norway bounds, but setting regardless')
           setUserLocation({ lat: latitude, lng: longitude })
-          console.log('✅ Location set outside Norway bounds:', { lat: latitude, lng: longitude })
         }
 
         setLocationLoading(false)
-        console.log('📍 Location loading set to false')
       },
       (error) => {
         console.error('Error getting location:', error.message)
@@ -353,22 +342,18 @@ function MapLibreTrakkeAppInner() {
         checked: newChecked
       }
       
-      console.log(`🔄 Category toggle:`, { nodeId, isChecked, newChecked })
 
       // Handle category selection changes
       setTimeout(async () => {
         const activeCategories = getActiveCategories(newState)
-        console.log(`🏷️ Categories changed. Active categories: ${activeCategories.join(', ')}`)
         
         if (activeCategories.length === 0) {
           setPois([])
-          console.log(`🏷️ No categories selected, cleared POIs`)
           return
         }
         
         // Load POI data only if we have viewport (prevents loading during initial render)
         if (currentViewport) {
-          console.log('📍 Current viewport:', currentViewport)
           setLoading(true)
           setError(null)
           
@@ -377,85 +362,64 @@ function MapLibreTrakkeAppInner() {
             
             // Load Krigsminne from OpenStreetMap if krigsminne category is active
             if (activeCategories.includes('krigsminne')) {
-              console.log('🏰 Loading enhanced Krigsminne from OpenStreetMap with viewport:', currentViewport)
               const overpassPOIs = await OverpassService.fetchKrigsminnePOIs(currentViewport)
-              console.log('📊 Raw Overpass POIs received:', overpassPOIs.length, overpassPOIs)
 
               const transformedOverpassPOIs = await transformOverpassPOIs(overpassPOIs)
               allPOIs = [...allPOIs, ...transformedOverpassPOIs]
 
-              console.log(`🏰 Loaded ${transformedOverpassPOIs.length} enhanced Krigsminne POIs from OpenStreetMap`)
             }
             
             // Load cave entrances from OpenStreetMap if hule category is active
             if (activeCategories.includes('hule')) {
-              console.log('🕳️ Loading cave entrances from OpenStreetMap with viewport:', currentViewport)
               const cavePOIs = await OverpassService.fetchCaveEntrancePOIs(currentViewport)
-              console.log('📊 Raw Cave POIs received:', cavePOIs.length, cavePOIs)
               
               const transformedCavePOIs = transformCavePOIs(cavePOIs)
               allPOIs = [...allPOIs, ...transformedCavePOIs]
               
-              console.log(`🕳️ Loaded ${transformedCavePOIs.length} cave entrance POIs from OpenStreetMap`)
             }
             
             // Load observation towers from OpenStreetMap if observasjonstårn category is active
             if (activeCategories.includes('observasjonstårn')) {
-              console.log('🗼 Loading observation towers from OpenStreetMap with viewport:', currentViewport)
               const towerPOIs = await OverpassService.fetchObservationTowerPOIs(currentViewport)
-              console.log('📊 Raw Tower POIs received:', towerPOIs.length, towerPOIs)
               
               const transformedTowerPOIs = transformTowerPOIs(towerPOIs)
               allPOIs = [...allPOIs, ...transformedTowerPOIs]
               
-              console.log(`🗼 Loaded ${transformedTowerPOIs.length} observation tower POIs from OpenStreetMap`)
 
               // Also load hunting stands for observasjonstårn category
-              console.log('🦌 Loading hunting stands from OpenStreetMap with viewport:', currentViewport)
               const huntingStandPOIs = await OverpassService.fetchHuntingStandPOIs(currentViewport)
-              console.log('📊 Raw Hunting Stand POIs received:', huntingStandPOIs.length, huntingStandPOIs)
               
               const transformedHuntingStandPOIs = transformHuntingStandPOIs(huntingStandPOIs)
               allPOIs = [...allPOIs, ...transformedHuntingStandPOIs]
               
-              console.log(`🦌 Loaded ${transformedHuntingStandPOIs.length} hunting stand POIs from OpenStreetMap`)
             }
 
             // Load fire pits from OpenStreetMap if bålplass category is active
             if (activeCategories.includes('bålplass')) {
-              console.log('🔥 Loading fire pits from OpenStreetMap with viewport:', currentViewport)
               const firepitPOIs = await OverpassService.fetchFirepitPOIs(currentViewport)
-              console.log('📊 Raw Firepit POIs received:', firepitPOIs.length, firepitPOIs)
               
               const transformedFirepitPOIs = transformFirepitPOIs(firepitPOIs)
               allPOIs = [...allPOIs, ...transformedFirepitPOIs]
               
-              console.log(`🔥 Loaded ${transformedFirepitPOIs.length} fire pit POIs from OpenStreetMap`)
             }
 
             // Load shelters from OpenStreetMap if gapahuk_vindskjul category is active
             if (activeCategories.includes('gapahuk_vindskjul')) {
-              console.log('🏠 Loading shelters from OpenStreetMap with viewport:', currentViewport)
               const shelterPOIs = await OverpassService.fetchShelterPOIs(currentViewport)
-              console.log('📊 Raw Shelter POIs received:', shelterPOIs.length, shelterPOIs)
 
               const transformedShelterPOIs = transformShelterPOIs(shelterPOIs)
               allPOIs = [...allPOIs, ...transformedShelterPOIs]
 
-              console.log(`🏠 Loaded ${transformedShelterPOIs.length} shelter POIs from OpenStreetMap`)
             }
 
             // Load tilfluktsrom from Geonorge WFS if tilfluktsrom category is active
             if (activeCategories.includes('tilfluktsrom')) {
-              console.log('🛡️ Loading tilfluktsrom from Geonorge WFS with viewport:', currentViewport)
               try {
                 const tilfluktsromPOIs = await _tilfluktsromService.current.fetchTilfluktsrom(currentViewport)
-                console.log('📊 Raw Tilfluktsrom POIs received:', tilfluktsromPOIs.length, tilfluktsromPOIs)
 
                 const transformedTilfluktsromPOIs = transformTilfluktsromPOIs(tilfluktsromPOIs)
                 allPOIs = [...allPOIs, ...transformedTilfluktsromPOIs]
 
-                console.log(`🛡️ Loaded ${transformedTilfluktsromPOIs.length} tilfluktsrom POIs from Geonorge WFS`)
               } catch (tilfluktsromError) {
                 console.error('❌ Error loading tilfluktsrom data:', tilfluktsromError)
                 setError(`Feil ved lasting av tilfluktsrom: ${tilfluktsromError instanceof Error ? tilfluktsromError.message : 'Ukjent feil'}`)
@@ -466,21 +430,17 @@ function MapLibreTrakkeAppInner() {
             // Only load when zoomed in (zoom >= 10) to avoid overwhelming the map
             if (activeCategories.includes('bussholdeplass')) {
               if (currentViewport.zoom >= 10) {
-                console.log('🚌 Loading bus stops from Entur API with viewport:', currentViewport)
                 try {
                   const busStops = await EnturService.fetchBusStops(currentViewport)
-                  console.log('📊 Raw bus stop data received:', busStops.length, busStops)
 
                   const transformedBusStops = transformEnturStops(busStops, 'bus')
                   allPOIs = [...allPOIs, ...transformedBusStops]
 
-                  console.log(`🚌 Loaded ${transformedBusStops.length} bus stops from Entur API`)
                 } catch (enturError) {
                   console.error('❌ Error loading bus stops:', enturError)
                   setError(`Feil ved lasting av bussholdeplasser: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
                 }
               } else {
-                console.log('🚌 Skipping bus stops - zoom in to level 10 or higher (current: ' + currentViewport.zoom + ')')
               }
             }
 
@@ -488,78 +448,59 @@ function MapLibreTrakkeAppInner() {
             // Train stations can load at lower zoom (8+) as there are fewer of them
             if (activeCategories.includes('togstasjon')) {
               if (currentViewport.zoom >= 8) {
-                console.log('🚂 Loading train stations from Entur API with viewport:', currentViewport)
                 try {
                   const trainStations = await EnturService.fetchTrainStations(currentViewport)
-                  console.log('📊 Raw train station data received:', trainStations.length, trainStations)
 
                   const transformedStations = transformEnturStops(trainStations, 'train')
                   allPOIs = [...allPOIs, ...transformedStations]
 
-                  console.log(`🚂 Loaded ${transformedStations.length} train stations from Entur API`)
                 } catch (enturError) {
                   console.error('❌ Error loading train stations:', enturError)
                   setError(`Feil ved lasting av togstasjoner: ${enturError instanceof Error ? enturError.message : 'Ukjent feil'}`)
                 }
               } else {
-                console.log('🚂 Skipping train stations - zoom in to level 8 or higher (current: ' + currentViewport.zoom + ')')
               }
             }
 
             // Load cable cars from OpenStreetMap if taubane category is active
             if (activeCategories.includes('taubane')) {
-              console.log('🚡 Loading cable cars from OpenStreetMap with viewport:', currentViewport)
               const cableCarPOIs = await OverpassService.fetchCableCarPOIs(currentViewport)
-              console.log('📊 Raw Cable Car POIs received:', cableCarPOIs.length, cableCarPOIs)
 
               const transformedCableCarPOIs = transformCableCarPOIs(cableCarPOIs)
               allPOIs = [...allPOIs, ...transformedCableCarPOIs]
 
-              console.log(`🚡 Loaded ${transformedCableCarPOIs.length} cable car POIs from OpenStreetMap`)
             }
 
             // Load waterfalls from OpenStreetMap if foss category is active
             if (activeCategories.includes('foss')) {
-              console.log('💧 Loading waterfalls from OpenStreetMap with viewport:', currentViewport)
               const waterfallPOIs = await OverpassService.fetchWaterfallPOIs(currentViewport)
-              console.log('📊 Raw Waterfall POIs received:', waterfallPOIs.length, waterfallPOIs)
 
               const transformedWaterfallPOIs = transformWaterfallPOIs(waterfallPOIs)
               allPOIs = [...allPOIs, ...transformedWaterfallPOIs]
 
-              console.log(`💧 Loaded ${transformedWaterfallPOIs.length} waterfall POIs from OpenStreetMap`)
             }
 
             // Load viewpoints from OpenStreetMap if utsiktspunkt category is active
             if (activeCategories.includes('utsiktspunkt')) {
-              console.log('👁️ Loading viewpoints from OpenStreetMap with viewport:', currentViewport)
               const viewpointPOIs = await OverpassService.fetchViewpointPOIs(currentViewport)
-              console.log('📊 Raw Viewpoint POIs received:', viewpointPOIs.length, viewpointPOIs)
 
               const transformedViewpointPOIs = transformViewpointPOIs(viewpointPOIs)
               allPOIs = [...allPOIs, ...transformedViewpointPOIs]
 
-              console.log(`👁️ Loaded ${transformedViewpointPOIs.length} viewpoint POIs from OpenStreetMap`)
             }
 
 
             // Load custom POIs from local storage for all active categories
-            console.log('🏛️ Loading custom POIs for active categories:', activeCategories)
             const customPOIs = await poiDataService.getPOIsByCategories(activeCategories)
             if (customPOIs.length > 0) {
-              console.log(`📊 Loaded ${customPOIs.length} custom POIs:`, customPOIs)
               allPOIs = [...allPOIs, ...(customPOIs as POI[])]
             } else {
-              console.log('📭 No custom POIs found for active categories')
             }
 
             if (allPOIs.length === 0) {
-              console.log('⚠️ No active categories with POI data:', activeCategories)
             }
             
-            console.log('🎯 Setting POIs on map:', allPOIs)
             setPois(allPOIs)
-            console.log(`🏷️ Loaded ${allPOIs.length} total POIs for active categories: ${activeCategories.join(', ')}`)
           } catch (err) {
             console.error('❌ Error loading POIs:', err)
             setError('Kunne ikke laste POI-data')
@@ -568,7 +509,6 @@ function MapLibreTrakkeAppInner() {
             setLoading(false)
           }
         } else {
-          console.log('⚠️ No viewport available, skipping POI loading')
         }
       }, 100)
 
@@ -588,7 +528,6 @@ function MapLibreTrakkeAppInner() {
 
   // Function to refresh POI data when new POIs are added
   const handlePOIAdded = useCallback(() => {
-    console.log('🔄 POI added, refreshing data...')
     // Trigger category toggle to reload POIs for active categories
     const activeCategories = getActiveCategories(categoryState)
     if (activeCategories.length > 0 && currentViewport) {
@@ -599,14 +538,12 @@ function MapLibreTrakkeAppInner() {
 
   // Function to handle map type changes
   const handleMapTypeChange = useCallback((newMapType: 'topo' | 'satellite') => {
-    console.log(`🗺️ Changing map type from ${mapType} to ${newMapType}`)
     setMapType(newMapType)
   }, [mapType])
 
   const handleViewportChange = useCallback((viewport: { north: number; south: number; east: number; west: number; zoom: number }) => {
     setCurrentViewport(viewport)
     setCurrentZoom(viewport.zoom)
-    console.log('🗺️ Viewport changed:', viewport)
 
     // Only reload POIs for significant viewport changes (not during zoom animations)
     // The category toggle handler will load POIs when categories change
@@ -665,7 +602,6 @@ function MapLibreTrakkeAppInner() {
 
   // Trail interaction handlers
   const handleTrailSelect = useCallback((trail: Trail) => {
-    console.log('🥾 Trail selected:', trail.properties.name)
     setSelectedTrail(trail)
     setShowTrailDetails(true)
 
@@ -709,7 +645,6 @@ function MapLibreTrakkeAppInner() {
   }, [])
 
   const handleTrailTypesChange = useCallback((activeTypes: TrailType[]) => {
-    console.log('🥾 Trail types changed:', activeTypes)
     _setActiveTrailTypes(activeTypes)
 
     // Update trail visibility on map
@@ -737,7 +672,6 @@ function MapLibreTrakkeAppInner() {
           try {
             // Lazy initialization: Add layer if it doesn't exist
             if (!map.getLayer(layerId)) {
-              console.log(`🔄 Lazy loading trail layer: ${layerId}`)
 
               // Get layer configuration
               const turrutebasenSources = TurrutebasenService.getWMSLayerSources()
@@ -747,7 +681,6 @@ function MapLibreTrakkeAppInner() {
                 // Add source if it doesn't exist
                 if (!map.getSource(sourceId)) {
                   map.addSource(sourceId, source)
-                  console.log(`✅ Added trail source: ${sourceId}`)
                 }
 
                 // Add raster layer for WMS
@@ -759,13 +692,11 @@ function MapLibreTrakkeAppInner() {
                     'raster-opacity': 0.8
                   }
                 })
-                console.log(`✅ Added trail layer: ${layerId}`)
               }
             }
 
             // Show the layer
             map.setLayoutProperty(layerId, 'visibility', 'visible')
-            console.log(`✅ Trail layer ${layerId} enabled`)
           } catch (error) {
             console.warn(`Could not show trail layer ${layerId}:`, error)
           }
@@ -776,7 +707,6 @@ function MapLibreTrakkeAppInner() {
 
   // Handle Naturskog layer toggles
   const handleNaturskogLayerToggle = useCallback((layerType: NaturskogLayerType, enabled: boolean) => {
-    console.log(`🌲 Naturskog layer ${layerType} ${enabled ? 'enabled' : 'disabled'}`)
 
     // Track active layers for re-initialization after style changes
     setActiveNaturskogLayers(prev => {
@@ -798,7 +728,6 @@ function MapLibreTrakkeAppInner() {
         try {
           // Lazy initialization: Add layer if it doesn't exist
           if (!map.getLayer(layerId)) {
-            console.log(`🔄 Lazy loading Naturskog layer: ${layerId}`)
 
             // Get layer configuration
             const naturskogSources = NaturskogService.getWMSLayerSources()
@@ -811,18 +740,15 @@ function MapLibreTrakkeAppInner() {
               // Add source if it doesn't exist
               if (!map.getSource(sourceId)) {
                 map.addSource(sourceId, source)
-                console.log(`✅ Added Naturskog source: ${sourceId}`)
               }
 
               // Add layer
               map.addLayer(layerConfig)
-              console.log(`✅ Added Naturskog layer: ${layerId}`)
             }
           }
 
           // Toggle layer visibility
           map.setLayoutProperty(layerId, 'visibility', enabled ? 'visible' : 'none')
-          console.log(`✅ Naturskog layer ${layerType} visibility set to ${enabled ? 'visible' : 'none'}`)
         } catch (error) {
           console.warn(`⚠️ Could not toggle Naturskog layer ${layerType}:`, error)
         }
@@ -839,17 +765,14 @@ function MapLibreTrakkeAppInner() {
 
     // Wait for style to load before re-adding layers
     const handleStyleLoad = () => {
-      console.log('🔄 Style changed, re-initializing active layers')
 
       // Re-trigger trail layers if any are active
       if (_activeTrailTypes.length > 0) {
-        console.log(`🥾 Re-adding ${_activeTrailTypes.length} active trail layers`)
         handleTrailTypesChange(_activeTrailTypes)
       }
 
       // Re-trigger Naturskog layers if any are active
       if (activeNaturskogLayers.size > 0) {
-        console.log(`🌲 Re-adding ${activeNaturskogLayers.size} active Naturskog layers`)
         activeNaturskogLayers.forEach(layerType => {
           handleNaturskogLayerToggle(layerType, true)
         })
@@ -902,7 +825,6 @@ function MapLibreTrakkeAppInner() {
 
   // Transform Overpass POIs to our POI interface with enhanced data
   const transformOverpassPOIs = async (overpassPOIs: OverpassPOI[]): Promise<POI[]> => {
-    console.log('🎨 Enhancing POIs with historical data and media...')
 
     const transformedPOIs = await Promise.all(
       overpassPOIs.map(async poi => {
@@ -926,7 +848,6 @@ function MapLibreTrakkeAppInner() {
 
           if (enhancedData && Object.keys(enhancedData).length > 0) {
             basePOI.enhancedData = enhancedData
-            console.log(`✨ Enhanced ${poi.name} with rich data`)
           }
         } catch (enhancementError) {
           console.warn(`⚠️ Could not enhance ${poi.name}:`, enhancementError)
@@ -936,9 +857,6 @@ function MapLibreTrakkeAppInner() {
       })
     )
 
-    console.log('🔄 Transformed enhanced POIs:', transformedPOIs.map(p =>
-      `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}${p.enhancedData ? ' (ENHANCED)' : ''}`
-    ))
     return transformedPOIs
   }
 
@@ -954,7 +872,6 @@ function MapLibreTrakkeAppInner() {
       lng: poi.lng
     }))
     
-    console.log('🔄 Transformed Cave POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -970,7 +887,6 @@ function MapLibreTrakkeAppInner() {
       lng: poi.lng
     }))
     
-    console.log('🔄 Transformed Tower POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1007,7 +923,6 @@ function MapLibreTrakkeAppInner() {
       }
     })
     
-    console.log('🔄 Transformed Hunting Stand POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1046,7 +961,6 @@ function MapLibreTrakkeAppInner() {
       }
     })
     
-    console.log('🔄 Transformed Firepit POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1086,7 +1000,6 @@ function MapLibreTrakkeAppInner() {
       }
     })
     
-    console.log('🔄 Transformed Shelter POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1102,7 +1015,6 @@ function MapLibreTrakkeAppInner() {
       color: '#ea580c' // Use "Service" category color (orange)
     }))
 
-    console.log('🔄 Transformed Tilfluktsrom POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1123,7 +1035,6 @@ function MapLibreTrakkeAppInner() {
       color: transportColor
     }))
 
-    console.log(`🔄 Transformed ${stopType} stops:`, transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}]`))
     return transformedPOIs
   }
 
@@ -1161,7 +1072,6 @@ function MapLibreTrakkeAppInner() {
       }
     })
 
-    console.log('🔄 Transformed Cable Car POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1195,7 +1105,6 @@ function MapLibreTrakkeAppInner() {
       }
     })
 
-    console.log('🔄 Transformed Waterfall POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 
@@ -1230,7 +1139,6 @@ function MapLibreTrakkeAppInner() {
       }
     })
 
-    console.log('🔄 Transformed Viewpoint POIs:', transformedPOIs.map(p => `${p.name} at [${p.lat}, ${p.lng}] - ${p.description}`))
     return transformedPOIs
   }
 

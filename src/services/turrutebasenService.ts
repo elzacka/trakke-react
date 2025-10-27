@@ -56,17 +56,14 @@ export class TurrutebasenService {
     maxFeatures?: number
     types?: string[]
   }): Promise<Trail[]> {
-    console.log('Trail data served via WMS layers')
     return []
   }
 
   static async getTrailById(_id: string): Promise<Trail | null> {
-    console.log('Trail detail lookup not supported in WMS mode')
     return null
   }
 
   static async searchTrails(query: TrailSearchQuery): Promise<TrailSearchResult> {
-    console.log('Trail search uses WMS layers')
     return {
       trails: [],
       totalCount: 0,
@@ -89,7 +86,6 @@ export class TurrutebasenService {
   }
 
   static async planRoute(start: { lat: number; lng: number }, end: { lat: number; lng: number }, _preferences?: RoutePreferences): Promise<PlannedRoute | null> {
-    console.log('Route planning from', start, 'to', end)
     return null
   }
 }

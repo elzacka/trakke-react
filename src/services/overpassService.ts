@@ -51,12 +51,10 @@ export class OverpassService {
     // Check cache first (temporarily disabled for testing)
     // const cached = this.cache.get(cacheKey)
     // if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-    //   console.log('🗄️ Using cached Krigsminne data')
     //   return cached.data
     // }
 
     try {
-      console.log('🔄 Fetching Krigsminne from OpenStreetMap...', bounds)
       
       // Constrain bounds to Norway's geographic limits
       const norwayBounds = {
@@ -67,7 +65,6 @@ export class OverpassService {
       }
 
       // Debug the Overpass query by logging the bounds and query
-      console.log('🗺️ Query bounds:', norwayBounds)
       
       // Specific query for war memorials/Krigsminne only
       const overpassQuery = `
@@ -90,7 +87,6 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      console.log('🔍 Overpass query:', overpassQuery)
 
       const response = await fetch(this.BASE_URL, {
         method: 'POST',
@@ -109,23 +105,19 @@ export class OverpassService {
       // Ensure proper UTF-8 decoding
       const responseText = await response.text()
       const data = JSON.parse(responseText)
-      console.log('📊 Raw Overpass response:', data)
       
       // Debug: Check for Norwegian characters in response
       const sampleElements = data.elements?.slice(0, 3) || []
       sampleElements.forEach((element: { tags?: { name?: string } }, index: number) => {
         if (element.tags?.name) {
-          console.log(`🔍 Sample name ${index + 1}:`, element.tags.name)
         }
       })
       
       const pois = this.transformOverpassDataToPOIs(data)
-      console.log(`🔄 Transformed ${pois.length} Krigsminne POIs from Overpass API`)
 
       // Cache the results
       this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${pois.length} Krigsminne POIs from OpenStreetMap`)
       return pois
 
     } catch (error) {
@@ -142,7 +134,6 @@ export class OverpassService {
     const cacheKey = `caves_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
     
     try {
-      console.log('🕳️ Fetching cave entrances from OpenStreetMap...', bounds)
       
       // Constrain bounds to Norway's geographic limits
       const norwayBounds = {
@@ -152,7 +143,6 @@ export class OverpassService {
         west: Math.max(bounds.west, 4.0)      // Norway's westernmost point
       }
 
-      console.log('🗺️ Query bounds:', norwayBounds)
       
       // Specific query for cave entrances only
       const overpassQuery = `
@@ -165,7 +155,6 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      console.log('🔍 Cave entrance Overpass query:', overpassQuery)
 
       const response = await fetch(this.BASE_URL, {
         method: 'POST',
@@ -183,15 +172,12 @@ export class OverpassService {
 
       const responseText = await response.text()
       const data = JSON.parse(responseText)
-      console.log('📊 Raw cave entrance Overpass response:', data)
       
       const pois = this.transformCaveEntranceDataToPOIs(data)
-      console.log(`🕳️ Transformed ${pois.length} cave entrance POIs from Overpass API`)
 
       // Cache the results
       this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${pois.length} cave entrance POIs from OpenStreetMap`)
       return pois
 
     } catch (error) {
@@ -208,7 +194,6 @@ export class OverpassService {
     const cacheKey = `towers_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
     
     try {
-      console.log('🗼 Fetching observation towers from OpenStreetMap...', bounds)
       
       // Constrain bounds to Norway's geographic limits
       const norwayBounds = {
@@ -218,7 +203,6 @@ export class OverpassService {
         west: Math.max(bounds.west, 4.0)      // Norway's westernmost point
       }
 
-      console.log('🗺️ Query bounds:', norwayBounds)
       
       // Specific query for observation towers and watchtowers
       const overpassQuery = `
@@ -238,7 +222,6 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      console.log('🔍 Observation tower Overpass query:', overpassQuery)
 
       const response = await fetch(this.BASE_URL, {
         method: 'POST',
@@ -256,15 +239,12 @@ export class OverpassService {
 
       const responseText = await response.text()
       const data = JSON.parse(responseText)
-      console.log('📊 Raw observation tower Overpass response:', data)
       
       const pois = this.transformObservationTowerDataToPOIs(data)
-      console.log(`🗼 Transformed ${pois.length} observation tower POIs from Overpass API`)
 
       // Cache the results
       this.cache.set(cacheKey, { data: pois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${pois.length} observation tower POIs from OpenStreetMap`)
       return pois
 
     } catch (error) {
@@ -345,7 +325,6 @@ export class OverpassService {
       }
     })
 
-    console.log(`✅ Converted ${pois.length} Krigsminne POIs from Overpass data`)
     return pois
   }
 
@@ -421,7 +400,6 @@ export class OverpassService {
       }
     })
 
-    console.log(`✅ Converted ${pois.length} cave entrance POIs from Overpass data`)
     return pois
   }
 
@@ -497,7 +475,6 @@ export class OverpassService {
       }
     })
 
-    console.log(`✅ Converted ${pois.length} observation tower POIs from Overpass data`)
     return pois
   }
 
@@ -1019,7 +996,6 @@ export class OverpassService {
    */
   static clearCache(): void {
     this.cache.clear()
-    console.log('🗑️ Overpass cache cleared')
   }
 
   /**
@@ -1029,7 +1005,6 @@ export class OverpassService {
     const cacheKey = `hunting_stands_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
     
     try {
-      console.log('🦌 Fetching hunting stands from OpenStreetMap...', bounds)
       
       // Constrain bounds to Norway's geographic limits
       const norwayBounds = {
@@ -1048,7 +1023,6 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      console.log('🔍 Hunting stand Overpass query:', overpassQuery)
 
       const response = await fetch(this.BASE_URL, {
         method: 'POST',
@@ -1066,7 +1040,6 @@ export class OverpassService {
 
       const responseText = await response.text()
       const data = JSON.parse(responseText)
-      console.log('📊 Raw hunting stand Overpass response:', data)
       
       // Return raw POI data without generic transformation - let the app handle specific transformation
       const rawPois = data.elements?.map((element: OverpassElement) => ({
@@ -1078,12 +1051,10 @@ export class OverpassService {
         tags: element.tags || {}
       })) || []
       
-      console.log(`🦌 Extracted ${rawPois.length} raw hunting stand POIs from Overpass API`)
 
       // Cache the results
       this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${rawPois.length} hunting stand POIs from OpenStreetMap`)
       return rawPois
     } catch (error) {
       console.error('❌ Error fetching hunting stands:', error)
@@ -1098,7 +1069,6 @@ export class OverpassService {
     const cacheKey = `firepits_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
     
     try {
-      console.log('🔥 Fetching fire pits from OpenStreetMap...', bounds)
       
       // Constrain bounds to Norway's geographic limits
       const norwayBounds = {
@@ -1118,7 +1088,6 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      console.log('🔍 Fire pit Overpass query:', overpassQuery)
 
       const response = await fetch(this.BASE_URL, {
         method: 'POST',
@@ -1136,7 +1105,6 @@ export class OverpassService {
 
       const responseText = await response.text()
       const data = JSON.parse(responseText)
-      console.log('📊 Raw fire pit Overpass response:', data)
       
       // Return raw POI data without generic transformation - let the app handle specific transformation
       const rawPois = data.elements?.map((element: OverpassElement) => ({
@@ -1148,12 +1116,10 @@ export class OverpassService {
         tags: element.tags || {}
       })) || []
       
-      console.log(`🔥 Extracted ${rawPois.length} raw fire pit POIs from Overpass API`)
 
       // Cache the results
       this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${rawPois.length} fire pit POIs from OpenStreetMap`)
       return rawPois
     } catch (error) {
       console.error('❌ Error fetching fire pits:', error)
@@ -1168,7 +1134,6 @@ export class OverpassService {
     const cacheKey = `shelters_norway_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
     
     try {
-      console.log('🏠 Fetching shelters from OpenStreetMap...', bounds)
       
       // Constrain bounds to Norway's geographic limits
       const norwayBounds = {
@@ -1204,7 +1169,6 @@ export class OverpassService {
         out center body 100;
       `.trim()
       
-      console.log('🔍 Shelter Overpass query:', overpassQuery)
 
       const response = await fetch(this.BASE_URL, {
         method: 'POST',
@@ -1222,7 +1186,6 @@ export class OverpassService {
 
       const responseText = await response.text()
       const data = JSON.parse(responseText)
-      console.log('📊 Raw shelter Overpass response:', data)
       
       // Return raw POI data without generic transformation - let the app handle specific transformation
       const rawPois = data.elements?.map((element: OverpassElement) => ({
@@ -1234,12 +1197,10 @@ export class OverpassService {
         tags: element.tags || {}
       })) || []
       
-      console.log(`🏠 Extracted ${rawPois.length} raw shelter POIs from Overpass API`)
 
       // Cache the results
       this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
       
-      console.log(`✅ Fetched ${rawPois.length} shelter POIs from OpenStreetMap`)
       return rawPois
     } catch (error) {
       console.error('❌ Error fetching shelters:', error)
@@ -1257,7 +1218,6 @@ export class OverpassService {
 
     const cached = this.cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log(`🗄️ Using cached cable car data (${cached.data.length} POIs)`)
       return cached.data
     }
 
@@ -1301,9 +1261,7 @@ export class OverpassService {
         tags: element.tags || {}
       })) || []
 
-      console.log(`🚡 Extracted ${rawPois.length} cable car POIs`)
       this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
-      console.log(`✅ Fetched ${rawPois.length} cable car POIs from OpenStreetMap`)
       return rawPois
     } catch (error) {
       console.error('❌ Error fetching cable cars:', error)
@@ -1321,7 +1279,6 @@ export class OverpassService {
 
     const cached = this.cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log(`🗄️ Using cached waterfall data (${cached.data.length} POIs)`)
       return cached.data
     }
 
@@ -1363,9 +1320,7 @@ export class OverpassService {
         tags: element.tags || {}
       })) || []
 
-      console.log(`💧 Extracted ${rawPois.length} waterfall POIs`)
       this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
-      console.log(`✅ Fetched ${rawPois.length} waterfall POIs from OpenStreetMap`)
       return rawPois
     } catch (error) {
       console.error('❌ Error fetching waterfalls:', error)
@@ -1383,7 +1338,6 @@ export class OverpassService {
 
     const cached = this.cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log(`🗄️ Using cached viewpoint data (${cached.data.length} POIs)`)
       return cached.data
     }
 
@@ -1423,9 +1377,7 @@ export class OverpassService {
         tags: element.tags || {}
       })) || []
 
-      console.log(`👁️ Extracted ${rawPois.length} viewpoint POIs`)
       this.cache.set(cacheKey, { data: rawPois, timestamp: Date.now() })
-      console.log(`✅ Fetched ${rawPois.length} viewpoint POIs from OpenStreetMap`)
       return rawPois
     } catch (error) {
       console.error('❌ Error fetching viewpoints:', error)

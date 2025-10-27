@@ -80,7 +80,6 @@ export class KartverketTrailService {
       })
 
       if (response.ok) {
-        console.log('✅ Kartverket trail service endpoint is reachable')
         return true
       } else {
         console.warn(`⚠️ Kartverket trail service returned ${response.status}`)
@@ -110,8 +109,6 @@ export class KartverketTrailService {
    * Currently returns empty array - to be implemented when WFS/API access is available
    */
   static async fetchTrailsInBounds(bounds: TrailBounds): Promise<KartverketTrail[]> {
-    console.log('🥾 Kartverket trail service called for bounds:', bounds)
-    console.log('📋 Note: Official trail data integration pending - using WMS layer for visualization')
     
     // Validate bounds are within Norway
     if (!this.isValidNorwegianBounds(bounds)) {
@@ -128,8 +125,6 @@ export class KartverketTrailService {
    * Future method: Search trails by name or criteria
    */
   static async searchTrails(query: string): Promise<KartverketTrail[]> {
-    console.log('🔍 Trail search requested:', query)
-    console.log('📋 Note: Trail search pending official API access')
     
     // TODO: Implement when trail search API is available
     return []

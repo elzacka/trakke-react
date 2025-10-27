@@ -109,7 +109,6 @@ export class AdminService {
     }
 
     localStorage.setItem(STORAGE_KEYS.ADMIN_HASH, JSON.stringify(adminHash))
-    console.log('✅ Admin password set securely')
   }
 
   /**
@@ -277,7 +276,6 @@ export class AdminService {
       localStorage.removeItem(STORAGE_KEYS.LOGIN_ATTEMPTS)
       localStorage.removeItem(STORAGE_KEYS.LOCKOUT_UNTIL)
 
-      console.log('✅ Admin login successful')
       return {
         success: true,
         message: 'Login successful'
@@ -306,7 +304,6 @@ export class AdminService {
       const { expiresAt } = JSON.parse(sessionData)
 
       if (Date.now() > expiresAt) {
-        console.log('🕐 Admin session expired')
         this.logout()
         return false
       }
@@ -363,7 +360,6 @@ export class AdminService {
       this.sessionCheckInterval = null
     }
 
-    console.log('🔓 Admin logged out')
   }
 
   /**

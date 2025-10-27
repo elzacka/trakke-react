@@ -99,7 +99,6 @@ export class ElevationService {
     coordinates: number[][],
     resolution: number = 50
   ): Promise<ElevationPoint[]> {
-    console.log(`📈 Generating elevation profile for ${coordinates.length} coordinates, resolution: ${resolution}`)
 
     if (!coordinates || coordinates.length < 2) {
       console.warn('⚠️ Invalid coordinates for elevation profile')
@@ -109,7 +108,6 @@ export class ElevationService {
     try {
       // Sample points along the trail based on resolution
       const samplePoints = this.sampleTrailPoints(coordinates, resolution)
-      console.log(`📊 Sampled ${samplePoints.length} points from ${coordinates.length} coordinates`)
 
       // Get elevations for sampled points
       const elevationRequests = samplePoints.map(coord => ({
@@ -144,7 +142,6 @@ export class ElevationService {
         }
       }
 
-      console.log(`✅ Generated elevation profile with ${elevationProfile.length} valid points`)
       return elevationProfile
 
     } catch (error) {

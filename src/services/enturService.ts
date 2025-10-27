@@ -54,7 +54,6 @@ export class EnturService {
    * Fetch bus stops within bounds
    */
   static async fetchBusStops(bounds: StopBounds): Promise<EnturStop[]> {
-    console.log('🚌 Fetching bus stops from Entur API...')
     // Use multiple search terms to get comprehensive coverage
     return this.fetchStopsMultipleSearches(bounds, ['venue'], ['onstreetBus', 'busStation'])
   }
@@ -63,7 +62,6 @@ export class EnturService {
    * Fetch train stations within bounds
    */
   static async fetchTrainStations(bounds: StopBounds): Promise<EnturStop[]> {
-    console.log('🚂 Fetching train stations from Entur API...')
     return this.fetchStopsMultipleSearches(bounds, ['venue'], ['railStation'])
   }
 
@@ -85,7 +83,6 @@ export class EnturService {
     const combinedCacheKey = `combined_${stopTypes.join(',')}_${bounds.north},${bounds.south},${bounds.east},${bounds.west}`
     const cached = this.cache.get(combinedCacheKey)
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log(`🗄️ Using cached Entur data (${cached.data.length} stops)`)
       return cached.data
     }
 
@@ -109,7 +106,6 @@ export class EnturService {
       })
 
       const uniqueStops = Array.from(allStops.values())
-      console.log(`📊 Combined ${uniqueStops.length} unique stops from ${searchTerms.length} parallel searches`)
 
       // Cache the combined result
       this.cache.set(combinedCacheKey, { data: uniqueStops, timestamp: Date.now() })
@@ -136,7 +132,6 @@ export class EnturService {
     // Check cache
     const cached = this.cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      console.log(`🗄️ Using cached Entur data (${cached.data.length} stops)`)
       return cached.data
     }
 
@@ -167,7 +162,6 @@ export class EnturService {
 
       const url = `${this.GEOCODER_URL}/autocomplete?${params.toString()}`
 
-      console.log('📡 Entur API request:', url)
 
       const response = await fetch(url, {
         headers: {
@@ -186,7 +180,6 @@ export class EnturService {
       // Cache the results
       this.cache.set(cacheKey, { data: stops, timestamp: Date.now() })
 
-      console.log(`✅ Fetched ${stops.length} stops from Entur (${stopTypes.join(', ')})`)
       return stops
 
     } catch (error) {
@@ -250,7 +243,6 @@ export class EnturService {
       })
       .filter((stop): stop is EnturStop => stop !== null)
 
-    console.log(`📊 Parsed ${stops.length} valid stops from ${data.features.length} features`)
     return stops
   }
 
@@ -259,6 +251,5 @@ export class EnturService {
    */
   static clearCache(): void {
     this.cache.clear()
-    console.log('🗑️ Entur cache cleared')
   }
 }

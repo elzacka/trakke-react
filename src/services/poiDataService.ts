@@ -94,7 +94,6 @@ export class POIDataService {
       store.lastUpdated = Date.now()
       localStorage.setItem(STORAGE_KEYS.POI_DATA, JSON.stringify(store))
 
-      console.log('✅ POI data saved successfully')
     } catch (error) {
       console.error('❌ Error saving POI store:', error)
       throw new Error('Failed to save POI data')
@@ -212,7 +211,6 @@ export class POIDataService {
       store.pois.push(newPOI)
       this.saveStore(store)
 
-      console.log('✅ POI added successfully:', newPOI.name)
       return {
         success: true,
         id: newPOI.id,
@@ -265,7 +263,6 @@ export class POIDataService {
 
       this.saveStore(store)
 
-      console.log('✅ POI updated successfully:', id)
       return {
         success: true,
         message: 'POI updated successfully'
@@ -299,7 +296,6 @@ export class POIDataService {
       store.pois.splice(poiIndex, 1)
       this.saveStore(store)
 
-      console.log('✅ POI deleted successfully:', deletedPOI.name)
       return {
         success: true,
         message: 'POI deleted successfully'

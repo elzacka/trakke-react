@@ -44,13 +44,11 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
     _setActiveTrailTypes(newActiveTrailTypes)
     onTrailTypesChange(newActiveTrailTypes)
 
-    console.log(`🥾 Trail type ${trailType} ${newActiveTrailTypes.includes(trailType) ? 'enabled' : 'disabled'}`)
   }, [_activeTrailTypes, onTrailTypesChange])
 
   const _clearAllTrails = useCallback(() => {
     _setActiveTrailTypes([])
     onTrailTypesChange([])
-    console.log('🥾 All trail types cleared')
   }, [onTrailTypesChange])
 
   return (

@@ -55,7 +55,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose 
       // Show native install prompt (Android/Desktop Chrome/Edge)
       await deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
-      console.log(`PWA install outcome: ${outcome}`)
       setDeferredPrompt(null)
       onClose()
     }

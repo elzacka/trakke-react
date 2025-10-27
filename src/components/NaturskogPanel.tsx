@@ -22,7 +22,6 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
     setActiveLayers(newActiveLayers)
     onLayerToggle(layerType, !isCurrentlyActive)
 
-    console.log(`🌲 Naturskog layer ${layerType} ${!isCurrentlyActive ? 'enabled' : 'disabled'}`)
   }, [activeLayers, onLayerToggle])
 
   const clearAllLayers = useCallback(() => {
@@ -30,7 +29,6 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
       onLayerToggle(layerType, false)
     })
     setActiveLayers(new Set())
-    console.log('🌲 All Naturskog layers cleared')
   }, [activeLayers, onLayerToggle])
 
   return (

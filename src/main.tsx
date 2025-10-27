@@ -12,18 +12,14 @@ import '@fontsource/material-symbols-outlined'
 import './index.css'
 import { MapLibreTrakkeApp } from './MapLibreTrakkeApp'
 
-console.log('🚀 Loading MapLibre TrakkeApp with Kartverket official landtopo vector tiles...')
-
 try {
   const root = document.getElementById('root')
   if (!root) {
     console.error('❌ Could not find root element')
   } else {
-    console.log('✅ Found root element, creating React root...')
     createRoot(root).render(
       <MapLibreTrakkeApp />
     )
-    console.log('✅ MapLibre TrakkeApp with Kartverket landtopo should be rendered')
   }
 } catch (error) {
   console.error('❌ Error rendering MapLibre TrakkeApp:', error)

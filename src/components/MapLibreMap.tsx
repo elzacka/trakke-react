@@ -353,12 +353,10 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
   // Keep distance measuring ref in sync
   useEffect(() => {
     isDistanceMeasuringRef.current = isDistanceMeasuring
-    console.log(`📏 Distance measuring mode: ${isDistanceMeasuring}`)
   }, [isDistanceMeasuring])
 
   // Create map style based on map type - shared function
   const createMapStyle = (mapType: 'topo' | 'satellite'): maplibregl.StyleSpecification => {
-    console.log(`🗺️ Creating map style for type: ${mapType}`)
 
     if (mapType === 'topo') {
       // Kartverket Topographic Map
@@ -425,13 +423,9 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
-    console.log(`🗺️ [DEBUG] Initializing MapLibre with ${mapType} map type...`)
-    console.log(`🗺️ [DEBUG] Container ref exists:`, !!containerRef.current)
-    console.log(`🗺️ [DEBUG] Container dimensions:`, containerRef.current?.offsetWidth, 'x', containerRef.current?.offsetHeight)
 
     // Map initialization function
     const initializeWithLocation = (center: [number, number]) => {
-      console.log(`🗺️ Initializing MapLibre with center: [${center}] and style:`, createMapStyle(mapType))
 
       try {
         const initialMaxZoom = 18 // Same max zoom for both map types
@@ -465,14 +459,12 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         map.doubleClickZoom.enable() // Double-click to zoom in
         map.touchZoomRotate.enable() // Pinch to zoom on touch devices
 
-        console.log(`🗺️ [DEBUG] Map object created successfully:`, map)
         setMapInitialized(true)
         setMapInitError(null)
 
         // Assign map to ref and set up event handlers
         mapRef.current = map
         setupMapEventHandlers(map)
-        console.log(`🗺️ Map initialized and event handlers attached`)
 
         return map
       } catch (error) {
@@ -488,24 +480,19 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
     // Initialize map layers (both Naturskog and Turrutebasen)
     const initializeMapLayers = (map: maplibregl.Map, context: string) => {
       if (layersInitialized) {
-        console.log(`🔄 [${context}] Layers already initialized, skipping...`)
         return
       }
 
-      console.log(`🔄 [${context}] Starting layer initialization...`)
       layersInitialized = true
 
       // PERFORMANCE OPTIMIZATION: Only log layer sources without adding them to map
       // Layers will be initialized on-demand when first toggled
-      console.log(`⚡ [${context}] Using lazy layer initialization for better performance`)
 
       try {
         const _naturskogSources = NaturskogService.getWMSLayerSources()
         const naturskogLayers = NaturskogService.getMapLayers()
-        console.log(`🌲 [${context}] Naturskog layers ready for lazy loading:`, naturskogLayers.map(l => l.id))
 
         const _turrutebasenSources = TurrutebasenService.getWMSLayerSources()
-        console.log(`🥾 [${context}] Turrutebasen sources ready for lazy loading:`, Object.keys(_turrutebasenSources))
       } catch (error) {
         console.error(`❌ [${context}] Error preparing lazy layer data:`, error)
       }
@@ -514,20 +501,15 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
       // Add Naturskog WMS layers
       try {
-        console.log(`🌲 [${context}] Starting Naturskog WMS layer initialization...`)
         const naturskogSources = NaturskogService.getWMSLayerSources()
-        console.log(`🌲 [${context}] Got Naturskog sources:`, Object.keys(naturskogSources))
         const naturskogLayers = NaturskogService.getMapLayers()
-        console.log(`🌲 [${context}] Got Naturskog layers:`, naturskogLayers.map(l => l.id))
 
         // Add sources
         Object.entries(naturskogSources).forEach(([sourceId, source]) => {
           try {
             if (!map.getSource(sourceId)) {
               map.addSource(sourceId, source)
-              console.log(`✅ [${context}] Added Naturskog source: ${sourceId}`)
             } else {
-              console.log(`ℹ️ [${context}] Naturskog source ${sourceId} already exists`)
             }
           } catch (error) {
             console.error(`❌ [${context}] Failed to add Naturskog source ${sourceId}:`, error)
@@ -539,38 +521,30 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           try {
             if (!map.getLayer(layer.id)) {
               map.addLayer(layer)
-              console.log(`✅ [${context}] Added Naturskog layer: ${layer.id}`)
             } else {
-              console.log(`ℹ️ [${context}] Naturskog layer ${layer.id} already exists`)
             }
           } catch (error) {
             console.error(`❌ [${context}] Failed to add Naturskog layer ${layer.id}:`, error)
           }
         })
-        console.log(`🌲 [${context}] Naturskog layers initialized`)
       } catch (error) {
         console.error(`❌ [${context}] [CRITICAL] Failed to add Naturskog layers:`, error)
       }
 
       // Add Turrutebasen WMS layers
       try {
-        console.log(`🥾 [${context}] Starting Turrutebasen WMS layer initialization...`)
         const turrutebasenSources = TurrutebasenService.getWMSLayerSources()
 
         // Add sources and layers for each trail type
         Object.entries(turrutebasenSources).forEach(([sourceId, source]) => {
           if (!map.getSource(sourceId)) {
             map.addSource(sourceId, source)
-            console.log(`✅ [${context}] Added Turrutebasen source: ${sourceId}`)
           } else {
-            console.log(`ℹ️ [${context}] Turrutebasen source ${sourceId} already exists`)
           }
         })
 
         // Turrutebasen layers are now handled via WMS sources only
-        console.log(`ℹ️ [${context}] Turrutebasen WMS sources prepared for lazy loading`)
 
-        console.log(`🥾 [${context}] Turrutebasen layers initialized`)
       } catch (error) {
         console.error(`❌ [${context}] Failed to add Turrutebasen layers:`, error)
       }
@@ -581,7 +555,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       // No default controls - using custom overlay UI components instead
 
       map.on('load', () => {
-        console.log(`✅ MapLibre loaded with ${mapType} map tiles`)
         setMapLoaded(true)
 
         // Initialize coordinates with map center for immediate display
@@ -616,11 +589,9 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
       // Add style load error handling
       map.on('styledata', () => {
-        console.log(`🎨 [DEBUG] Style data loaded for ${mapType}`)
       })
 
       map.on('style.load', () => {
-        console.log(`🎨 [DEBUG] Style fully loaded for ${mapType}`)
         // Re-initialize layers when style loads (handles hard refresh issues)
         initializeMapLayers(map, 'STYLE_LOAD')
       })
@@ -750,7 +721,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
             document.body.removeChild(textArea)
           }
 
-          console.log(`📋 Copied coordinates: ${coordinatesText}`)
           onCoordinatesCopied?.(true)
         } catch (error) {
           console.error('Failed to copy coordinates:', error)
@@ -762,7 +732,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       map.on('click', (e) => {
         if (isDistanceMeasuringRef.current) {
           const { lat, lng } = e.lngLat
-          console.log(`📏 Adding distance measurement point at [${lat.toFixed(5)}, ${lng.toFixed(5)}]`)
           e.preventDefault()
           addDistanceMeasurementPoint({ lat, lng })
         }
@@ -771,15 +740,12 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
     // Try user location first, fallback to Hardangervidda if disabled/failed
     if (navigator.geolocation) {
-      console.log('🌍 Attempting to get user location...')
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
-          console.log(`📍 Using user location`)
           initializeWithLocation(userCenter)
         },
         (error) => {
-          console.log(`❌ Geolocation failed: ${error.message}, using Hardangervidda fallback`)
           const hardangervidda: [number, number] = [7.47408, 60.13022]
           initializeWithLocation(hardangervidda)
         },
@@ -790,10 +756,8 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         }
       )
     } else {
-      console.log('📍 No geolocation support, using Hardangervidda as default')
       const hardangervidda: [number, number] = [7.47408, 60.13022] // Hardangervidda coordinates
       const map = initializeWithLocation(hardangervidda)
-      console.log(`🗺️ [DEBUG] Map from initializeWithLocation (no geolocation):`, !!map)
       if (map) {
         setupMapEventHandlers(map)
       } else {
@@ -820,7 +784,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
     if (!mapRef.current || !mapLoaded) return
 
     const map = mapRef.current
-    console.log(`🗺️ Map type switching effect triggered: ${mapType}`)
 
     // Preserve current map position and zoom before style change
     const currentCenter = map.getCenter()
@@ -828,7 +791,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
     const currentBearing = map.getBearing()
     const currentPitch = map.getPitch()
 
-    console.log(`📍 Current position before switch: center=[${currentCenter.lng.toFixed(4)}, ${currentCenter.lat.toFixed(4)}], zoom=${currentZoom.toFixed(2)}`)
 
     // Update map style based on mapType
     const newStyle = createMapStyle(mapType)
@@ -836,7 +798,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
     // Restore map position after style loads
     void map.once('styledata', () => {
-      console.log(`🎨 Style loaded for ${mapType}, restoring position...`)
 
       // Update zoom limits based on map type
       const newMaxZoom = mapType === 'topo' ? 18 : 17 // Reduced satellite to 17 to avoid "Map data not yet available" tiles
@@ -853,7 +814,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         pitch: currentPitch
       })
 
-      console.log(`✅ Map type switched to ${mapType}, position restored to [${currentCenter.lng.toFixed(4)}, ${currentCenter.lat.toFixed(4)}], zoom=${targetZoom.toFixed(2)}`)
 
       // Re-emit viewport bounds after position is restored
       setTimeout(() => {
@@ -933,7 +893,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       // Add overlay to map container
       map.getContainer().appendChild(overlay)
 
-      console.log('✅ Marker overlay added to map with color:', poi.color)
 
       // Enhanced hover effects with smooth animations
       markerElement.addEventListener('mouseenter', () => {
@@ -1006,7 +965,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
   // Handle trail click events
   const handleTrailClick = useCallback((trail: Trail, lngLat: maplibregl.LngLat) => {
-    console.log(`🥾 Trail clicked: ${trail.properties.name}`)
 
     _setSelectedTrail(trail)
 
@@ -1105,7 +1063,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
     const map = mapRef.current
 
-    console.log('🔄 Adding WMS trail layers from Turrutebasen')
 
     // Get all WMS sources from the service
     const wmsSources = TurrutebasenService.getWMSLayerSources()
@@ -1134,7 +1091,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
             })
           }
 
-          console.log(`✅ Added WMS trail layer: ${layerId}`)
         } catch (error) {
           console.error(`❌ Failed to add WMS trail layer for ${trailType}:`, error)
         }
@@ -1154,7 +1110,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
     try {
       if (map.getLayer(layerId)) {
         map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
-        console.log(`🔄 ${visible ? 'Showing' : 'Hiding'} WMS trail layer: ${layerId}`)
       }
     } catch (error) {
       console.error(`❌ Failed to toggle WMS trail layer ${layerId}:`, error)
@@ -1231,7 +1186,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         paint: paintProperties
       })
 
-      console.log(`✅ Added vector trail layer: trails-${trailType}`)
     })
 
     // Add trail click handlers
@@ -1265,8 +1219,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
     setLastTrailBounds(trailBounds)
 
     try {
-      console.log(`🥾 Loading trails from Turrutebasen for types:`, activeTypes)
-      console.log(`📍 Bounds:`, trailBounds)
 
       // Fetch trails from Turrutebasen WFS
       const fetchedTrails = await TurrutebasenService.fetchTrailsInBounds(trailBounds, {
@@ -1279,7 +1231,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         return activeTypes.includes(trailType as 'hiking' | 'skiing' | 'cycling' | 'other')
       })
 
-      console.log(`✅ Loaded ${filteredTrails.length} trails from Turrutebasen`)
       setTrails(filteredTrails)
 
       // Add trails to map
@@ -1289,7 +1240,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       console.error('❌ Failed to load trails:', error)
 
       // Fallback to WMS overlay if vector data fails
-      console.log('🔄 Falling back to WMS trail overlay')
       addWMSTrailLayers(activeTypes)
 
     } finally {
@@ -1342,7 +1292,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
     // Add WMS trail layers for active categories
     if (trailTypesForLayer.length > 0) {
-      console.log('🥾 Adding WMS trail layers for active types:', trailTypesForLayer)
       addWMSTrailLayers(trailTypesForLayer)
 
       // Toggle visibility for all trail types
@@ -1352,7 +1301,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         toggleWMSTrailLayer(type, isActive)
       })
     } else {
-      console.log('🚫 No trail categories active - hiding all trail layers')
       // Hide all WMS trail layers
       const allTypes: ('hiking' | 'skiing' | 'cycling' | 'other')[] = ['hiking', 'skiing', 'cycling', 'other']
       allTypes.forEach(type => {
@@ -1400,19 +1348,15 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
     // Always clean up existing search marker first
     if (searchMarkerRef.current) {
-      console.log('🧹 Removing previous search marker')
       searchMarkerRef.current.remove()
       searchMarkerRef.current = null
     }
 
     // If no search result, just cleanup and return
     if (!searchResult) {
-      console.log('🔍 No search result, cleanup completed')
       return
     }
 
-    console.log(`🔍 Centering map on search result: ${searchResult.displayName}`)
-    console.log('🔍 Creating search marker at coordinates:', searchResult.lat, searchResult.lng)
 
     // Create modern search marker
     const searchElement = document.createElement('div')
@@ -1436,7 +1380,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       .addTo(map)
 
     searchMarkerRef.current = searchMarker
-    console.log('✅ Search marker added to map successfully')
 
     // Center map on search result
     map.flyTo({
@@ -1448,7 +1391,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
     // Automatically remove search marker after 3 seconds
     const removeTimer = setTimeout(() => {
       if (searchMarkerRef.current) {
-        console.log('⏱️ Auto-removing search marker after 3 seconds')
         searchMarkerRef.current.remove()
         searchMarkerRef.current = null
       }
@@ -1466,7 +1408,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
 
     // If userLocation is null, remove markers and return
     if (!userLocation) {
-      console.log('📍 User location cleared - removing markers')
       if (userLocationMarkerRef.current) {
         userLocationMarkerRef.current.remove()
         userLocationMarkerRef.current = null
@@ -1479,8 +1420,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
     }
 
     const map = mapRef.current
-    console.log(`📍 Centering map on user location: ${userLocation.lat}, ${userLocation.lng}`)
-    console.log('📍 Creating position marker at coordinates:', userLocation.lat, userLocation.lng)
 
     // Remove existing user location marker if it exists
     if (userLocationMarkerRef.current) {
@@ -1548,7 +1487,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
       .addTo(map)
 
     positionMarkerRef.current = positionMarker
-    console.log('✅ Position marker added to map successfully')
 
     // Fly to user location
     map.flyTo({

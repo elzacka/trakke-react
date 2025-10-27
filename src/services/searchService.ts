@@ -149,7 +149,6 @@ interface KartverketPlaceNameResponse {
 // Reverse geocoding - get place name from coordinates
 async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
   try {
-    console.log(`🔍 Reverse geocoding coordinates: ${lat}, ${lng}`)
 
     // Use Kartverket's place name API to find nearby places
     const radius = 1000 // 1km radius
@@ -193,7 +192,6 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
         locationDescription += `, ${municipality}`
       }
 
-      console.log(`✅ Found place: ${locationDescription} (${placeType})`)
       return locationDescription
     }
 
@@ -221,7 +219,6 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
     if (lngDir === 'W') lng = -lng
 
     if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
-      console.log(`📍 Parsed coordinates (degree-direction): ${lat}, ${lng}`)
       return { lat, lng, format: 'decimal' }
     }
   }
@@ -236,7 +233,6 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
     const lng = parseFloat(decimalMatch[2])
 
     if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
-      console.log(`📍 Parsed coordinates (decimal): ${lat}, ${lng}`)
       return { lat, lng, format: 'decimal' }
     }
   }
@@ -253,7 +249,6 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
     if (lngDir === 'W') lng = -lng
 
     if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
-      console.log(`📍 Parsed coordinates (prefix-direction): ${lat}, ${lng}`)
       return { lat, lng, format: 'decimal' }
     }
   }
@@ -279,7 +274,6 @@ function parseCoordinates(input: string): CoordinateParseResult | null {
     if (lngDir === 'W') lng = -lng
 
     if (isValidNumber(lat) && isValidNumber(lng) && isValidNorwegianCoordinate(lat, lng)) {
-      console.log(`📍 Parsed coordinates (DMS): ${lat}, ${lng}`)
       return { lat, lng, format: 'dms' }
     }
   }
@@ -450,7 +444,6 @@ async function searchKartverketAddresses(query: string): Promise<SearchResult[]>
       const addressMatch = query.match(/^(.+?)\s+(\d+[A-Za-z]?)\s*$/)
       if (addressMatch) {
         const streetName = addressMatch[1].trim()
-        console.log(`\ud83c\udfe0 Ingen eksakt match for "${query}", pr\u00f8ver gatenavn: "${streetName}"`)
         const streetUrl = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodeURIComponent(streetName)}&treffPerSide=8&side=1`
         const streetResults = await attemptAddressSearch(streetUrl)
         if (streetResults && streetResults.length > 0) {
@@ -463,7 +456,6 @@ async function searchKartverketAddresses(query: string): Promise<SearchResult[]>
     
     // If still no results, try fuzzy search as last resort
     if (results.length === 0) {
-      console.log(`\ud83c\udfe0 Pr\u00f8ver fuzzy search for "${query}"`)
       const fuzzyUrl = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodedQuery}&treffPerSide=10&side=1&fuzzy=true`
       const fuzzyResults = await attemptAddressSearch(fuzzyUrl)
       if (fuzzyResults) {
@@ -482,7 +474,6 @@ async function searchKartverketAddresses(query: string): Promise<SearchResult[]>
 // Helper function for address search attempts
 async function attemptAddressSearch(url: string): Promise<SearchResult[]> {
   try {
-    console.log('🏠 Kartverket adresse søk:', url)
     
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 8000)
@@ -503,7 +494,6 @@ async function attemptAddressSearch(url: string): Promise<SearchResult[]> {
     
     const data: KartverketAddressResponse = await response.json()
     
-    console.log(`🏠 Kartverket adresse resultater: ${data.metadata.totaltAntallTreff} treff, returnerer ${data.adresser?.length || 0}`)
     
     if (!data.adresser || !Array.isArray(data.adresser)) {
       return []
@@ -554,7 +544,6 @@ async function searchKartverket(query: string): Promise<SearchResult[]> {
     const encodedQuery = encodeURIComponent(query.trim())
     const url = `https://ws.geonorge.no/stedsnavn/v1/navn?sok=${encodedQuery}*&treffPerSide=10&side=1&kommunenummer=*&fuzzy=true`
     
-    console.log('🗺️ Kartverket søk:', url)
     
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 8000) // Longer timeout for government API
@@ -575,7 +564,6 @@ async function searchKartverket(query: string): Promise<SearchResult[]> {
     
     const data: KartverketResponse = await response.json()
     
-    console.log(`📍 Kartverket resultater: ${data.metadata.totaltAntallTreff} treff, returnerer ${data.navn?.length || 0}`)
     
     if (!data.navn || !Array.isArray(data.navn)) {
       return []

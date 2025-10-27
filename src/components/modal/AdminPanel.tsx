@@ -141,7 +141,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onCategoryToggle, catego
         if (onCategoryToggle && categoryState && formData.type) {
           const isCurrentlyEnabled = categoryState.checked[formData.type]
           if (!isCurrentlyEnabled) {
-            console.log(`🏷️ Auto-enabling category: ${formData.type}`)
             onCategoryToggle(formData.type)
           }
         }

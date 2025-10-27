@@ -21,11 +21,9 @@ export class TilfluktsromService {
   private async fetchWithFallback(url: string, headers: HeadersInit): Promise<Response> {
     // ALWAYS try direct access first (works if CORS is enabled by the WFS server)
     try {
-      console.log(`🔄 Trying direct WFS access (GDPR compliant)...`)
       const directResponse = await fetch(url, { headers })
 
       if (directResponse.ok) {
-        console.log(`✅ Direct WFS access successful - CORS enabled by Geonorge`)
         return directResponse
       } else {
         console.warn(`⚠️ Direct access returned ${directResponse.status}: ${directResponse.statusText}`)
@@ -50,7 +48,6 @@ export class TilfluktsromService {
   }): Promise<TilfluktsromPOI[]> {
     try {
       const isProduction = window.location.hostname.includes('github.io')
-      console.log(`🏠 Fetching tilfluktsrom data from Geonorge WFS... (${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode)`, bounds)
 
       // Construct WFS GetFeature request with bounding box filter
       const params = new URLSearchParams({
@@ -66,7 +63,6 @@ export class TilfluktsromService {
       })
 
       const url = `${this.baseUrl}?${params.toString()}`
-      console.log('🔗 WFS URL:', url)
 
       const response = await this.fetchWithFallback(url, {
         'User-Agent': 'Tråkke Norwegian Outdoor App (https://github.com/elzacka/trakke-react)'
@@ -77,7 +73,6 @@ export class TilfluktsromService {
       }
 
       const xmlText = await response.text()
-      console.log('📄 Received XML response, parsing...')
 
       // Parse XML response
       const parser = new DOMParser()
@@ -93,7 +88,6 @@ export class TilfluktsromService {
       const features = xmlDoc.getElementsByTagNameNS('*', 'Tilfluktsrom')
       const tilfluktsromList: TilfluktsromPOI[] = []
 
-      console.log(`📊 Found ${features.length} tilfluktsrom features`)
 
       for (let i = 0; i < features.length; i++) {
         const feature = features[i]
@@ -168,7 +162,6 @@ export class TilfluktsromService {
         }
       }
 
-      console.log(`✅ Successfully parsed ${tilfluktsromList.length} tilfluktsrom POIs`)
       return tilfluktsromList
 
     } catch (error) {
