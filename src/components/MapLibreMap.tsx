@@ -537,7 +537,6 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         Object.entries(turrutebasenSources).forEach(([sourceId, source]) => {
           if (!map.getSource(sourceId)) {
             map.addSource(sourceId, source)
-          } else {
           }
         })
 
@@ -743,7 +742,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           const userCenter: [number, number] = [position.coords.longitude, position.coords.latitude]
           initializeWithLocation(userCenter)
         },
-        (error) => {
+        (_error) => {
           const hardangervidda: [number, number] = [7.47408, 60.13022]
           initializeWithLocation(hardangervidda)
         },

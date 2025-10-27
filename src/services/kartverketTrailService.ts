@@ -124,8 +124,8 @@ export class KartverketTrailService {
   /**
    * Future method: Search trails by name or criteria
    */
-  static async searchTrails(query: string): Promise<KartverketTrail[]> {
-    
+  static async searchTrails(_query: string): Promise<KartverketTrail[]> {
+
     // TODO: Implement when trail search API is available
     return []
   }

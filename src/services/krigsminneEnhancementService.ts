@@ -90,27 +90,12 @@ export class KrigsminneEnhancementService {
 
 
       // Only use geotagged data - no fallback to non-location-specific images
-      if (allThumbnails.length === 0) {
-      }
-
       allThumbnails = allThumbnails.slice(0, 6) // Limit to 6 total images
 
       const enhancedData: EnhancedKrigsminneData = {
         media: {
           thumbnails: allThumbnails
         }
-      }
-
-      const hasContent = allThumbnails.length > 0
-      const sourceBreakdown = {
-        nasjonalbiblioteket: nasjonalbibliotekResult?.length || 0,
-        digitalt_museum: museumResult?.length || 0,
-        flickr: flickrResult?.length || 0,
-        curated: allThumbnails.length === (nasjonalbibliotekResult?.length || 0) + (museumResult?.length || 0) + (flickrResult?.length || 0) ? 0 : allThumbnails.length
-      }
-
-
-      if (hasContent) {
       }
 
       return enhancedData
@@ -125,7 +110,7 @@ export class KrigsminneEnhancementService {
    * Fetch images from Norwegian Digital Museum (Digitalt Museum)
    * This has a good collection of historical photos from Norway
    */
-  private async fetchDigitaltMuseumImages(lat: number, lng: number, poiName: string): Promise<MediaThumbnail[]> {
+  private async fetchDigitaltMuseumImages(_lat: number, _lng: number, _poiName: string): Promise<MediaThumbnail[]> {
     try {
 
       // Create broader search queries for better results
@@ -204,7 +189,7 @@ export class KrigsminneEnhancementService {
   /**
    * Fetch images from Norwegian National Library (Nasjonalbiblioteket)
    */
-  private async fetchNasjonalbibliotekImages(lat: number, lng: number, poiName: string): Promise<MediaThumbnail[]> {
+  private async fetchNasjonalbibliotekImages(_lat: number, _lng: number, _poiName: string): Promise<MediaThumbnail[]> {
     try {
 
       // Search strategies for Norwegian National Library
