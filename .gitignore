@@ -31,3 +31,7 @@ Console log debug info.md
 Github build errors.md
 s1.png
 UI adjustments.md
+*.local.md
+notes/
+debug/
+trakke.code-workspace*
