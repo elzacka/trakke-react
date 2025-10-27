@@ -685,74 +685,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
         })
       })
 
-      // Enhanced long press detection for mobile coordinate copying
-      let longPressTimer: NodeJS.Timeout | null = null
-      let longPressCoords: { lat: number; lng: number } | null = null
-      let startTouch: { x: number; y: number } | null = null
-      const LONG_PRESS_DURATION = 1200 // 1.2 seconds - long enough to avoid interfering with pan
-      const TOUCH_MOVE_THRESHOLD = 25 // 25px - larger threshold to prevent accidental triggers during pan
-
-      map.on('touchstart', (e) => {
-        if (e.lngLat && e.originalEvent.touches.length === 1) {
-          const touch = e.originalEvent.touches[0]
-          startTouch = { x: touch.clientX, y: touch.clientY }
-          longPressCoords = { lat: e.lngLat.lat, lng: e.lngLat.lng }
-
-          longPressTimer = setTimeout(() => {
-            if (longPressCoords) {
-              const coordinatesText = `${longPressCoords.lat.toFixed(5)}°N, ${longPressCoords.lng.toFixed(5)}°E`
-
-              // Vibrate if supported (mobile feedback)
-              if (navigator.vibrate) {
-                navigator.vibrate(50)
-              }
-
-              // iOS Safari clipboard copy - simplified synchronous approach
-              const textArea = document.createElement('textarea')
-              textArea.value = coordinatesText
-
-              // Position off-screen but still in viewport (iOS requirement)
-              textArea.style.position = 'fixed'
-              textArea.style.top = '0'
-              textArea.style.left = '-999999px'
-              textArea.style.fontSize = '16px' // Prevents iOS zoom
-              textArea.style.opacity = '0'
-              textArea.style.pointerEvents = 'none'
-
-              // iOS requires element to be editable
-              textArea.readOnly = false
-
-              document.body.appendChild(textArea)
-
-              // iOS-specific selection
-              textArea.focus()
-              textArea.select()
-              textArea.setSelectionRange(0, 99999)
-
-              // Copy using execCommand (most reliable for iOS)
-              const success = document.execCommand('copy')
-
-              document.body.removeChild(textArea)
-
-              console.log(`📋 Copied coordinates (${success ? 'success' : 'failed'}): ${coordinatesText}`)
-
-              // Always show feedback, even if copy might have failed
-              onCoordinatesCopied?.(true)
-            }
-          }, LONG_PRESS_DURATION)
-        }
-      })
-
-      map.on('touchend', () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer)
-          longPressTimer = null
-        }
-        longPressCoords = null
-        startTouch = null
-      })
-
-      // Track touch coordinates and cancel long press on significant move
+      // Track touch coordinates for mobile coordinate display in sidebar
       map.on('touchmove', (e) => {
         // Update coordinates for mobile
         if (e.lngLat) {
@@ -761,20 +694,15 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
             lng: e.lngLat.lng
           })
         }
+      })
 
-        // Cancel long press if finger moves too much
-        if (longPressTimer && startTouch && e.originalEvent.touches.length === 1) {
-          const touch = e.originalEvent.touches[0]
-          const moveDistance = Math.sqrt(
-            Math.pow(touch.clientX - startTouch.x, 2) + Math.pow(touch.clientY - startTouch.y, 2)
-          )
-
-          if (moveDistance > TOUCH_MOVE_THRESHOLD) {
-            clearTimeout(longPressTimer)
-            longPressTimer = null
-            longPressCoords = null
-            startTouch = null
-          }
+      // Also track touchstart for initial coordinate display
+      map.on('touchstart', (e) => {
+        if (e.lngLat) {
+          onCoordinatesChange?.({
+            lat: e.lngLat.lat,
+            lng: e.lngLat.lng
+          })
         }
       })
 
