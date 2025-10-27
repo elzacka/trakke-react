@@ -6,7 +6,7 @@ interface TrailPanelProps {
 }
 
 export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
-  const [isTrailsExpanded, setIsTrailsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [_activeTrailTypes, _setActiveTrailTypes] = useState<TrailType[]>([])
 
   const availableTrailTypes: Array<{ type: TrailType; name: string; icon: string; description: string }> = [
@@ -43,7 +43,6 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
 
     _setActiveTrailTypes(newActiveTrailTypes)
     onTrailTypesChange(newActiveTrailTypes)
-
   }, [_activeTrailTypes, onTrailTypesChange])
 
   const _clearAllTrails = useCallback(() => {
@@ -55,11 +54,11 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
     <div className="trail-panel" style={{ marginBottom: '16px' }}>
       {/* Toggle Button */}
       <button
-        onClick={() => setIsTrailsExpanded(!isTrailsExpanded)}
+        onClick={() => setIsExpanded(!isExpanded)}
         style={{
           width: '100%',
           padding: '8px 12px',
-          backgroundColor: isTrailsExpanded ? '#f1f5f9' : '#ffffff',
+          backgroundColor: isExpanded ? '#f1f5f9' : '#ffffff',
           border: '1px solid #e2e8f0',
           borderRadius: '6px',
           display: 'flex',
@@ -70,16 +69,16 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
           fontWeight: '500',
           color: _activeTrailTypes.length > 0 ? '#3e4533' : '#64748b',
           transition: 'all 0.2s ease',
-          marginBottom: isTrailsExpanded ? '8px' : '0'
+          marginBottom: isExpanded ? '8px' : '0'
         }}
         onMouseEnter={(e) => {
-          if (!isTrailsExpanded) {
+          if (!isExpanded) {
             e.currentTarget.style.backgroundColor = '#f8fafc'
             e.currentTarget.style.borderColor = '#cbd5e1'
           }
         }}
         onMouseLeave={(e) => {
-          if (!isTrailsExpanded) {
+          if (!isExpanded) {
             e.currentTarget.style.backgroundColor = '#ffffff'
             e.currentTarget.style.borderColor = '#e2e8f0'
           }
@@ -121,7 +120,7 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
             fontFamily: 'Material Symbols Outlined',
             fontSize: '16px',
             color: '#64748b',
-            transform: isTrailsExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease'
           }}
         >
@@ -129,98 +128,81 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
         </span>
       </button>
 
-      {/* Expanded Content - Trail Type Toggles */}
-      {isTrailsExpanded && (
+      {/* Expanded Content - Dropdown with options */}
+      {isExpanded && (
         <div style={{
           backgroundColor: '#ffffff',
           border: '1px solid #e2e8f0',
           borderRadius: '6px',
-          overflow: 'hidden',
+          padding: '12px',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
         }}>
-          <div style={{ padding: '12px' }}>
-            {/* Trail Type Toggles */}
-            <div style={{ marginBottom: '12px' }}>
-              {availableTrailTypes.map(({ type, name, icon, description }) => (
-                <div
+          {/* Trail Type Toggle Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {availableTrailTypes.map(({ type, name, icon, description }) => {
+              const isActive = _activeTrailTypes.includes(type)
+              return (
+                <button
                   key={type}
+                  onClick={() => handleTrailTypeToggle(type)}
                   style={{
-                    marginBottom: '8px',
-                    border: '1px solid #e2e8f0',
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: isActive ? '#f0fdf4' : 'transparent',
+                    border: isActive ? '1px solid #3e4533' : '1px solid #e5e7eb',
                     borderRadius: '6px',
-                    overflow: 'hidden',
-                    transition: 'all 0.2s ease'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = '#f8fafc'
+                      e.currentTarget.style.borderColor = '#cbd5e1'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.borderColor = '#e5e7eb'
+                    }
                   }}
                 >
-                  <button
-                    onClick={() => handleTrailTypeToggle(type)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      backgroundColor: _activeTrailTypes.includes(type) ? '#f0f9ff' : '#ffffff',
-                      border: _activeTrailTypes.includes(type) ? '2px solid #3e4533' : 'none',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!_activeTrailTypes.includes(type)) {
-                        e.currentTarget.style.backgroundColor = '#f8fafc'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!_activeTrailTypes.includes(type)) {
-                        e.currentTarget.style.backgroundColor = '#ffffff'
-                      }
-                    }}
-                  >
-                    {/* Icon */}
-                    <span style={{
-                      fontFamily: 'Material Symbols Outlined',
-                      fontSize: '20px',
-                      color: _activeTrailTypes.includes(type) ? '#3e4533' : '#9ca3af'
+                  {/* Icon */}
+                  <span style={{
+                    fontFamily: 'Material Symbols Outlined',
+                    fontSize: '20px',
+                    color: isActive ? '#3e4533' : '#9ca3af'
+                  }}>
+                    {icon}
+                  </span>
+
+                  {/* Content */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: isActive ? '#3e4533' : '#374151',
+                      marginBottom: '2px'
                     }}>
-                      {icon}
-                    </span>
-
-                    {/* Content */}
-                    <div style={{ flex: 1, textAlign: 'left' }}>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: _activeTrailTypes.includes(type) ? '#3e4533' : '#374151',
-                        marginBottom: '2px'
-                      }}>
-                        {name}
-                      </div>
-                      <div style={{
-                        fontSize: '11px',
-                        color: '#6b7280'
-                      }}>
-                        {description}
-                      </div>
+                      {name}
                     </div>
-
-                    {/* Active indicator */}
-                    {_activeTrailTypes.includes(type) && (
-                      <span style={{
-                        fontFamily: 'Material Symbols Outlined',
-                        fontSize: '18px',
-                        color: '#3e4533'
-                      }}>
-                        check_circle
-                      </span>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Clear All Button - Disabled while service is unavailable */}
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#6b7280'
+                    }}>
+                      {description}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
           </div>
+
+          {/* Clear All Button - Disabled while service is unavailable */}
         </div>
       )}
     </div>

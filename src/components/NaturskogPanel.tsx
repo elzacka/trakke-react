@@ -21,7 +21,6 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
 
     setActiveLayers(newActiveLayers)
     onLayerToggle(layerType, !isCurrentlyActive)
-
   }, [activeLayers, onLayerToggle])
 
   const clearAllLayers = useCallback(() => {
@@ -109,129 +108,110 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
         </span>
       </button>
 
-      {/* Expanded Content - Layer Toggles */}
+      {/* Expanded Content - Dropdown with options */}
       {isExpanded && (
         <div style={{
           backgroundColor: '#ffffff',
           border: '1px solid #e2e8f0',
           borderRadius: '6px',
-          overflow: 'hidden',
+          padding: '12px',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
         }}>
-          <div style={{ padding: '12px' }}>
-            {/* Layer Toggles */}
-            <div style={{ marginBottom: '12px' }}>
-              {NATURSKOG_LAYERS.map((layer) => {
-                const isActive = activeLayers.has(layer.type)
-                return (
-                  <div
-                    key={layer.type}
-                    style={{
-                      marginBottom: '8px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '6px',
-                      overflow: 'hidden',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <button
-                      onClick={() => handleLayerToggle(layer.type)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        backgroundColor: isActive ? '#f0f9ff' : '#ffffff',
-                        border: isActive ? '2px solid #3e4533' : 'none',
-                        borderRadius: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.backgroundColor = '#f8fafc'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.backgroundColor = '#ffffff'
-                        }
-                      }}
-                    >
-                      {/* Icon */}
-                      <span style={{
-                        fontFamily: 'Material Symbols Outlined',
-                        fontSize: '20px',
-                        color: isActive ? layer.color : '#9ca3af'
-                      }}>
-                        {layer.icon}
-                      </span>
+          {/* Layer Toggle Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {NATURSKOG_LAYERS.map((layer) => {
+              const isActive = activeLayers.has(layer.type)
+              return (
+                <button
+                  key={layer.type}
+                  onClick={() => handleLayerToggle(layer.type)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    backgroundColor: isActive ? '#f0fdf4' : 'transparent',
+                    border: isActive ? '1px solid #3e4533' : '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = '#f8fafc'
+                      e.currentTarget.style.borderColor = '#cbd5e1'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.borderColor = '#e5e7eb'
+                    }
+                  }}
+                >
+                  {/* Icon */}
+                  <span style={{
+                    fontFamily: 'Material Symbols Outlined',
+                    fontSize: '20px',
+                    color: isActive ? layer.color : '#9ca3af'
+                  }}>
+                    {layer.icon}
+                  </span>
 
-                      {/* Content */}
-                      <div style={{ flex: 1, textAlign: 'left' }}>
-                        <div style={{
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          color: isActive ? '#3e4533' : '#374151',
-                          marginBottom: '2px'
-                        }}>
-                          {layer.name}
-                        </div>
-                        <div style={{
-                          fontSize: '11px',
-                          color: '#6b7280',
-                          lineHeight: '1.3'
-                        }}>
-                          {layer.description}
-                        </div>
-                      </div>
-
-                      {/* Active indicator */}
-                      {isActive && (
-                        <span style={{
-                          fontFamily: 'Material Symbols Outlined',
-                          fontSize: '18px',
-                          color: '#3e4533'
-                        }}>
-                          check_circle
-                        </span>
-                      )}
-                    </button>
+                  {/* Content */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: isActive ? '#3e4533' : '#374151',
+                      marginBottom: '2px'
+                    }}>
+                      {layer.name}
+                    </div>
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#6b7280',
+                      lineHeight: '1.3'
+                    }}>
+                      {layer.description}
+                    </div>
                   </div>
-                )
-              })}
-            </div>
-
-            {/* Clear All Button */}
-            {activeLayers.size > 0 && (
-              <button
-                onClick={clearAllLayers}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  backgroundColor: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '4px',
-                  color: '#dc2626',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fee2e2'
-                  e.currentTarget.style.borderColor = '#fca5a5'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fef2f2'
-                  e.currentTarget.style.borderColor = '#fecaca'
-                }}
-              >
-                Fjern alle kartlag
-              </button>
-            )}
+                </button>
+              )
+            })}
           </div>
+
+          {/* Clear All Button */}
+          {activeLayers.size > 0 && (
+            <button
+              onClick={clearAllLayers}
+              style={{
+                width: '100%',
+                marginTop: '12px',
+                padding: '8px 12px',
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '4px',
+                color: '#dc2626',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fee2e2'
+                e.currentTarget.style.borderColor = '#fca5a5'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#fef2f2'
+                e.currentTarget.style.borderColor = '#fecaca'
+              }}
+            >
+              Fjern alle kartlag
+            </button>
+          )}
         </div>
       )}
     </div>
