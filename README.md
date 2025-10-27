@@ -9,17 +9,21 @@
 
 ## 📍 Current Status
 
-**Fully Functional:**
+**Fully Functional & Production Ready:**
 - Interactive maps with GPS navigation and distance measurement
 - 12+ POI categories with real-time data from government and open sources
 - Trail system with WMS raster layers from Turrutebasen (Norwegian National Trail Database)
-- Mobile-optimized interface with keyboard shortcuts
+- Progressive Web App (PWA) with offline support and install capability
+- Mobile-optimized interface with touch gestures and keyboard shortcuts
 - Nature area overlays (Naturskog layers) from Norwegian environmental agencies
+
+**Last Updated:** October 27, 2025
 
 ## ✨ Features
 
 - **Interactive Maps** - Topographic (Kartverket) and satellite (Esri) maps with seamless switching
-- **GPS Navigation** - Real-time location tracking with coordinate display and reverse geocoding
+- **Progressive Web App (PWA)** - Install as native app on mobile/desktop, works offline, auto-updates
+- **GPS Navigation** - Real-time location tracking with coordinate display
 - **Distance Measurement** - Visual distance tool with markers and real-time feedback
 - **Smart Search** - Norwegian place names, addresses, coordinates, and local POI search
 - **12+ POI Categories** - Organized into 6 main groups:
@@ -36,17 +40,18 @@
 
 ## 🏗️ Technology
 
-- **Stack**: React 19 + TypeScript, MapLibre GL JS, Zustand, Vite
+- **Stack**: React 19 + TypeScript, MapLibre GL JS, Zustand, Vite 7, vite-plugin-pwa
 - **Data Sources**:
   - **Base Maps**: Kartverket WMTS (topographic), Esri World Imagery (satellite)
   - **POIs**: OpenStreetMap via Overpass API, Geonorge WFS (emergency shelters)
   - **Transport**: Entur Geocoder API (bus stops, train stations)
   - **Trails**: Turrutebasen WMS (Norwegian National Trail Database)
   - **Nature Areas**: Miljødirektoratet WMS (Naturskog layers)
+- **PWA**: Service Workers with Workbox, offline caching, installable
 - **Browser Support**: Chrome/Edge 90+, Firefox 88+, Safari 14+, Mobile Safari iOS 14+
 - **Architecture**:
   - **Entry Point**: `src/main.tsx` → `src/MapLibreTrakkeApp.tsx`
-  - **State Management**: React Context + local state (no Redux/Zustand stores)
+  - **State Management**: React Context + Zustand (admin only) + local state
   - **Map Engine**: MapLibre GL JS with custom DOM overlay for POIs
   - **POI Rendering**: Custom positioned DOM elements (NOT GeoJSON rendering)
   - **Layer Management**: Lazy loading with automatic re-initialization on style changes
@@ -61,9 +66,10 @@ npm install
 npm run dev
 ```
 
-- **Development**: http://localhost:5173
-- **Build**: `npm run build`
-- **Deploy**: `npm run deploy`
+- **Development**: http://localhost:3000
+- **Build**: `npm run build` (TypeScript check + Vite build)
+- **Lint**: `npm run lint` (ESLint with max 150 warnings)
+- **Deploy**: Automatic via GitHub Actions on push to `main`
 
 ## 🎮 Controls
 
@@ -71,7 +77,7 @@ npm run dev
 - **Search**: `Ctrl+K` to open search panel (Norwegian place names, coordinates, addresses)
 - **Sidebar**: `Ctrl+B` to toggle sidebar
 - **Location**: `Ctrl+L` to toggle GPS tracking
-- **Coordinates**: `Ctrl+click` on map to copy coordinates, or click coordinate display
+- **Coordinates**: `Ctrl+click` (right-click) on map to copy coordinates
 - **Zoom**: Scroll wheel (normal), `Shift+scroll` (precise control - 4.5x finer increments)
 - **Box Zoom**: `Shift+drag` to zoom to selected area
 - **Rotate/Tilt**: `Ctrl+drag` to rotate and tilt the map
@@ -81,8 +87,9 @@ npm run dev
 - **Pan**: Single finger drag
 - **Zoom**: Pinch in/out
 - **Rotate**: Two-finger rotate
-- **Coordinates**: Long press (500ms) on map to copy, coordinates update as finger moves
+- **Tilt**: Two-finger push up/down
 - **POI Details**: Tap markers to view information
+- **Install App**: Tap install prompt when it appears
 - **Touch Targets**: Minimum 44px for all interactive elements
 
 ## 🔧 Configuration
@@ -125,28 +132,23 @@ The application uses a cohesive Norwegian nature-inspired color palette:
    npm run lint        # Must pass with 0 errors (max 150 warnings)
    npm run build       # TypeScript build must succeed
    ```
-3. Use the safe-commit helper script (recommended):
-   ```bash
-   ./scripts/safe-commit.sh "Your commit message"
-   ```
-4. Follow TypeScript + Norwegian terminology guidelines
-5. Test on desktop and mobile before submitting PR
+3. Follow TypeScript + Norwegian terminology guidelines
+4. Test on desktop and mobile before submitting PR
+5. Create PR against `main` branch
 
 ### Code Quality Requirements
 - **ESLint**: Zero tolerance for errors, max 150 warnings
 - **TypeScript**: All builds must pass type checking
-- **Pre-commit Hook**: Automatically blocks commits with ESLint errors
 - **Language**: All user-facing text in Norwegian (Bokmål)
+- **Deployment**: Automatic via GitHub Actions on merge to `main`
 
 ### Adding POI Categories
 1. Add fetch function to appropriate service (e.g., `src/services/overpassService.ts`)
 2. Add transform function to `src/MapLibreTrakkeApp.tsx`
 3. Add loading logic to main POI loading `useEffect`
-4. Enable category in `src/components/HierarchicalCategoryFilter.tsx`
+4. Update category tree in `src/components/CategoryPanel.tsx`
 5. Verify POI type exists in `src/data/pois.ts`
 6. Add data attribution to "Om kartet" modal
-
-See `CLAUDE.md` for detailed implementation guidelines.
 
 ## 🏔️ Norwegian Heritage
 

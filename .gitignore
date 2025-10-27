@@ -35,3 +35,11 @@ UI adjustments.md
 notes/
 debug/
 trakke.code-workspace*
+
+# Screenshots and temporary images
+*.png
+*.jpg
+*.jpeg
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
