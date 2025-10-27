@@ -150,22 +150,39 @@ export function HierarchicalCategoryFilter({
           )}
           
           {!hasChildren && <div style={{ width: '24px', display: 'inline-block' }} />}
-          
-          <input
-            type="checkbox"
-            id={node.id}
-            checked={isChecked}
-            onChange={() => !isDisabled && onCategoryToggle(node.id)}
+
+          {/* Custom checkbox replacement */}
+          <button
+            onClick={() => !isDisabled && onCategoryToggle(node.id)}
             disabled={isDisabled}
-            style={{ 
+            style={{
+              width: '18px',
+              height: '18px',
               marginRight: '8px',
-              opacity: isDisabled ? 0.4 : 1,
+              borderRadius: '4px',
+              border: `2px solid ${isChecked ? '#3e4533' : '#d1d5db'}`,
+              backgroundColor: isChecked ? '#3e4533' : '#ffffff',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               cursor: isDisabled ? 'not-allowed' : 'pointer',
-              accentColor: '#10b981',
-              width: '14px',
-              height: '14px'
+              opacity: isDisabled ? 0.4 : 1,
+              transition: 'all 0.2s ease',
+              padding: 0,
+              flexShrink: 0
             }}
-          />
+          >
+            {isChecked && (
+              <span style={{
+                fontFamily: 'Material Symbols Outlined',
+                fontSize: '12px',
+                color: 'white',
+                lineHeight: '1'
+              }}>
+                check
+              </span>
+            )}
+          </button>
           
           {node.icon && !node.parent && (
             <div
@@ -197,9 +214,9 @@ export function HierarchicalCategoryFilter({
             </div>
           )}
           
-          <label 
-            htmlFor={node.id}
-            style={{ 
+          <span
+            onClick={() => !isDisabled && onCategoryToggle(node.id)}
+            style={{
               cursor: isDisabled ? 'not-allowed' : 'pointer',
               fontSize: '14px',
               fontWeight: isDisabled ? '400' : '500',
@@ -211,7 +228,7 @@ export function HierarchicalCategoryFilter({
             }}
           >
             {node.name}
-          </label>
+          </span>
         </div>
         
         {hasChildren && isExpanded && node.children && (

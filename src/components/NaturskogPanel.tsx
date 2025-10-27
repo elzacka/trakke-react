@@ -140,7 +140,8 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
                         width: '100%',
                         padding: '10px 12px',
                         backgroundColor: isActive ? '#f0f9ff' : '#ffffff',
-                        border: 'none',
+                        border: isActive ? '2px solid #3e4533' : 'none',
+                        borderRadius: '6px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '10px',
@@ -158,33 +159,10 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
                         }
                       }}
                     >
-                      {/* Checkbox */}
-                      <div style={{
-                        width: '16px',
-                        height: '16px',
-                        borderRadius: '3px',
-                        border: `2px solid ${isActive ? '#3e4533' : '#d1d5db'}`,
-                        backgroundColor: isActive ? '#3e4533' : '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s ease'
-                      }}>
-                        {isActive && (
-                          <span style={{
-                            color: 'white',
-                            fontSize: '10px',
-                            lineHeight: '1'
-                          }}>
-                            ✓
-                          </span>
-                        )}
-                      </div>
-
                       {/* Icon */}
                       <span style={{
                         fontFamily: 'Material Symbols Outlined',
-                        fontSize: '18px',
+                        fontSize: '20px',
                         color: isActive ? layer.color : '#9ca3af'
                       }}>
                         {layer.icon}
@@ -195,7 +173,7 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
                         <div style={{
                           fontSize: '14px',
                           fontWeight: '500',
-                          color: isActive ? '#075985' : '#374151',
+                          color: isActive ? '#3e4533' : '#374151',
                           marginBottom: '2px'
                         }}>
                           {layer.name}
@@ -208,6 +186,17 @@ export function NaturskogPanel({ onLayerToggle }: NaturskogPanelProps) {
                           {layer.description}
                         </div>
                       </div>
+
+                      {/* Active indicator */}
+                      {isActive && (
+                        <span style={{
+                          fontFamily: 'Material Symbols Outlined',
+                          fontSize: '18px',
+                          color: '#3e4533'
+                        }}>
+                          check_circle
+                        </span>
+                      )}
                     </button>
                   </div>
                 )

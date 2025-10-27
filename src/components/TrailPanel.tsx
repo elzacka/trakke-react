@@ -158,7 +158,8 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                       width: '100%',
                       padding: '10px 12px',
                       backgroundColor: _activeTrailTypes.includes(type) ? '#f0f9ff' : '#ffffff',
-                      border: 'none',
+                      border: _activeTrailTypes.includes(type) ? '2px solid #3e4533' : 'none',
+                      borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '10px',
@@ -176,34 +177,11 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                       }
                     }}
                   >
-                    {/* Checkbox */}
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '3px',
-                      border: `2px solid ${_activeTrailTypes.includes(type) ? '#3e4533' : '#d1d5db'}`,
-                      backgroundColor: _activeTrailTypes.includes(type) ? '#3e4533' : '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      {_activeTrailTypes.includes(type) && (
-                        <span style={{
-                          color: 'white',
-                          fontSize: '10px',
-                          lineHeight: '1'
-                        }}>
-                          ✓
-                        </span>
-                      )}
-                    </div>
-
                     {/* Icon */}
                     <span style={{
                       fontFamily: 'Material Symbols Outlined',
-                      fontSize: '18px',
-                      color: _activeTrailTypes.includes(type) ? '#3e4533' : '#64748b'
+                      fontSize: '20px',
+                      color: _activeTrailTypes.includes(type) ? '#3e4533' : '#9ca3af'
                     }}>
                       {icon}
                     </span>
@@ -213,7 +191,7 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                       <div style={{
                         fontSize: '14px',
                         fontWeight: '500',
-                        color: _activeTrailTypes.includes(type) ? '#3e4533' : '#334155',
+                        color: _activeTrailTypes.includes(type) ? '#3e4533' : '#374151',
                         marginBottom: '2px'
                       }}>
                         {name}
@@ -225,6 +203,17 @@ export function TrailPanel({ onTrailTypesChange }: TrailPanelProps) {
                         {description}
                       </div>
                     </div>
+
+                    {/* Active indicator */}
+                    {_activeTrailTypes.includes(type) && (
+                      <span style={{
+                        fontFamily: 'Material Symbols Outlined',
+                        fontSize: '18px',
+                        color: '#3e4533'
+                      }}>
+                        check_circle
+                      </span>
+                    )}
                   </button>
                 </div>
               ))}
