@@ -5,10 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:network": "vite --host",
-    "dev:tunnel": "echo '🚀 Start the dev server in one terminal with: npm run dev' && echo '🌐 Then run this in another terminal: npx cloudflared tunnel --url http://localhost:3000'",
     "build": "tsc -b && vite build",
-    "build:preview": "npm run build && vite preview --host",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 150",
     "lint:fix": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 150 --fix",
