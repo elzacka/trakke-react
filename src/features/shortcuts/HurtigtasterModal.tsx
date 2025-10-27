@@ -73,8 +73,8 @@ const ShortcutRow: React.FC<{ shortcut: ShortcutItem }> = ({ shortcut }) => {
 
 export const HurtigtasterModal: React.FC<HurtigtasterModalProps> = ({ isOpen, onClose }) => {
   // Split shortcuts into Mobile and Desktop groups
-  const mobileShortcuts = HURTIGTASTER.slice(0, 6)  // First 6 are mobile
-  const desktopShortcuts = HURTIGTASTER.slice(6)    // Rest are desktop
+  const mobileShortcuts = HURTIGTASTER.slice(0, 5)  // First 5 are mobile (removed coordinate copy)
+  const desktopShortcuts = HURTIGTASTER.slice(5)    // Rest are desktop
 
   // Determine if we're on mobile
   const isMobile = window.innerWidth < 768

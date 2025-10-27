@@ -698,7 +698,7 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
           startTouch = { x: touch.clientX, y: touch.clientY }
           longPressCoords = { lat: e.lngLat.lat, lng: e.lngLat.lng }
 
-          longPressTimer = setTimeout(async () => {
+          longPressTimer = setTimeout(() => {
             if (longPressCoords) {
               const coordinatesText = `${longPressCoords.lat.toFixed(5)}°N, ${longPressCoords.lng.toFixed(5)}°E`
 
@@ -707,51 +707,37 @@ const MapLibreMapComponent = forwardRef<MapLibreMapRef, MapLibreMapProps>((props
                 navigator.vibrate(50)
               }
 
-              try {
-                // Use the improved clipboard function
-                if (navigator.clipboard && window.isSecureContext) {
-                  await navigator.clipboard.writeText(coordinatesText)
-                } else {
-                  // Improved fallback for mobile browsers (especially iOS Safari)
-                  const textArea = document.createElement('textarea')
-                  textArea.value = coordinatesText
-                  textArea.style.position = 'fixed'
-                  textArea.style.top = '0'
-                  textArea.style.left = '0'
-                  textArea.style.width = '2em'
-                  textArea.style.height = '2em'
-                  textArea.style.padding = '0'
-                  textArea.style.border = 'none'
-                  textArea.style.outline = 'none'
-                  textArea.style.boxShadow = 'none'
-                  textArea.style.background = 'transparent'
-                  textArea.setAttribute('readonly', '')
-                  document.body.appendChild(textArea)
+              // iOS Safari clipboard copy - simplified synchronous approach
+              const textArea = document.createElement('textarea')
+              textArea.value = coordinatesText
 
-                  // iOS Safari requires the element to be in viewport
-                  textArea.contentEditable = 'true'
-                  textArea.readOnly = false
+              // Position off-screen but still in viewport (iOS requirement)
+              textArea.style.position = 'fixed'
+              textArea.style.top = '0'
+              textArea.style.left = '-999999px'
+              textArea.style.fontSize = '16px' // Prevents iOS zoom
+              textArea.style.opacity = '0'
+              textArea.style.pointerEvents = 'none'
 
-                  const range = document.createRange()
-                  range.selectNodeContents(textArea)
-                  const selection = window.getSelection()
-                  if (selection) {
-                    selection.removeAllRanges()
-                    selection.addRange(range)
-                  }
-                  textArea.setSelectionRange(0, 999999)
+              // iOS requires element to be editable
+              textArea.readOnly = false
 
-                  document.execCommand('copy')
-                  document.body.removeChild(textArea)
-                }
+              document.body.appendChild(textArea)
 
-                console.log(`📋 Copied coordinates with long press: ${coordinatesText}`)
-                onCoordinatesCopied?.(true)
-              } catch (error) {
-                console.error('Failed to copy coordinates:', error)
-                // Still show visual feedback
-                onCoordinatesCopied?.(true)
-              }
+              // iOS-specific selection
+              textArea.focus()
+              textArea.select()
+              textArea.setSelectionRange(0, 99999)
+
+              // Copy using execCommand (most reliable for iOS)
+              const success = document.execCommand('copy')
+
+              document.body.removeChild(textArea)
+
+              console.log(`📋 Copied coordinates (${success ? 'success' : 'failed'}): ${coordinatesText}`)
+
+              // Always show feedback, even if copy might have failed
+              onCoordinatesCopied?.(true)
             }
           }, LONG_PRESS_DURATION)
         }

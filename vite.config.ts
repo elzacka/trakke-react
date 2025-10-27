@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    basicSsl(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -125,12 +127,12 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: '127.0.0.1', // Use explicit IP instead of localhost for better reliability
+    host: '0.0.0.0', // Allow network access for testing on other devices
     open: true,
     strictPort: true, // Use exact port to avoid confusion
     hmr: {
       port: 3001,
-      host: '127.0.0.1' // Match server host for consistency
+      host: '0.0.0.0' // Match server host for consistency
     },
     cors: true,
     watch: {

@@ -69,13 +69,9 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
   return (
     <div className="install-prompt-overlay" onClick={onClose}>
       <div className="install-prompt-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
+        {/* Header with Title */}
         <div className="install-prompt-header">
-          <div className="install-prompt-icon">
-            <span className="material-symbols-outlined" style={{ color: '#3e4533', fontSize: '32px' }}>
-              forest
-            </span>
-          </div>
+          <h2 className="install-prompt-title">Bruke Tråkke som app?</h2>
           <button
             className="install-prompt-close"
             onClick={onClose}
@@ -85,22 +81,16 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
           </button>
         </div>
 
-        {/* Title */}
-        <h2 className="install-prompt-title">Bruke Tråkke som app?</h2>
-
         {/* Platform-specific instructions */}
         <div className="install-prompt-instructions">
           {platform === 'ios' && browser === 'safari' && (
             <>
-              <p className="install-prompt-description">
-                Følg disse stegene:
-              </p>
               <ol className="install-prompt-steps">
                 <li>
                   <span className="step-number">1</span>
                   <div className="step-content">
                     <span className="step-text">
-                      Trykk på <strong>de tre prikkene</strong> nederst til høyre
+                      Trykk på <strong>de tre prikkene</strong> nederst
                     </span>
                   </div>
                 </li>
@@ -108,7 +98,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   <span className="step-number">2</span>
                   <div className="step-content">
                     <span className="step-text">
-                      Trykk <strong>Del-ikonet</strong>
+                      Trykk <strong>Del</strong>
                     </span>
                   </div>
                 </li>
@@ -116,7 +106,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   <span className="step-number">3</span>
                   <div className="step-content">
                     <span className="step-text">
-                      Sveip opp og velg <strong>«Legg til på Hjem-skjerm»</strong>
+                      Sveip <strong>opp</strong>
                     </span>
                   </div>
                 </li>
@@ -124,22 +114,29 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   <span className="step-number">4</span>
                   <div className="step-content">
                     <span className="step-text">
-                      Velg <strong>«Åpne som nettapp»</strong>
+                      Trykk <strong>Legg til på Hjem-skjerm</strong>
                     </span>
                   </div>
-		</li>
+                </li>
                 <li>
                   <span className="step-number">5</span>
                   <div className="step-content">
                     <span className="step-text">
-                      Trykk <strong>«Legg til»</strong> i høyre hjørne
+                      Velg <strong>Åpne som nettapp</strong>
+                    </span>
+                  </div>
+		</li>
+                <li>
+                  <span className="step-number">6</span>
+                  <div className="step-content">
+                    <span className="step-text">
+                      Trykk <strong>Legg til</strong>
                     </span>
                   </div>
                 </li>
               </ol>
               <div className="install-prompt-note">
-                <span className="material-symbols-outlined">info</span>
-                <span>Dette fungerer kun i Safari på iOS</span>
+                Dette funker kun i Safari på iOS
               </div>
             </>
           )}
@@ -147,7 +144,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
           {platform === 'ios' && browser !== 'safari' && (
             <>
               <p className="install-prompt-description">
-                For å installere Tråkke på din iPhone må du åpne denne siden i <strong>Safari</strong>.
+                For å bruke Tråkke som app må du åpne denne siden i <strong>Safari</strong>.
               </p>
               <div className="install-prompt-note">
                 <span className="material-symbols-outlined">info</span>
@@ -159,7 +156,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
           {platform === 'android' && deferredPrompt && (
             <>
               <p className="install-prompt-description">
-                Installer Tråkke for raskere tilgang og bedre ytelse
+                Bruke Tråkke som app?
               </p>
               <button
                 className="install-prompt-install-btn"
@@ -174,7 +171,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
           {platform === 'android' && !deferredPrompt && (
             <>
               <p className="install-prompt-description">
-                Følg disse stegene for å installere Tråkke:
+                Følg disse stegene:
               </p>
               <ol className="install-prompt-steps">
                 <li>
@@ -189,7 +186,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   <span className="step-number">2</span>
                   <div className="step-content">
                     <span className="step-text">
-                      Velg <strong>«Legg til på startsiden»</strong> eller <strong>«Installer app»</strong>
+                      Velg <strong>Legg til på startsiden</strong> eller <strong>Installer app</strong>
                     </span>
                   </div>
                 </li>
@@ -208,7 +205,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
           {platform === 'desktop' && (
             <>
               <p className="install-prompt-description">
-                Installer Tråkke for raskere tilgang og offline-støtte
+                Bruke Tråkke som app?
               </p>
               {deferredPrompt && (
                 <button
@@ -229,19 +226,13 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
           )}
         </div>
 
-        {/* Footer buttons */}
+        {/* Footer button */}
         <div className="install-prompt-footer">
           <button
-            className="install-prompt-dismiss-btn"
-            onClick={handleDontShowAgain}
-          >
-            Ikke vis igjen
-          </button>
-          <button
-            className="install-prompt-later-btn"
+            className="install-prompt-understand-btn"
             onClick={onClose}
           >
-            Kanskje senere
+            Skjønner
           </button>
         </div>
       </div>

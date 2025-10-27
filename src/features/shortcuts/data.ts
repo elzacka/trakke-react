@@ -11,7 +11,6 @@ export const HURTIGTASTER: ShortcutItem[] = [
   { action: "Roter kart",         tokens: ["To fingre + vri"],      isGesture: true },
   { action: "Vipp kart",          tokens: ["To fingre + skyv opp/ned"], isGesture: true },
   { action: "Zoom til punkt",     tokens: ["Dobbelttrykk"],         isGesture: true },
-  { action: "Kopier koordinater fra kart", tokens: ["Langt trykk"], isGesture: true },
 
   // Desktop (PC/Mac)
   { action: "Søk",                    tokens: ["Ctrl", "K"] },
