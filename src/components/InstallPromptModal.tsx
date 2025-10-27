@@ -71,11 +71,7 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
       <div className="install-prompt-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="install-prompt-header">
-          <div className="install-prompt-icon">
-            <span className="material-symbols-outlined" style={{ color: '#3e4533', fontSize: '32px' }}>
-              forest
-            </span>
-          </div>
+          <h2 className="install-prompt-title">Bruke Tråkke som app?</h2>
           <button
             className="install-prompt-close"
             onClick={onClose}
@@ -85,16 +81,10 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
           </button>
         </div>
 
-        {/* Title */}
-        <h2 className="install-prompt-title">Bruke Tråkke som app?</h2>
-
         {/* Platform-specific instructions */}
         <div className="install-prompt-instructions">
           {platform === 'ios' && browser === 'safari' && (
             <>
-              <p className="install-prompt-description">
-                Følg disse stegene:
-              </p>
               <ol className="install-prompt-steps">
                 <li>
                   <span className="step-number">1</span>
@@ -137,6 +127,12 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
                   </div>
                 </li>
               </ol>
+              <button
+                className="install-prompt-cta-btn"
+                onClick={onClose}
+              >
+                Skjønner
+              </button>
               <div className="install-prompt-note">
                 <span className="material-symbols-outlined">info</span>
                 <span>Dette fungerer kun i Safari på iOS</span>
@@ -146,9 +142,12 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'ios' && browser !== 'safari' && (
             <>
-              <p className="install-prompt-description">
-                For å installere Tråkke på din iPhone må du åpne denne siden i <strong>Safari</strong>.
-              </p>
+              <button
+                className="install-prompt-cta-btn"
+                onClick={onClose}
+              >
+                Skjønner
+              </button>
               <div className="install-prompt-note">
                 <span className="material-symbols-outlined">info</span>
                 <span>Kopier lenken og åpne den i Safari-nettleseren</span>
@@ -158,9 +157,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'android' && deferredPrompt && (
             <>
-              <p className="install-prompt-description">
-                Installer Tråkke for raskere tilgang og bedre ytelse
-              </p>
               <button
                 className="install-prompt-install-btn"
                 onClick={handleInstallClick}
@@ -173,9 +169,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'android' && !deferredPrompt && (
             <>
-              <p className="install-prompt-description">
-                Følg disse stegene for å installere Tråkke:
-              </p>
               <ol className="install-prompt-steps">
                 <li>
                   <span className="step-number">1</span>
@@ -207,9 +200,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
 
           {platform === 'desktop' && (
             <>
-              <p className="install-prompt-description">
-                Installer Tråkke for raskere tilgang og offline-støtte
-              </p>
               {deferredPrompt && (
                 <button
                   className="install-prompt-install-btn"
@@ -227,22 +217,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
               )}
             </>
           )}
-        </div>
-
-        {/* Footer buttons */}
-        <div className="install-prompt-footer">
-          <button
-            className="install-prompt-dismiss-btn"
-            onClick={handleDontShowAgain}
-          >
-            Ikke vis igjen
-          </button>
-          <button
-            className="install-prompt-later-btn"
-            onClick={onClose}
-          >
-            Kanskje senere
-          </button>
         </div>
       </div>
     </div>
