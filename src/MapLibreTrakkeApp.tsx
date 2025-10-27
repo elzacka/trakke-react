@@ -293,11 +293,6 @@ function MapLibreTrakkeAppInner() {
     setShowInstallPrompt(false)
   }, [])
 
-  const handleInstallPromptDismiss = useCallback(() => {
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString())
-    setShowInstallPrompt(false)
-  }, [])
-
   const handleCategoryToggle = useCallback((nodeId: string) => {
     setCategoryState(prev => {
       const newChecked = { ...prev.checked }
@@ -2303,7 +2298,6 @@ function MapLibreTrakkeAppInner() {
       {showInstallPrompt && (
         <InstallPromptModal
           onClose={handleInstallPromptClose}
-          onDismiss={handleInstallPromptDismiss}
         />
       )}
 

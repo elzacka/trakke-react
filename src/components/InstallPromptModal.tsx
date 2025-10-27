@@ -8,10 +8,9 @@ interface BeforeInstallPromptEvent extends Event {
 
 interface InstallPromptModalProps {
   onClose: () => void
-  onDismiss: () => void
 }
 
-export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose, onDismiss }) => {
+export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop' | 'unknown'>('unknown')
   const [browser, setBrowser] = useState<'safari' | 'chrome' | 'firefox' | 'edge' | 'other'>('other')
@@ -60,10 +59,6 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose,
       setDeferredPrompt(null)
       onClose()
     }
-  }
-
-  const handleDontShowAgain = () => {
-    onDismiss()
   }
 
   return (
