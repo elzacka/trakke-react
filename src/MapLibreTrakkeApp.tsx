@@ -1351,7 +1351,7 @@ function MapLibreTrakkeAppInner() {
           <>
             {/* Header */}
             <div style={{
-              padding: window.innerWidth < 768 ? '44px 20px 20px' : '24px 20px 20px',
+              padding: '24px 20px 20px',
               borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(8px)'
@@ -1454,7 +1454,7 @@ function MapLibreTrakkeAppInner() {
                   textTransform: 'uppercase',
                   opacity: 0.8
                 }}>
-                  Under utvikling • Sist oppdatert 26. okt 2025
+                  Under utvikling • Sist oppdatert 22. okt 2025
                 </p>
               </div>
             </div>
