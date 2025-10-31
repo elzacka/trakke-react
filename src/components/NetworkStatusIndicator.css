@@ -1,0 +1,186 @@
+/* Network Status Indicator - World-Class UI/UX */
+
+.network-status-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  animation: slideInFromTop 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 500ms ease-in-out;
+}
+
+.network-status-indicator.dismissing {
+  animation: slideOutToTop 300ms ease-in forwards;
+}
+
+.network-status-content {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Icon */
+.network-status-icon-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.network-status-icon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.network-status-icon.spinning {
+  animation: spin 1.5s linear infinite;
+}
+
+/* Text */
+.network-status-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0; /* Allow text truncation */
+}
+
+.network-status-message {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+}
+
+.network-status-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
+/* Action Button */
+.network-status-action {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-height: 44px; /* Touch-friendly */
+  display: flex;
+  align-items: center;
+}
+
+.network-status-action:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.network-status-action:active {
+  transform: translateY(0);
+}
+
+/* Animations */
+@keyframes slideInFromTop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToTop {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .network-status-content {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .network-status-message {
+    font-size: 13px;
+  }
+
+  .network-status-subtitle {
+    font-size: 11px;
+  }
+
+  .network-status-action {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .network-status-indicator {
+    animation: fadeIn 300ms ease-in;
+  }
+
+  .network-status-indicator.dismissing {
+    animation: fadeOut 200ms ease-out forwards;
+  }
+
+  .network-status-icon.spinning {
+    animation: none;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .network-status-indicator {
+    border-bottom-width: 2px;
+  }
+
+  .network-status-action {
+    border-width: 2px;
+  }
+}

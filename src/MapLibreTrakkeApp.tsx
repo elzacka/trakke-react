@@ -28,6 +28,8 @@ import { TegnforklaringModal } from './features/legend/TegnforklaringModal'
 import { AdminLoginModal } from './components/modal/AdminLoginModal'
 import { AdminPanel } from './components/modal/AdminPanel'
 import { InstallPromptModal } from './components/InstallPromptModal'
+import { NetworkStatusIndicator } from './components/NetworkStatusIndicator'
+import { OfflineInfoModal } from './components/modal/OfflineInfoModal'
 import './services/adminService' // Import to make adminService available globally
 
 function MapLibreTrakkeAppInner() {
@@ -74,6 +76,9 @@ function MapLibreTrakkeAppInner() {
 
   // PWA Install Prompt state
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
+
+  // Offline Info Modal state
+  const [showOfflineInfo, setShowOfflineInfo] = useState(false)
 
   // POI data state (currently only Krigsminne from OpenStreetMap)
   const [pois, setPois] = useState<POI[]>([])
@@ -2209,6 +2214,17 @@ function MapLibreTrakkeAppInner() {
           onClose={handleInstallPromptClose}
         />
       )}
+
+      {/* Network Status Indicator */}
+      <NetworkStatusIndicator
+        onShowOfflineInfo={() => setShowOfflineInfo(true)}
+      />
+
+      {/* Offline Info Modal */}
+      <OfflineInfoModal
+        isOpen={showOfflineInfo}
+        onClose={() => setShowOfflineInfo(false)}
+      />
 
       {/* Trail Details Modal */}
       {showTrailDetails && (
