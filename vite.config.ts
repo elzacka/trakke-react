@@ -8,8 +8,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'favicon-16x16.svg', 'icons/*.svg'],
+      includeAssets: ['favicon.svg', 'favicon-16x16.svg', 'icons/*.svg', 'offline.html'],
       manifest: {
+        id: '/',
         name: 'Tråkke - Oppdag Norge med turskoa på',
         short_name: 'Tråkke',
         description: 'Utforsk Norges natur, kulturarv og friluftsopplevelser',
@@ -20,6 +21,30 @@ export default defineConfig({
         scope: './',
         start_url: './',
         lang: 'no',
+        categories: ['travel', 'navigation', 'utilities', 'lifestyle'],
+        shortcuts: [
+          {
+            name: 'Søk',
+            short_name: 'Søk',
+            description: 'Søk etter steder og koordinater',
+            url: './?action=search',
+            icons: [{ src: './icons/icon-192x192.svg', sizes: '192x192' }]
+          },
+          {
+            name: 'Min posisjon',
+            short_name: 'Posisjon',
+            description: 'Gå til min posisjon',
+            url: './?action=location',
+            icons: [{ src: './icons/icon-192x192.svg', sizes: '192x192' }]
+          },
+          {
+            name: 'Turer',
+            short_name: 'Turer',
+            description: 'Utforsk turløyper',
+            url: './?action=trails',
+            icons: [{ src: './icons/icon-192x192.svg', sizes: '192x192' }]
+          }
+        ],
         icons: [
           {
             src: './icons/icon-192x192.svg',
@@ -49,6 +74,12 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,gif,webp,woff,woff2}'],
+        navigateFallback: null,
+        navigateFallbackDenylist: [/^\/api\//, /^\/__/],
+        offlineGoogleAnalytics: false,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -66,12 +97,12 @@ export default defineConfig({
           },
           {
             urlPattern: /^https:\/\/opencache\.statkart\.no\/.*/i,
-            handler: 'NetworkFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'kartverket-tiles',
               expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200]

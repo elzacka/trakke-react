@@ -43,10 +43,24 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose 
       setDeferredPrompt(e as BeforeInstallPromptEvent)
     }
 
+    // Listen for appinstalled event to track successful installations
+    const handleAppInstalled = () => {
+      console.log('[PWA] App successfully installed')
+      // Store installation timestamp for analytics
+      try {
+        localStorage.setItem('trakke_installed_at', new Date().toISOString())
+        localStorage.setItem('trakke_installed', 'true')
+      } catch {
+        // Silent fail if localStorage is unavailable
+      }
+    }
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
     }
   }, [])
 
@@ -54,7 +68,17 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ onClose 
     if (deferredPrompt) {
       // Show native install prompt (Android/Desktop Chrome/Edge)
       await deferredPrompt.prompt()
-      const { outcome: _outcome } = await deferredPrompt.userChoice
+      const { outcome } = await deferredPrompt.userChoice
+
+      // Track installation outcome
+      if (outcome === 'accepted') {
+        // User accepted the install prompt - installation is in progress
+        console.log('[PWA] User accepted install prompt')
+      } else {
+        // User dismissed the install prompt
+        console.log('[PWA] User dismissed install prompt')
+      }
+
       setDeferredPrompt(null)
       onClose()
     }

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tråkke - Frakoblet</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Exo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #3e4533;
+      padding: 1rem;
+    }
+
+    .offline-container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 500px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(62, 69, 51, 0.15);
+    }
+
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      color: #3e4533;
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      letter-spacing: -0.5px;
+    }
+
+    p {
+      color: #64748b;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .features {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1.5rem 0;
+      text-align: left;
+    }
+
+    .features h2 {
+      color: #3e4533;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .features ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .features li {
+      color: #64748b;
+      font-size: 0.875rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .features li:last-child {
+      border-bottom: none;
+    }
+
+    .features li::before {
+      content: '✓';
+      color: #3e4533;
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+
+    button {
+      background: #3e4533;
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(62, 69, 51, 0.2);
+    }
+
+    button:hover {
+      background: #2d3326;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(62, 69, 51, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .status.online {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(146, 64, 14, 0.2);
+      border-top-color: #92400e;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .status.online .spinner {
+      display: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 640px) {
+      .offline-container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .icon {
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="icon">🏔️</div>
+    <h1>Ingen nettforbindelse</h1>
+    <p>Tråkke trenger internett for å laste kart, turløyper og interessepunkter.</p>
+
+    <div class="features">
+      <h2>Krever nettilgang:</h2>
+      <ul>
+        <li>Interaktive kart (Kartverket)</li>
+        <li>Interessepunkter (POI)</li>
+        <li>Turløyper og naturområder</li>
+        <li>Stedssøk og koordinater</li>
+      </ul>
+    </div>
+
+    <button onclick="window.location.reload()">Prøv igjen</button>
+
+    <div class="status" id="status">
+      <span class="spinner"></span>
+      <span>Venter på tilkobling...</span>
+    </div>
+  </div>
+
+  <script>
+    // Auto-reload when back online
+    window.addEventListener('online', () => {
+      const statusEl = document.getElementById('status')
+      statusEl.className = 'status online'
+      statusEl.innerHTML = '<span>✓</span><span>Tilkoblet! Laster inn...</span>'
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
+    })
+
+    // Update status immediately if already online
+    if (navigator.onLine) {
+      window.location.reload()
+    }
+  </script>
+</body>
+</html>
